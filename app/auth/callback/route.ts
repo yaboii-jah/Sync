@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login", origin));
+    return NextResponse.redirect(new URL("/", origin));
   }
 
   const supabase = await createClient();
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error("[auth/callback] exchange failed:", error.message);
     return NextResponse.redirect(
-      new URL(`/login?error=oauth&detail=${encodeURIComponent(error.message)}`, origin),
+      new URL(`/?error=oauth&detail=${encodeURIComponent(error.message)}`, origin),
     );
   }
 
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL("/login?error=oauth", origin));
+    return NextResponse.redirect(new URL("/?error=oauth", origin));
   }
 
   const { data: profile } = await supabase
