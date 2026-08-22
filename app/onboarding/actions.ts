@@ -1,7 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { isValidLinkedInProfileUrl } from "@/lib/linkedin";
+import {
+  isValidLinkedInProfileUrl,
+  normalizeLinkedInProfileUrl,
+} from "@/lib/linkedin";
 import { createClient } from "@/lib/supabase/server";
 
 export interface SaveLinkedInUrlState {
@@ -21,6 +24,14 @@ export async function saveLinkedInUrl(
     };
   }
 
+  const normalizedUrl = normalizeLinkedInProfileUrl(linkedinUrl);
+
+  if (!normalizedUrl) {
+    return {
+      error: "Enter a valid LinkedIn profile URL, e.g. https://linkedin.com/in/your-name",
+    };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,7 +41,7 @@ export async function saveLinkedInUrl(
 
   const { error } = await supabase
     .from("profiles")
-    .update({ linkedin_url: linkedinUrl })
+    .update({ linkedin_url: normalizedUrl })
     .eq("id", user.id);
 
   if (error) {

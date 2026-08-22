@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return NextResponse.redirect(new URL("/login?error=oauth", origin));
+    console.error("[auth/callback] exchange failed:", error.message);
+    return NextResponse.redirect(
+      new URL(`/login?error=oauth&detail=${encodeURIComponent(error.message)}`, origin),
+    );
   }
 
   const {

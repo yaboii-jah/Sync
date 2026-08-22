@@ -21,11 +21,11 @@ change.
 - Decisions made during auth planning: three-unit slice (clients/proxy → schema+RLS → auth UI); blocking onboarding gate for first-time LinkedIn URL capture; stub `/home` post-login target; functional-only login/onboarding UI this phase (ceremonial landing is a separate unit); basic sign-out included; `profiles.pass_type` column included in migration; loose `linkedin.com/in/` URL validation
 - Auth Unit 2: Supabase CLI linked to project (Flowgram / `mygybolhwoeckrgczclm`); migration `20260822090000_create_profiles.sql` pushed — `profiles` table (id → auth.users, name, photo_url, validated linkedin_url, pass_type default 'regular', timestamps), RLS enabled with select/update-own policies using `(select auth.uid())`, `handle_new_user` trigger auto-creating profiles from auth metadata, `updated_at` trigger; `database.types.ts` regenerated via CLI into `lib/supabase/` and typed clients wired up; migration list verified local = remote. Live RLS behavior test deferred until a real authenticated user exists (needs LinkedIn provider)
 - Auth Unit 3: dark-only token foundation in `globals.css` (brand palette as Tailwind v4 `@theme` tokens, Lato via `next/font`); functional landing page with Get Started; `/login` with LinkedIn sign-in server action; `/auth/callback` route handler exchanging the OAuth code and routing to onboarding vs home based on profile state; blocking `/onboarding` gate with validated LinkedIn URL save (client form via `useActionState`, server-side re-validation, DB check constraint as backstop); stub `/home` showing identity + sign-out (requires complete profile via `requireCompleteProfile` helper); proxy redirects signed-in users from `/login` to `/home`; build/lint pass, route protection smoke-tested. Ceremonial landing treatment deliberately deferred to its own design unit
+- Live end-to-end verification of the auth unit against the production Supabase project: `linkedin_oidc` provider confirmed enabled; authorize endpoint redirects to LinkedIn's consent URL with correct scopes (`openid email profile`) and callback; admin-created test users confirmed the `handle_new_user` trigger auto-creates profiles seeded from auth metadata; RLS verified — auth user reads/updates own row only, anon sees nothing, cross-user select/update/delete all blocked, no client delete path; DB check constraint rejects non-LinkedIn URLs while accepting valid ones; `updated_at` trigger confirmed firing. App-level flow simulated with real session cookies in ssr format: signed-in user without LinkedIn URL is gated to `/onboarding`, after URL save reaches `/home`, signed-in users hitting `/login` bounce to `/home`. Test users deleted afterwards; database left clean
 
-## In Progress
+## In Progress  
 
-- Auth phase: Units 1–3 complete — auth feature unit done within scope
-- Blocked for live end-to-end verification: LinkedIn Developer app with OIDC product approval + provider credentials in Supabase dashboard (Auth → Providers → LinkedIn). Once configured, verify: sign-in → profile auto-created by trigger → onboarding gate → URL save → home; then re-run RLS behavior checks with the real session
+- None. Auth feature unit fully verified end-to-end against the live project (LinkedIn provider configured and live). The only unautomatable step is the human LinkedIn consent screen — everything before and after it was verified programmatically.
 
 ## Next Up
 
@@ -37,6 +37,10 @@ change.
 - App name not yet finalized (candidates discussed: Flowgram Campus, Pulse/EventPulse, Nimbus, Orbit, Loop, Sync)
 - Hosting not yet finalized — Vercel + Supabase Cloud is the assumed pairing, not a locked decision
 - Workshop registration system design (slot concurrency, QR check-in flow) still unaddressed in detail — deferred until that phase starts
+
+## Environment Setup Requirements
+
+- **Supabase Auth redirect allowlisting**: GoTrue only honors OAuth `redirect_to` targets listed under Dashboard → Authentication → URL Configuration → Redirect URLs; anything else silently falls back to the Site URL and drops the auth code on an unhandled page. Required entries: `http://localhost:3000/auth/callback` for local dev, plus each deployed origin's `/auth/callback` when hosting is finalized. As a safety net, `/login` now detects a stray `?code=` query param and redirects it to `/auth/callback` so sign-in still completes.
 
 ## Architecture Decisions
 

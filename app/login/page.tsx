@@ -1,11 +1,16 @@
+import { redirect } from "next/navigation";
 import { signInWithLinkedIn } from "./actions";
 
 interface LoginPageProps {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; code?: string; detail?: string }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { error } = await searchParams;
+  const { error, code, detail } = await searchParams;
+
+  if (code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
+  }
 
   return (
     <main className="flex flex-1 items-center justify-center px-4">
@@ -16,8 +21,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           set up automatically.
         </p>
         {error ? (
-          <p className="mt-4 rounded-lg bg-state-error/20 px-3 py-2 text-sm text-state-error">
-            Something went wrong signing you in. Please try again.
+          <p className="mt-4 rounded-lg bg-state-error/20 px-3 py-2 text-sm break-words text-state-error">
+            Something went wrong signing you in.{detail ? ` (${detail})` : ""}
           </p>
         ) : null}
         <form action={signInWithLinkedIn} className="mt-8">
