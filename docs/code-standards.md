@@ -1,0 +1,46 @@
+# Code Standards
+
+## General
+
+- Keep modules small and single-purpose — a session card component shouldn't also know how to format notification text
+- Fix root causes, don't layer workarounds — if Realtime data arrives in the wrong shape, fix the query or the schema, don't patch it in the UI layer
+- Don't mix unrelated concerns in one component or route — auth logic, data fetching, and presentation stay separated
+- Don't build toward deferred scope (workshop registration, admin tooling) — nothing in the current codebase should assume those exist yet
+
+## TypeScript
+
+- Strict mode is required throughout the project
+- Avoid `any` — use explicit interfaces or narrowly scoped types, especially for Supabase table rows and LinkedIn OAuth payloads
+- Validate unknown external input at system boundaries before trusting it (LinkedIn OAuth response fields, Realtime payloads) rather than assuming shape
+
+## Next.js
+
+- Default to server components; add `"use client"` only where browser interactivity is required (e.g. the QR code display, the tab bar, live-updating badges)
+- Keep any route handler focused on a single responsibility
+- Don't create a Next.js API route as a passthrough for something the Supabase client can already do directly under RLS — only add one when logic must run server-side (e.g. triggering a Web Push notification on a session status change)
+
+## Styling
+
+- Use CSS custom property tokens for color and spacing — no hardcoded hex values
+- Follow the dark-only theme defined in `ui-context.md` — dark-teal grounds, pale-lime text, golden-brown hairline borders — with the card-based, bottom-tab-navigation layout; never revert to a light or list-heavy layout
+- Status badges (Not Started / Ongoing / Finished) use a consistent color mapping wherever they appear — schedule, notifications, session detail
+
+## API Routes / Edge Functions
+
+- Validate and parse request input before any logic runs
+- Enforce auth before any mutation — no route trusts a client-supplied user ID
+- Return consistent, predictable response shapes across all routes
+- Reserve custom routes and Supabase Edge Functions for what RLS and the Supabase client can't handle directly — primarily, sending a Web Push notification when a session's status changes
+
+## Data and Storage
+
+- Metadata (sessions, speakers/sponsors, notifications, profiles) belongs in the Supabase Postgres database
+- Profile and speaker photos are referenced by external URL (e.g. from LinkedIn) — no blob storage needed unless that changes later
+- Don't store large or generated content directly in the database
+
+## File Organization
+
+- `app/` — Next.js routes for attendee-facing screens (Home, Session Detail, Notifications, Connect, More, Account Settings)
+- `lib/supabase/` — Supabase client setup and typed queries/mutations for sessions, speakers, notifications, and profiles
+- `components/` — Shared UI building blocks: session cards, status badges, QR code display, tab navigation
+- `public/` + service worker config — PWA manifest, icons, and the service worker handling offline caching and push delivery
