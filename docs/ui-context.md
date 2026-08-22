@@ -67,6 +67,7 @@ Not yet decided. If a library is adopted later (e.g. shadcn/ui), its default the
 - **Bottom tab navigation**: dark-teal bar with a thin golden-brown hairline top border. Active tab reads via a light-green icon glow, not a filled pill or background block.
 - **Lists (schedule, notifications, speakers)**: stacked cards, dark-teal fill, pale-lime text, thin golden-brown hairline border — no drop shadows anywhere in this app, per the brand doc's explicit rejection of "drop-shadow stacks."
 - **Modals/overlays** (session detail, networking QR, speaker bio): centered, generously rounded, backdrop blur, a glowing hairline border in place of a hard modal edge.
+- **Desktop (`≥1024px`)**: the bottom tab bar yields to a 232px labeled left rail — dark-teal ground, gold hairline right border, Perandory wordmark on top, sign-out pinned at the bottom. The home screen splits into a sticky hero pane (~38%, stays pinned while the schedule scrolls) beside the schedule list; content is capped at 1280px and centered on ultrawides. The mobile layout below the breakpoint is untouched.
 
 ## Icons
 

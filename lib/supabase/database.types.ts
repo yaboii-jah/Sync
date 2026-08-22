@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      events: {
+        Row: {
+          ends_at: string
+          id: string
+          name: string
+          starts_at: string
+          status: string
+          venue: string | null
+        }
+        Insert: {
+          ends_at: string
+          id?: string
+          name: string
+          starts_at: string
+          status?: string
+          venue?: string | null
+        }
+        Update: {
+          ends_at?: string
+          id?: string
+          name?: string
+          starts_at?: string
+          status?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
+      my_flow_bookmarks: {
+        Row: {
+          created_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "my_flow_bookmarks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -44,12 +97,113 @@ export type Database = {
         }
         Relationships: []
       }
+      session_speakers: {
+        Row: {
+          session_id: string
+          speaker_id: string
+        }
+        Insert: {
+          session_id: string
+          speaker_id: string
+        }
+        Update: {
+          session_id?: string
+          speaker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_speakers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_speakers_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: false
+            referencedRelation: "speakers_sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          description: string | null
+          end_time: string
+          event_id: string
+          id: string
+          room: string | null
+          start_time: string
+          status: string
+          title: string
+        }
+        Insert: {
+          description?: string | null
+          end_time: string
+          event_id: string
+          id?: string
+          room?: string | null
+          start_time: string
+          status?: string
+          title: string
+        }
+        Update: {
+          description?: string | null
+          end_time?: string
+          event_id?: string
+          id?: string
+          room?: string | null
+          start_time?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      speakers_sponsors: {
+        Row: {
+          bio: string | null
+          id: string
+          linkedin_url: string | null
+          name: string
+          organization: string | null
+          photo_url: string | null
+          role: string
+        }
+        Insert: {
+          bio?: string | null
+          id?: string
+          linkedin_url?: string | null
+          name: string
+          organization?: string | null
+          photo_url?: string | null
+          role: string
+        }
+        Update: {
+          bio?: string | null
+          id?: string
+          linkedin_url?: string | null
+          name?: string
+          organization?: string | null
+          photo_url?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      sync_program_flow_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

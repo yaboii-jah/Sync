@@ -21,7 +21,7 @@
 
 ## Storage Model
 
-- **Database (Supabase Postgres)**: profiles, events, sessions, session-speaker links, speakers/sponsors, notifications, and quick links. Deferred workshop tables (workshops, workshop slots, workshop registrations) will live here too once that phase starts. LinkedIn profile URLs are validated loosely at input but stored canonically as `https://www.linkedin.com/in/<slug>`.
+- **Database (Supabase Postgres)**: profiles, events, sessions, session-speaker links, speakers/sponsors, notifications, quick links, and My Flow bookmarks (attendee-saved sessions). Session/event statuses flip automatically from schedule times via a pg_cron job running every minute — no manual posting, no drift beyond ~60s. Capacity columns are deferred together with workshop tables. Deferred workshop tables (workshops, workshop slots, workshop registrations) will live here too once that phase starts. LinkedIn profile URLs are validated loosely at input but stored canonically as `https://www.linkedin.com/in/<slug>`.
 - **Blob/File Storage**: not yet needed — profile photos come directly from LinkedIn's OAuth response as external URLs; speaker/sponsor photos can stay as external URLs or move to Supabase Storage later if that becomes necessary.
 
 ## Auth and Access Model
@@ -29,13 +29,13 @@
 - Every user signs in via Supabase Auth using LinkedIn (OIDC) — no separate registration form beyond a one-time LinkedIn profile URL entry
 - Each user's profile is a single row tied 1:1 to their auth identity — no shared or delegated ownership
 - Attendees have read-only access to sessions, speakers/sponsors, and notifications, enforced via Row Level Security — not just app-level checks
-- A user can only write to their own profile row (name, LinkedIn URL)
+- A user can only write to their own profile row and their own My Flow bookmarks — nothing else
 - There is no admin/organizer role in the app itself — session, speaker, and notification data is managed directly in the database, outside the app's access model entirely
 
 ## Invariants
 
 1. Session, speaker/sponsor, and notification tables have no client-side write path — RLS enforces read-only access for attendees, with no app-level admin bypass
 2. Session status changes are always derived from schedule time/status data — never from a manually typed notification
-3. A user can only ever modify their own profile row, never another user's
+3. A user can only ever modify their own profile row and their own My Flow bookmarks — never another user's rows or any content table
 4. No feature may depend on a custom admin interface, since none is being built for this version
 5. Push notifications are only ever triggered by a session status change — there is no freeform announcement-sending path in this version

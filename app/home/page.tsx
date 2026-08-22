@@ -1,39 +1,66 @@
-import Image from "next/image";
+import { LogOut } from "lucide-react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import {
+  getBookmarkedSessionIds,
+  getEvent,
+  getSessionsWithSpeakers,
+} from "@/lib/supabase/queries/program-flow";
+import { formatManilaDate } from "@/lib/format";
+import { HeroCard } from "@/components/home/hero-card";
+import { HomeClient } from "@/components/home/home-client";
 import { signOut } from "./actions";
 
 export default async function HomePage() {
-  const { user, profile } = await requireCompleteProfile();
+  await requireCompleteProfile();
+
+  const [event, sessions, bookmarks] = await Promise.all([
+    getEvent(),
+    getSessionsWithSpeakers(),
+    getBookmarkedSessionIds(),
+  ]);
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border-default px-8 py-10 text-center">
-        {profile.photo_url ? (
-          <Image
-            src={profile.photo_url}
-            alt=""
-            width={80}
-            height={80}
-            unoptimized
-            className="mx-auto h-20 w-20 rounded-full border border-border-default object-cover"
-          />
-        ) : null}
-        <h1 className="mt-4 text-2xl font-bold text-text-primary">
-          Hi, {profile.name || "there"}
-        </h1>
-        <p className="mt-3 text-text-muted">
-          You&apos;re signed in as {user.email}. The full event dashboard is
-          coming in the next phase.
+    <main className="w-full">
+      <header className="flex items-center justify-between lg:hidden">
+        <p className="font-display text-2xl text-text-primary uppercase">
+          Sync
         </p>
-        <form action={signOut} className="mt-8">
+        <form action={signOut}>
           <button
             type="submit"
-            className="w-full rounded-lg border border-border-default px-5 py-3 font-bold text-text-primary transition-colors hover:bg-accent-primary"
+            aria-label="Sign out"
+            className="rounded-lg p-2 text-text-muted transition-colors hover:text-text-primary"
           >
-            Sign out
+            <LogOut className="h-5 w-5" />
           </button>
         </form>
-      </div>
+      </header>
+
+      {event ? (
+        <>
+          <div className="lg:flex lg:items-start lg:gap-12">
+            <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
+              <HeroCard event={event} sessions={sessions} />
+              <p className="mt-4 hidden text-sm text-text-muted lg:block">
+                {formatManilaDate(event.starts_at)} · {event.venue}
+              </p>
+            </div>
+
+            <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
+              <h2 className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
+                Program Flow · {formatManilaDate(event.starts_at)}
+              </h2>
+              <div className="mt-3">
+                <HomeClient sessions={sessions} initialBookmarks={bookmarks} />
+              </div>
+            </section>
+          </div>
+        </>
+      ) : (
+        <p className="mt-10 rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
+          Event details are being finalized — check back soon.
+        </p>
+      )}
     </main>
   );
 }
