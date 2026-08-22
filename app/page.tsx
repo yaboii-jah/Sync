@@ -4,7 +4,7 @@ export default function LandingPage() {
   return (
     <main className="flex flex-1 items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border-default px-8 py-10 text-center">
-        <h1 className="text-3xl font-bold text-text-primary">Flowgram</h1>
+        <h1 className="text-3xl font-bold text-text-primary">Sync</h1>
         <p className="mt-2 text-sm font-bold tracking-wide text-text-muted uppercase">
           Student Edition
         </p>

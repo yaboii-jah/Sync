@@ -14,13 +14,14 @@
 ## System Boundaries
 
 - `app/` — Next.js routes for all attendee-facing screens: Home, Session Detail, Notifications, Connect, More, Account Settings
+- Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, and `/login` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
 - `lib/supabase/` — Supabase client setup and typed queries/mutations for sessions, speakers, notifications, and profiles
 - `components/` — Shared UI building blocks: session cards, live status badges, QR code display, tab navigation
 - `public/` + service worker config — PWA manifest, icons, and the service worker handling offline caching and push notification delivery
 
 ## Storage Model
 
-- **Database (Supabase Postgres)**: profiles, events, sessions, session-speaker links, speakers/sponsors, notifications, and quick links. Deferred workshop tables (workshops, workshop slots, workshop registrations) will live here too once that phase starts.
+- **Database (Supabase Postgres)**: profiles, events, sessions, session-speaker links, speakers/sponsors, notifications, and quick links. Deferred workshop tables (workshops, workshop slots, workshop registrations) will live here too once that phase starts. LinkedIn profile URLs are validated loosely at input but stored canonically as `https://www.linkedin.com/in/<slug>`.
 - **Blob/File Storage**: not yet needed — profile photos come directly from LinkedIn's OAuth response as external URLs; speaker/sponsor photos can stay as external URLs or move to Supabase Storage later if that becomes necessary.
 
 ## Auth and Access Model

@@ -5,7 +5,7 @@ change.
 
 ## Current Phase
 
-- Planning — no implementation started yet
+- Auth phase complete and verified end-to-end; next phase: Program Flow (schedule schema, then dashboard UI)
 
 ## Current Goal
 
@@ -22,6 +22,7 @@ change.
 - Auth Unit 2: Supabase CLI linked to project (Flowgram / `mygybolhwoeckrgczclm`); migration `20260822090000_create_profiles.sql` pushed — `profiles` table (id → auth.users, name, photo_url, validated linkedin_url, pass_type default 'regular', timestamps), RLS enabled with select/update-own policies using `(select auth.uid())`, `handle_new_user` trigger auto-creating profiles from auth metadata, `updated_at` trigger; `database.types.ts` regenerated via CLI into `lib/supabase/` and typed clients wired up; migration list verified local = remote. Live RLS behavior test deferred until a real authenticated user exists (needs LinkedIn provider)
 - Auth Unit 3: dark-only token foundation in `globals.css` (brand palette as Tailwind v4 `@theme` tokens, Lato via `next/font`); functional landing page with Get Started; `/login` with LinkedIn sign-in server action; `/auth/callback` route handler exchanging the OAuth code and routing to onboarding vs home based on profile state; blocking `/onboarding` gate with validated LinkedIn URL save (client form via `useActionState`, server-side re-validation, DB check constraint as backstop); stub `/home` showing identity + sign-out (requires complete profile via `requireCompleteProfile` helper); proxy redirects signed-in users from `/login` to `/home`; build/lint pass, route protection smoke-tested. Ceremonial landing treatment deliberately deferred to its own design unit
 - Live end-to-end verification of the auth unit against the production Supabase project: `linkedin_oidc` provider confirmed enabled; authorize endpoint redirects to LinkedIn's consent URL with correct scopes (`openid email profile`) and callback; admin-created test users confirmed the `handle_new_user` trigger auto-creates profiles seeded from auth metadata; RLS verified — auth user reads/updates own row only, anon sees nothing, cross-user select/update/delete all blocked, no client delete path; DB check constraint rejects non-LinkedIn URLs while accepting valid ones; `updated_at` trigger confirmed firing. App-level flow simulated with real session cookies in ssr format: signed-in user without LinkedIn URL is gated to `/onboarding`, after URL save reaches `/home`, signed-in users hitting `/login` bounce to `/home`. Test users deleted afterwards; database left clean
+- Post-verification fixes from real-browser testing: OAuth redirect loop fixed in `proxy.ts` (matcher now excludes `/auth/*` so the OAuth callback is reachable while signed out; proxy redirects strip query params so stray codes can't leak into `/login`); `/auth/callback` surfaces exchange failures via terminal log + `?detail=` shown on the login page; `/login` self-heals stray `?code=` params by forwarding them to `/auth/callback`; flexible LinkedIn URL handling — loose client validation accepting http/https, www./m. subdomains, sub-page paths, and query params, with canonical storage (`https://www.linkedin.com/in/<slug>`) and migration `20260822110000` relaxing the DB check constraint to match
 
 ## In Progress  
 
@@ -29,12 +30,13 @@ change.
 
 ## Next Up
 
-- Scaffold the Next.js + Supabase project
-- Implement LinkedIn sign-in via Supabase Auth (`linkedin_oidc`), including the one-time LinkedIn profile URL capture step
+- Program Flow schema unit: `events`, `sessions`, `session_speakers`, `speakers_sponsors` tables + read-only RLS for authenticated users + seed data
+- Program Flow dashboard unit: real `/home` replacing the stub — "Happening Now" card, full schedule with status badges, session detail view
+- Ceremonial Landing/Login brand treatment from `ui-context.md` (design-heavy; independent of Program Flow)
 
 ## Open Questions
 
-- App name not yet finalized (candidates discussed: Flowgram Campus, Pulse/EventPulse, Nimbus, Orbit, Loop, Sync)
+- App name: resolved — **Sync** (per project-overview.md)
 - Hosting not yet finalized — Vercel + Supabase Cloud is the assumed pairing, not a locked decision
 - Workshop registration system design (slot concurrency, QR check-in flow) still unaddressed in detail — deferred until that phase starts
 
@@ -53,7 +55,7 @@ change.
 
 ## Session Notes
 
-- Three planning docs are in place: project-overview.md, architecture.md, code-standards.md — all reflect the current trimmed scope (no admin side, no workshop registration, automatic-only notifications)
+- Planning docs (project-overview.md, architecture.md, code-standards.md, ui-context.md, ai-workflow-rules.md) reflect current scope; implementation has caught up with the auth portion of the plan
 - A Home screen mockup exists showing the proposed redesigned layout (bottom tabs, dashboard-style home) as a reference for the actual build
 - App naming is still open — no name has been chosen yet
-- Next session should pick up at project scaffolding and the LinkedIn sign-in flow
+- Next session should pick up at the Program Flow schema unit; real event schedule data from organizers is needed for seed content (placeholders acceptable to start)

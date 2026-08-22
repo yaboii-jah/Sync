@@ -9,7 +9,7 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: "Flowgram — Student Edition",
+  title: "Sync — Student Edition",
   description:
     "Your companion app for AWS Student Community Day Manila 2026.",
 };
