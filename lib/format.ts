@@ -11,6 +11,18 @@ const DATE_FORMAT = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila",
 });
 
+const RELATIVE_FORMAT = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+export function formatRelativeTime(iso: string, now: number = Date.now()): string {
+  const diffSeconds = Math.round((new Date(iso).getTime() - now) / 1000);
+  const abs = Math.abs(diffSeconds);
+
+  if (abs < 60) return RELATIVE_FORMAT.format(diffSeconds, "second");
+  if (abs < 3600) return RELATIVE_FORMAT.format(Math.round(diffSeconds / 60), "minute");
+  if (abs < 86400) return RELATIVE_FORMAT.format(Math.round(diffSeconds / 3600), "hour");
+  return RELATIVE_FORMAT.format(Math.round(diffSeconds / 86400), "day");
+}
+
 export type DisplayStatus = "not_started" | "ongoing" | "finished";
 
 export function formatManilaTime(iso: string): string {

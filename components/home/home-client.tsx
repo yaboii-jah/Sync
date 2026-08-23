@@ -12,7 +12,7 @@ import {
   getSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { formatManilaDate } from "@/lib/format";
-import { toggleBookmark, type ToggleBookmarkResult } from "@/app/home/actions";
+import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/actions";
 import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
@@ -167,3 +167,4 @@ export function HomeClient({
     </>
   );
 }
+

@@ -3,7 +3,7 @@
 import { Bell, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ensurePushSubscription } from "@/lib/push";
-import { savePushSubscription } from "@/app/home/actions";
+import { savePushSubscription } from "@/app/(app)/home/actions";
 
 type Stage = "checking" | "hidden" | "explain" | "busy" | "done" | "dismissed";
 
@@ -155,3 +155,4 @@ export function PushGate() {
 
   return null;
 }
+

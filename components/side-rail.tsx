@@ -10,7 +10,7 @@ import {
   QrCode,
   type LucideIcon,
 } from "lucide-react";
-import { signOut } from "@/app/home/actions";
+import { signOut } from "@/app/(app)/home/actions";
 
 interface RailItem {
   label: string;
@@ -20,7 +20,7 @@ interface RailItem {
 
 const RAIL_ITEMS: RailItem[] = [
   { label: "Home", icon: House, href: "/home" },
-  { label: "Alerts", icon: Bell },
+  { label: "Alerts", icon: Bell, href: "/alerts" },
   { label: "Connect", icon: QrCode },
   { label: "More", icon: MoreHorizontal },
 ];
@@ -82,3 +82,4 @@ export function SideRail() {
     </aside>
   );
 }
+

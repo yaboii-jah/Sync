@@ -12,7 +12,7 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { label: "Home", icon: House, href: "/home" },
-  { label: "Alerts", icon: Bell },
+  { label: "Alerts", icon: Bell, href: "/alerts" },
   { label: "Connect", icon: QrCode },
   { label: "More", icon: MoreHorizontal },
 ];
