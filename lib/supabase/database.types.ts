@@ -159,6 +159,30 @@ export type Database = {
         }
         Relationships: []
       }
+      quick_links: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          label: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          label: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          label?: string
+          url?: string
+        }
+        Relationships: []
+      }
       session_speakers: {
         Row: {
           session_id: string

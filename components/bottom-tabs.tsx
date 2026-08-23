@@ -14,7 +14,7 @@ const TABS: TabConfig[] = [
   { label: "Home", icon: House, href: "/home" },
   { label: "Alerts", icon: Bell, href: "/alerts" },
   { label: "Connect", icon: QrCode, href: "/connect" },
-  { label: "More", icon: MoreHorizontal },
+  { label: "More", icon: MoreHorizontal, href: "/more" },
 ];
 
 export function BottomTabs() {
