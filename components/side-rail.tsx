@@ -21,7 +21,7 @@ interface RailItem {
 const RAIL_ITEMS: RailItem[] = [
   { label: "Home", icon: House, href: "/home" },
   { label: "Alerts", icon: Bell, href: "/alerts" },
-  { label: "Connect", icon: QrCode },
+  { label: "Connect", icon: QrCode, href: "/connect" },
   { label: "More", icon: MoreHorizontal },
 ];
 
