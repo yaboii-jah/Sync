@@ -7,6 +7,8 @@ import {
   getSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { HomeClient } from "@/components/home/home-client";
+import { InstallChip } from "@/components/push/install-chip";
+import { PushGate } from "@/components/push/push-gate";
 import { signOut } from "./actions";
 
 export default async function HomePage() {
@@ -38,6 +40,7 @@ export default async function HomePage() {
 
       {event ? (
         <div className="mx-auto w-full max-w-md px-4 pt-6 lg:max-w-[1280px] lg:px-10 lg:pt-2">
+          <PushGate />
           <HomeClient
             initialEvent={event}
             initialSessions={sessions}
@@ -51,6 +54,8 @@ export default async function HomePage() {
           </p>
         </div>
       )}
+
+      <InstallChip />
     </main>
   );
 }
