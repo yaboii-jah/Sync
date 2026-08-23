@@ -5,7 +5,7 @@ change.
 
 ## Current Phase
 
-- Program Flow dashboard UI (Unit 5) complete; next unit: Realtime sync (live status flips via Supabase Realtime subscriptions)
+- Realtime sync unit (Unit 6) complete and verified; next unit: Notifications (Web Push delivery layer)
 
 ## Current Goal
 
@@ -21,6 +21,7 @@ change.
 - Auth Unit 4 / Program Flow schema (Unit 4): migrations `20260822130000_create_program_flow.sql` + `20260822131000_seed_program_flow.sql` pushed — `events`, `sessions` (title/description/room/start/end/status), `speakers_sponsors` (role-checked), `session_speakers` join, `my_flow_bookmarks` (own-row select/insert/delete RLS); read-only `TO authenticated` policies on content tables; pg_cron every-minute job `sync-program-flow-statuses` auto-flips session/event statuses from schedule times; placeholder seed loaded (event Sep 11 2026 9:30 AM–6 PM PHT at Asia Pacific College, 9 sessions incl. lunch, 8 speakers across all roles, 7 links) — real timeline swaps in later via SQL; `database.types.ts` regenerated; sync function verified executing (204), seed spot-checked
 - Unit 5 / Program Flow dashboard UI: bottom tab shell (Home live; Alerts/Connect/More disabled); smart "Happening Now" hero card with four states (pre-event countdown, current-session glow, Up Next, event wrap) driven by device clock + Manila-time formatting (`lib/format.ts`); All ⇄ My Flow segmented toggle; session cards with shared StatusBadge mapping (not-started = yellow-green outline, ongoing = light-green pulse, finished = dimmed) and optimistic bookmark toggling through a `toggleBookmark` server action; modal session detail per ui-context patterns; typed query layer in `lib/supabase/queries/program-flow.ts`; `lucide-react` added for stroke icons
 - Desktop split-view layout (`≥1024px`): 232px labeled left rail replaces the bottom tab bar (Perandory wordmark, gold hairline border, sign-out pinned); home splits into sticky hero pane (~38%) beside the schedule list; content capped at 1280px centered on ultrawides; mobile layout below the breakpoint untouched. Verified signed-in render at all widths
+- Unit 6 / Realtime sync: migration `20260822132000_enable_realtime.sql` added `sessions`, `my_flow_bookmarks`, `events` to the `supabase_realtime` publication (Realtime enforces each subscriber's RLS against their JWT — attendees only receive bookmark events for own rows); query layer refactored to accept any SupabaseClient (server cookie-bound client for initial render, browser client for live refetches); `hooks/use-program-flow-realtime.ts` subscribes one channel to all three tables and fires a debounced refetch on any change; HomeClient now owns event/sessions/bookmarks state (HeroCard moved inside so the hero updates live). Verified with a scripted authenticated subscriber asserting all four payload types (sessions UPDATE, bookmarks INSERT/DELETE, events UPDATE) arrive; anon/unauthenticated subscribers receive nothing. Known quirk documented: two changes committed within milliseconds can race delivery — the debounced refetch converges state regardless
 - Auth Unit 1: `@supabase/supabase-js` + `@supabase/ssr` installed; `.env.local`/`.env.example`; `lib/supabase/` browser + server clients with env validation; root `proxy.ts` (Next.js 16 convention — middleware renamed) refreshing sessions and gating all routes except `/` and `/login`; placeholder `/login` page; build/lint pass, redirect behavior verified against the live Supabase project
 - Decisions made during auth planning: three-unit slice (clients/proxy → schema+RLS → auth UI); blocking onboarding gate for first-time LinkedIn URL capture; stub `/home` post-login target; functional-only login/onboarding UI this phase (ceremonial landing is a separate unit); basic sign-out included; `profiles.pass_type` column included in migration; loose `linkedin.com/in/` URL validation
 - Auth Unit 2: Supabase CLI linked to project (Flowgram / `mygybolhwoeckrgczclm`); migration `20260822090000_create_profiles.sql` pushed — `profiles` table (id → auth.users, name, photo_url, validated linkedin_url, pass_type default 'regular', timestamps), RLS enabled with select/update-own policies using `(select auth.uid())`, `handle_new_user` trigger auto-creating profiles from auth metadata, `updated_at` trigger; `database.types.ts` regenerated via CLI into `lib/supabase/` and typed clients wired up; migration list verified local = remote. Live RLS behavior test deferred until a real authenticated user exists (needs LinkedIn provider)
@@ -34,9 +35,9 @@ change.
 
 ## Next Up
 
-- Realtime sync unit: Supabase Realtime subscriptions on `sessions` so status badges and the Happening Now hero flip live without refresh (built and verified independently per ai-workflow-rules)
-- Notifications/push unit after Realtime lands
+- Notifications unit: Web Push delivery layer — service worker push handler, push subscription storage, Edge Function/route triggered by session status changes
 - Ceremonial Landing/Login brand treatment from `ui-context.md` (design-heavy; independent of Program Flow)
+- Swap placeholder program-flow seed for the real event timeline when organizers provide it
 
 ## Open Questions
 

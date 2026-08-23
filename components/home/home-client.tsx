@@ -1,27 +1,65 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
+import { createClient } from "@/lib/supabase/client";
+import type {
+  EventInfo,
+  SessionWithSpeakers,
+} from "@/lib/supabase/queries/program-flow";
+import {
+  getBookmarkedSessionIds,
+  getEvent,
+  getSessionsWithSpeakers,
+} from "@/lib/supabase/queries/program-flow";
+import { formatManilaDate } from "@/lib/format";
 import { toggleBookmark, type ToggleBookmarkResult } from "@/app/home/actions";
+import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
+import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
 import { SessionModal } from "./session-modal";
 
 type View = "all" | "flow";
 
 interface HomeClientProps {
-  sessions: SessionWithSpeakers[];
+  initialEvent: EventInfo;
+  initialSessions: SessionWithSpeakers[];
   initialBookmarks: string[];
 }
 
-export function HomeClient({ sessions, initialBookmarks }: HomeClientProps) {
-  const [view, setView] = useState<View>("all");
+export function HomeClient({
+  initialEvent,
+  initialSessions,
+  initialBookmarks,
+}: HomeClientProps) {
+  const [event, setEvent] = useState(initialEvent);
+  const [sessions, setSessions] = useState(initialSessions);
   const [bookmarks, setBookmarks] = useState<Set<string>>(
     () => new Set(initialBookmarks),
   );
+  const [view, setView] = useState<View>("all");
   const [activeSession, setActiveSession] = useState<SessionWithSpeakers | null>(
     null,
   );
   const [, startTransition] = useTransition();
+
+  async function refetchProgramFlow() {
+    const client = createClient();
+    const [nextEvent, nextSessions, nextBookmarks] = await Promise.all([
+      getEvent(client),
+      getSessionsWithSpeakers(client),
+      getBookmarkedSessionIds(client),
+    ]);
+
+    if (nextEvent) setEvent(nextEvent);
+    setSessions(nextSessions);
+    setBookmarks(new Set(nextBookmarks));
+  }
+
+  useProgramFlowRealtime(() => {
+    void startTransition(() => {
+      void refetchProgramFlow();
+    });
+  });
 
   function handleToggleBookmark(sessionId: string) {
     setBookmarks((previous) => {
@@ -61,44 +99,61 @@ export function HomeClient({ sessions, initialBookmarks }: HomeClientProps) {
     }`;
 
   return (
-    <section>
-      <div className="rounded-xl border border-border-default p-1">
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setView("all")}
-            aria-pressed={view === "all"}
-            className={segmentedButtonClass(view === "all")}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("flow")}
-            aria-pressed={view === "flow"}
-            className={segmentedButtonClass(view === "flow")}
-          >
-            My Flow
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-col gap-3">
-        {visible.map((session) => (
-          <SessionCard
-            key={session.id}
-            session={session}
-            bookmarked={bookmarks.has(session.id)}
-            onToggleBookmark={handleToggleBookmark}
-            onOpen={setActiveSession}
-          />
-        ))}
-        {visible.length === 0 ? (
-          <p className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
-            Nothing in your flow yet — switch to All and bookmark the sessions
-            you don&apos;t want to miss.
+    <>
+      <div className="lg:flex lg:items-start lg:gap-12">
+        <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
+          <HeroCard event={event} sessions={sessions} />
+          <p className="mt-4 hidden text-sm text-text-muted lg:block">
+            {formatManilaDate(event.starts_at)} · {event.venue}
           </p>
-        ) : null}
+        </div>
+
+        <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
+          <h2 className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
+            Program Flow · {formatManilaDate(event.starts_at)}
+          </h2>
+
+          <div className="mt-3">
+            <div className="rounded-xl border border-border-default p-1">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setView("all")}
+                  aria-pressed={view === "all"}
+                  className={segmentedButtonClass(view === "all")}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("flow")}
+                  aria-pressed={view === "flow"}
+                  className={segmentedButtonClass(view === "flow")}
+                >
+                  My Flow
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3">
+              {visible.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  bookmarked={bookmarks.has(session.id)}
+                  onToggleBookmark={handleToggleBookmark}
+                  onOpen={setActiveSession}
+                />
+              ))}
+              {visible.length === 0 ? (
+                <p className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
+                  Nothing in your flow yet — switch to All and bookmark the
+                  sessions you don&apos;t want to miss.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
       </div>
 
       {activeSession ? (
@@ -109,6 +164,6 @@ export function HomeClient({ sessions, initialBookmarks }: HomeClientProps) {
           onClose={() => setActiveSession(null)}
         />
       ) : null}
-    </section>
+    </>
   );
 }

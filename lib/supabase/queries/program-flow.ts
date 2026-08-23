@@ -1,4 +1,7 @@
-import { createClient } from "../server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../database.types";
+
+type QueryClient = SupabaseClient<Database>;
 
 export interface SpeakerLite {
   id: string;
@@ -51,9 +54,10 @@ function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
   };
 }
 
-export async function getEvent(): Promise<EventInfo | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
+export async function getEvent(
+  client: QueryClient,
+): Promise<EventInfo | null> {
+  const { data } = await client
     .from("events")
     .select("id, name, venue, starts_at, ends_at, status")
     .order("starts_at")
@@ -63,9 +67,10 @@ export async function getEvent(): Promise<EventInfo | null> {
   return data ?? null;
 }
 
-export async function getSessionsWithSpeakers(): Promise<SessionWithSpeakers[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
+export async function getSessionsWithSpeakers(
+  client: QueryClient,
+): Promise<SessionWithSpeakers[]> {
+  const { data } = await client
     .from("sessions")
     .select(
       "id, title, description, room, start_time, end_time, status, session_speakers(speakers_sponsors(id, name, role, organization))",
@@ -77,11 +82,10 @@ export async function getSessionsWithSpeakers(): Promise<SessionWithSpeakers[]> 
   return (data as unknown as SessionRow[]).map(toSessionWithSpeakers);
 }
 
-export async function getBookmarkedSessionIds(): Promise<string[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("my_flow_bookmarks")
-    .select("session_id");
+export async function getBookmarkedSessionIds(
+  client: QueryClient,
+): Promise<string[]> {
+  const { data } = await client.from("my_flow_bookmarks").select("session_id");
 
   return (data ?? []).map((row) => row.session_id);
 }
