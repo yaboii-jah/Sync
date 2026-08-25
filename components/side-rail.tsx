@@ -8,6 +8,7 @@ import {
   LogOut,
   MoreHorizontal,
   QrCode,
+  User,
   type LucideIcon,
 } from "lucide-react";
 import { signOut } from "@/app/(app)/home/actions";
@@ -70,15 +71,29 @@ export function SideRail() {
         })}
       </nav>
 
-      <form action={signOut} className="mt-auto px-3 pb-6">
-        <button
-          type="submit"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-text-muted transition-colors hover:bg-accent-primary/20 hover:text-text-primary"
+      <div className="mt-auto flex flex-col gap-1 px-3 pb-6">
+        <Link
+          href="/settings"
+          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+            pathname.startsWith("/settings")
+              ? "bg-accent-primary/40 text-state-success [text-shadow:0_0_10px_rgba(88,222,105,0.6)]"
+              : "text-text-muted hover:bg-accent-primary/20 hover:text-text-primary"
+          }`}
         >
-          <LogOut className="h-5 w-5" />
-          <span className="text-sm font-bold">Sign out</span>
-        </button>
-      </form>
+          <User className="h-5 w-5" />
+          <span className="text-sm font-bold">Account</span>
+        </Link>
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-text-muted transition-colors hover:bg-accent-primary/20 hover:text-text-primary"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="text-sm font-bold">Sign out</span>
+          </button>
+        </form>
+      </div>
     </aside>
   );
 }

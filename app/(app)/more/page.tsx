@@ -2,15 +2,13 @@ import type { Metadata } from "next";
 import {
   Camera,
   Globe,
-  ChevronRight,
-  User,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getSpeakersSponsors } from "@/lib/supabase/queries/directory";
 import { getQuickLinks } from "@/lib/supabase/queries/quick-links";
+import { AppHeader } from "@/components/app-header";
 import { DirectoryClient } from "@/components/more/directory-client";
 
 export const metadata: Metadata = {
@@ -34,7 +32,8 @@ export default async function MorePage() {
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-3xl lg:px-10 lg:pt-10">
-        <h1 className="font-display text-3xl text-text-primary uppercase">
+        <AppHeader />
+        <h1 className="mt-6 font-display text-3xl text-text-primary uppercase">
           More
         </h1>
 
@@ -66,27 +65,6 @@ export default async function MorePage() {
             </div>
           </>
         ) : null}
-
-        <h2 className="mt-8 text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-          Account
-        </h2>
-        <Link
-          href="/settings"
-          className="mt-3 flex items-center gap-4 rounded-2xl border border-border-default bg-bg-base px-4 py-4 transition-colors hover:bg-accent-primary/20"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-primary/40 text-state-success">
-            <User className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-bold text-text-primary">
-              Account Settings
-            </span>
-            <span className="block text-sm text-text-muted">
-              Update your name and LinkedIn URL
-            </span>
-          </span>
-          <ChevronRight className="h-5 w-5 shrink-0 text-text-muted" />
-        </Link>
 
         <h2 className="mt-8 text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
           Speakers &amp; Sponsors

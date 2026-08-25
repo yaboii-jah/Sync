@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import { AppHeader } from "@/components/app-header";
 import { SettingsForm } from "@/components/settings/settings-form";
 
 export const metadata: Metadata = {
@@ -12,7 +13,8 @@ export default async function SettingsPage() {
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-md px-4 pt-8 lg:pt-10">
-        <h1 className="font-display text-3xl text-text-primary uppercase">
+        <AppHeader />
+        <h1 className="mt-6 font-display text-3xl text-text-primary uppercase">
           Account
         </h1>
         <p className="mt-2 text-sm text-text-muted">
