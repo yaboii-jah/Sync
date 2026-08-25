@@ -219,6 +219,11 @@ body {
     animation: none;
   }
 
+  .animate-pulse {
+    animation: none;
+    opacity: 0.5;
+  }
+
   .comet:nth-child(1) {
     translate: 12vw 10vh;
   }
