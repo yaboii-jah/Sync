@@ -45,11 +45,11 @@ export function SessionModal({
       role="dialog"
       aria-modal="true"
       aria-label={session.title}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-bg-base px-6 py-6 shadow-[0_0_40px_rgba(188,131,48,0.3)]"
+        className="modal-card relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-bg-base px-6 py-6 shadow-[0_0_40px_rgba(188,131,48,0.3)]"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -111,10 +111,8 @@ export function SessionModal({
           type="button"
           onClick={() => onToggleBookmark(session.id)}
           aria-pressed={bookmarked}
-          className={`mt-6 w-full rounded-full px-5 py-3 text-xs font-bold tracking-[0.14em] uppercase transition-colors ${
-            bookmarked
-              ? "bg-state-success text-charcoal"
-              : "bg-pastel-yellow text-charcoal hover:bg-light-green"
+          className={`mt-6 w-full rounded-full px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all active:scale-95 ${
+            bookmarked ? "bg-state-success" : "bg-pastel-yellow hover:bg-light-green"
           }`}
         >
           {bookmarked ? "Saved to My Flow" : "Add to My Flow"}

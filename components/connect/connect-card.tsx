@@ -68,7 +68,7 @@ export function ConnectCard({
           href={linkedinUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-colors hover:bg-light-green"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95"
         >
           <ExternalLink className="h-4 w-4" />
           Open my LinkedIn
@@ -76,7 +76,7 @@ export function ConnectCard({
         <button
           type="button"
           onClick={saveQr}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-border-default px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-primary uppercase transition-colors hover:bg-accent-primary/30"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-border-default px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-primary uppercase transition-all hover:bg-accent-primary/30 active:scale-95"
         >
           <Download className="h-4 w-4" />
           Save QR

@@ -6,6 +6,7 @@ import type { NotificationRow } from "@/lib/supabase/queries/notifications";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
 import { formatRelativeTime } from "@/lib/format";
 import { useRealtimeRefetch } from "@/hooks/use-realtime-refetch";
+import { EmptyCity } from "@/components/empty-states";
 
 interface AlertsClientProps {
   initialNotifications: NotificationRow[];
@@ -65,9 +66,12 @@ export function AlertsClient({ initialNotifications }: AlertsClientProps) {
         </article>
       ))}
       {notifications.length === 0 ? (
-        <p className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
-          No alerts yet — they&apos;ll appear here during the event.
-        </p>
+        <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center">
+          <EmptyCity />
+          <p className="mt-3 text-sm text-text-muted">
+            No alerts yet — they&apos;ll appear here during the event.
+          </p>
+        </div>
       ) : null}
     </div>
   );

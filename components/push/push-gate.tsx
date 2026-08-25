@@ -135,7 +135,7 @@ export function PushGate() {
                 type="button"
                 onClick={enable}
                 disabled={stage === "busy"}
-                className="rounded-full bg-pastel-yellow px-4 py-2 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-colors hover:bg-light-green disabled:opacity-60"
+                className="rounded-full bg-pastel-yellow px-4 py-2 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:opacity-60 active:scale-95"
               >
                 {stage === "busy" ? "Enabling…" : "Enable alerts"}
               </button>

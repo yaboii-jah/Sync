@@ -31,7 +31,7 @@ export function SessionCard({
   return (
     <article
       id={`session-${session.id}`}
-      className={`relative overflow-hidden rounded-2xl border bg-bg-base ${
+      className={`relative overflow-hidden rounded-2xl border bg-bg-base transition-all hover:-translate-y-0.5 ${
         ongoing
           ? "border-pastel-yellow/50 shadow-[0_0_24px_rgba(188,131,48,0.25)]"
           : "border-border-default"
@@ -82,11 +82,15 @@ export function SessionCard({
           aria-label={bookmarked ? "Remove from My Flow" : "Add to My Flow"}
           aria-pressed={bookmarked}
           onClick={() => onToggleBookmark(session.id)}
-          className={`rounded-lg p-2 transition-all hover:scale-110 ${
+          className={`rounded-lg p-2 transition-all hover:scale-110 active:scale-90 ${
             bookmarked ? "text-pastel-yellow" : "text-text-muted hover:text-text-primary"
           }`}
         >
-          <Bookmark className="h-5 w-5" fill={bookmarked ? "currentColor" : "none"} />
+          <Bookmark
+            key={bookmarked ? "on" : "off"}
+            className={`h-5 w-5 ${bookmarked ? "animate-[bookmark-pop_0.4s_ease]" : ""}`}
+            fill={bookmarked ? "currentColor" : "none"}
+          />
         </button>
       </div>
     </article>

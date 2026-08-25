@@ -15,7 +15,9 @@ import { formatManilaDate } from "@/lib/format";
 import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/actions";
 import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
 import { useNow } from "@/hooks/use-now";
+import { useToast } from "@/components/toast/toast-provider";
 import { displayStatus } from "@/lib/format";
+import { EmptyComet } from "@/components/empty-states";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
 import { SessionModal } from "./session-modal";
@@ -45,6 +47,7 @@ export function HomeClient({
   );
   const [, startTransition] = useTransition();
   const now = useNow(1000);
+  const { toast } = useToast();
 
   const liveSession =
     sessions.find(
@@ -71,6 +74,8 @@ export function HomeClient({
   });
 
   function handleToggleBookmark(sessionId: string) {
+    const wasBookmarked = bookmarks.has(sessionId);
+
     setBookmarks((previous) => {
       const next = new Set(previous);
       if (next.has(sessionId)) {
@@ -84,6 +89,7 @@ export function HomeClient({
     startTransition(async () => {
       const result: ToggleBookmarkResult = await toggleBookmark(sessionId);
       if (result.error) {
+        toast("Couldn't update your flow", "error");
         setBookmarks((previous) => {
           const reverted = new Set(previous);
           if (reverted.has(sessionId)) {
@@ -93,6 +99,8 @@ export function HomeClient({
           }
           return reverted;
         });
+      } else {
+        toast(wasBookmarked ? "Removed from My Flow" : "Added to My Flow");
       }
     });
   }
@@ -156,10 +164,13 @@ export function HomeClient({
                 />
               ))}
               {visible.length === 0 ? (
-                <p className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
-                  Nothing in your flow yet — switch to All and bookmark the
-                  sessions you don&apos;t want to miss.
-                </p>
+                <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center">
+                  <EmptyComet />
+                  <p className="mt-3 text-sm text-text-muted">
+                    Nothing in your flow yet — switch to All and bookmark the
+                    sessions you don&apos;t want to miss.
+                  </p>
+                </div>
               ) : null}
             </div>
           </div>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   updateProfile,
   type UpdateProfileState,
 } from "@/app/(app)/settings/actions";
+import { useToast } from "@/components/toast/toast-provider";
 
 const initialState: UpdateProfileState = { error: null, success: false };
 
@@ -19,6 +20,14 @@ export function SettingsForm({
     updateProfile,
     initialState,
   );
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (state.success) {
+      toast("Profile saved");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.success]);
 
   return (
     <form action={formAction} className="mt-4 flex flex-col gap-4">
@@ -70,7 +79,7 @@ export function SettingsForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-colors hover:bg-light-green disabled:opacity-60"
+        className="w-full rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:opacity-60 active:scale-95"
       >
         {pending ? "Saving…" : "Save changes"}
       </button>

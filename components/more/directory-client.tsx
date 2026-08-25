@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import type { Person } from "@/lib/supabase/queries/directory";
+import { EmptyConstellation } from "@/components/empty-states";
 
 type FilterKey = "all" | "speaker" | "host_panelist" | "sponsor";
 
@@ -88,7 +89,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
             type="button"
             onClick={() => setActivePerson(person)}
             aria-haspopup="dialog"
-            className="flex w-full items-center gap-4 rounded-2xl border border-border-default bg-bg-base px-4 py-3.5 text-left transition-colors hover:bg-accent-primary/20"
+            className="flex w-full items-center gap-4 rounded-2xl border border-border-default bg-bg-base px-4 py-3.5 text-left transition-all hover:-translate-y-0.5 hover:bg-accent-primary/20"
           >
             <PersonAvatar person={person} />
             <span className="min-w-0">
@@ -103,9 +104,12 @@ export function DirectoryClient({ people }: { people: Person[] }) {
           </button>
         ))}
         {visible.length === 0 ? (
-          <p className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
-            No one in this group yet.
-          </p>
+          <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center">
+            <EmptyConstellation />
+            <p className="mt-3 text-sm text-text-muted">
+              No one in this group yet.
+            </p>
+          </div>
         ) : null}
       </div>
 
@@ -126,16 +130,24 @@ function PersonBioModal({
   person: Person;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={person.name}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-bg-base px-6 py-6 shadow-[0_0_40px_rgba(188,131,48,0.3)]"
+        className="modal-card relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-bg-base px-6 py-6 shadow-[0_0_40px_rgba(188,131,48,0.3)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">

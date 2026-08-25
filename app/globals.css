@@ -215,7 +215,10 @@ body {
   .stars-layer-a,
   .stars-layer-b,
   .lockup-sheen,
-  .comet {
+  .comet,
+  .modal-backdrop,
+  .modal-card,
+  .toast-in {
     animation: none;
   }
 
@@ -241,5 +244,65 @@ body {
   }
   .comet:nth-child(6) {
     translate: 52vw 20vh;
+  }
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--pastel-yellow);
+  outline-offset: 2px;
+}
+
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop {
+  animation: modal-backdrop-in 0.2s ease-out;
+}
+
+.modal-card {
+  animation: modal-card-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-in {
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes bookmark-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
   }
 }

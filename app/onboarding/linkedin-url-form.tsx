@@ -38,7 +38,7 @@ export function LinkedInUrlForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-accent-primary px-5 py-3 font-bold text-text-primary transition-colors hover:brightness-125 disabled:opacity-60"
+        className="w-full rounded-lg bg-accent-primary px-5 py-3 font-bold text-text-primary transition-all hover:brightness-125 disabled:opacity-60 active:scale-95"
       >
         {pending ? "Saving…" : "Save and continue"}
       </button>

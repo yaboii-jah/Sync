@@ -115,7 +115,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         <form action={signInWithLinkedIn} className="mt-10">
           <button
             type="submit"
-            className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-colors hover:bg-light-green focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
+            className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
           >
             Sign in with LinkedIn
           </button>
