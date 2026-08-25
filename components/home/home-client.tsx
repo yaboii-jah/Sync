@@ -14,9 +14,12 @@ import {
 import { formatManilaDate } from "@/lib/format";
 import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/actions";
 import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
+import { useNow } from "@/hooks/use-now";
+import { displayStatus } from "@/lib/format";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
 import { SessionModal } from "./session-modal";
+import { ScrollToNow } from "./scroll-to-now";
 
 type View = "all" | "flow";
 
@@ -41,6 +44,12 @@ export function HomeClient({
     null,
   );
   const [, startTransition] = useTransition();
+  const now = useNow(1000);
+
+  const liveSession =
+    sessions.find(
+      (session) => displayStatus(session.start_time, session.end_time, now) === "ongoing",
+    ) ?? null;
 
   async function refetchProgramFlow() {
     const client = createClient();
@@ -100,9 +109,9 @@ export function HomeClient({
 
   return (
     <>
-      <div className="lg:flex lg:items-start lg:gap-12">
-        <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
-          <HeroCard event={event} sessions={sessions} />
+        <div className="lg:flex lg:items-start lg:gap-12">
+          <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
+            <HeroCard event={event} sessions={sessions} now={now} />
           <p className="mt-4 hidden text-sm text-text-muted lg:block">
             {formatManilaDate(event.starts_at)} · {event.venue}
           </p>
@@ -141,6 +150,7 @@ export function HomeClient({
                   key={session.id}
                   session={session}
                   bookmarked={bookmarks.has(session.id)}
+                  now={now}
                   onToggleBookmark={handleToggleBookmark}
                   onOpen={setActiveSession}
                 />
@@ -164,6 +174,8 @@ export function HomeClient({
           onClose={() => setActiveSession(null)}
         />
       ) : null}
+
+      <ScrollToNow targetId={liveSession ? `session-${liveSession.id}` : null} />
     </>
   );
 }

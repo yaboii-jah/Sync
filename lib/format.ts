@@ -49,3 +49,25 @@ export function displayStatus(
   if (now >= end) return "finished";
   return "ongoing";
 }
+
+export function relativeStartLabel(
+  startIso: string,
+  now: number = Date.now(),
+): string | null {
+  const diffMs = new Date(startIso).getTime() - now;
+  const absMinutes = Math.abs(Math.round(diffMs / 60000));
+
+  if (diffMs > 0) {
+    if (absMinutes < 1) return "starting now";
+    if (absMinutes < 60) return `in ${absMinutes} min`;
+    const hours = Math.floor(absMinutes / 60);
+    if (hours < 24) return `in ${hours} hr`;
+    return `in ${Math.floor(hours / 24)} d`;
+  }
+
+  if (absMinutes < 1) return "just started";
+  if (absMinutes < 60) return `started ${absMinutes} min ago`;
+  const hours = Math.floor(absMinutes / 60);
+  if (hours < 24) return `started ${hours} hr ago`;
+  return null;
+}

@@ -2,12 +2,17 @@
 
 import { Bookmark } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
-import { displayStatus, formatTimeRange } from "@/lib/format";
+import {
+  displayStatus,
+  formatTimeRange,
+  relativeStartLabel,
+} from "@/lib/format";
 import { StatusBadge } from "@/components/status-badge";
 
 interface SessionCardProps {
   session: SessionWithSpeakers;
   bookmarked: boolean;
+  now: number;
   onToggleBookmark: (sessionId: string) => void;
   onOpen: (session: SessionWithSpeakers) => void;
 }
@@ -15,22 +20,49 @@ interface SessionCardProps {
 export function SessionCard({
   session,
   bookmarked,
+  now,
   onToggleBookmark,
   onOpen,
 }: SessionCardProps) {
-  const status = displayStatus(session.start_time, session.end_time);
+  const status = displayStatus(session.start_time, session.end_time, now);
+  const ongoing = status === "ongoing";
+  const relative = relativeStartLabel(session.start_time, now);
 
   return (
-    <article className="rounded-2xl border border-border-default bg-bg-base">
+    <article
+      id={`session-${session.id}`}
+      className={`relative overflow-hidden rounded-2xl border bg-bg-base ${
+        ongoing
+          ? "border-pastel-yellow/50 shadow-[0_0_24px_rgba(188,131,48,0.25)]"
+          : "border-border-default"
+      }`}
+    >
+      {ongoing ? (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1 bg-pastel-yellow"
+        />
+      ) : null}
+
       <button
         type="button"
         onClick={() => onOpen(session)}
         className="w-full px-4 py-4 text-left"
         aria-haspopup="dialog"
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-bold tracking-wide text-text-muted uppercase">
             {formatTimeRange(session.start_time, session.end_time)}
+            {relative ? (
+              <span
+                suppressHydrationWarning
+                className={`ml-2 normal-case ${
+                  ongoing ? "text-pastel-yellow" : "text-text-muted/70"
+                }`}
+              >
+                · {relative}
+              </span>
+            ) : null}
           </span>
           <StatusBadge status={status} />
         </div>
@@ -50,7 +82,7 @@ export function SessionCard({
           aria-label={bookmarked ? "Remove from My Flow" : "Add to My Flow"}
           aria-pressed={bookmarked}
           onClick={() => onToggleBookmark(session.id)}
-          className={`rounded-lg p-2 transition-colors ${
+          className={`rounded-lg p-2 transition-all hover:scale-110 ${
             bookmarked ? "text-pastel-yellow" : "text-text-muted hover:text-text-primary"
           }`}
         >

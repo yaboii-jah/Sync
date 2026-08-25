@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { EventInfo, SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import { formatManilaDate, formatTimeRange } from "@/lib/format";
 
 interface HeroCardProps {
   event: EventInfo;
   sessions: SessionWithSpeakers[];
+  now: number;
 }
 
 function countdownParts(msRemaining: number) {
@@ -19,14 +19,7 @@ function countdownParts(msRemaining: number) {
   };
 }
 
-export function HeroCard({ event, sessions }: HeroCardProps) {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
+export function HeroCard({ event, sessions, now }: HeroCardProps) {
   const startsAt = new Date(event.starts_at).getTime();
   const endsAt = new Date(event.ends_at).getTime();
 
