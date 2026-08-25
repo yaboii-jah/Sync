@@ -34,7 +34,9 @@ export function SessionCard({
       className={`relative overflow-hidden rounded-2xl border bg-bg-base transition-all hover:-translate-y-0.5 ${
         ongoing
           ? "border-pastel-yellow/50 shadow-[0_0_24px_rgba(188,131,48,0.25)]"
-          : "border-border-default"
+          : finished
+            ? "border-border-default opacity-50"
+            : "border-border-default"
       }`}
     >
       {ongoing ? (
