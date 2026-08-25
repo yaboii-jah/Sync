@@ -8,10 +8,12 @@ interface NotificationPayload {
   type: string;
   title: string;
   body: string | null;
+  related_session_id: string | null;
 }
 
 interface SubscriptionRow {
   id: string;
+  user_id: string;
   endpoint: string;
   p256dh: string;
   auth: string;
@@ -39,11 +41,30 @@ Deno.serve(async (req) => {
 
   const { data: subscriptions, error } = await admin
     .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth");
+    .select("id, user_id, endpoint, p256dh, auth");
 
   if (error) {
     console.error("failed to load subscriptions:", error.message);
     return new Response("Internal error", { status: 500 });
+  }
+
+  let recipients: SubscriptionRow[] = subscriptions as SubscriptionRow[];
+
+  // Session-linked notifications target only attendees who bookmarked that
+  // session. Announcements (no session link) fan out to everyone.
+  if (payload.related_session_id) {
+    const { data: bookmarks, error: bookmarkError } = await admin
+      .from("my_flow_bookmarks")
+      .select("user_id")
+      .eq("session_id", payload.related_session_id);
+
+    if (bookmarkError) {
+      console.error("failed to load bookmarks:", bookmarkError.message);
+      return new Response("Internal error", { status: 500 });
+    }
+
+    const bookmarkedUserIds = new Set((bookmarks ?? []).map((row) => row.user_id));
+    recipients = recipients.filter((sub) => bookmarkedUserIds.has(sub.user_id));
   }
 
   const body = JSON.stringify({
@@ -52,7 +73,7 @@ Deno.serve(async (req) => {
   });
 
   const results = await Promise.allSettled(
-    (subscriptions as SubscriptionRow[]).map((sub) =>
+    recipients.map((sub) =>
       webpush
         .sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -83,5 +104,9 @@ Deno.serve(async (req) => {
     await admin.from("push_subscriptions").delete().in("id", dead);
   }
 
-  return Response.json({ delivered, pruned: dead.length });
+  return Response.json({
+    delivered,
+    pruned: dead.length,
+    targeted: recipients.length,
+  });
 });
