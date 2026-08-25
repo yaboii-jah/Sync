@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { CalendarPlus, X } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
   displayStatus,
   formatManilaDate,
   formatTimeRange,
 } from "@/lib/format";
+import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
 import { StatusBadge } from "@/components/status-badge";
 
 interface SessionModalProps {
@@ -117,6 +118,26 @@ export function SessionModal({
         >
           {bookmarked ? "Saved to My Flow" : "Add to My Flow"}
         </button>
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <a
+            href={googleCalendarUrl(session)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 rounded-full border border-border-default px-4 py-2.5 text-[0.68rem] font-bold tracking-wide text-text-muted uppercase transition-colors hover:text-text-primary"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            Google Cal
+          </a>
+          <button
+            type="button"
+            onClick={() => downloadIcs(session)}
+            className="flex items-center justify-center gap-1.5 rounded-full border border-border-default px-4 py-2.5 text-[0.68rem] font-bold tracking-wide text-text-muted uppercase transition-colors hover:text-text-primary"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            .ics file
+          </button>
+        </div>
       </div>
     </div>
   );

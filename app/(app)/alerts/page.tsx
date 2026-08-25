@@ -1,13 +1,17 @@
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
+import { getBookmarkedSessionIds } from "@/lib/supabase/queries/program-flow";
 import { AlertsClient } from "@/components/alerts/alerts-client";
 
 export default async function AlertsPage() {
   await requireCompleteProfile();
 
   const supabase = await createClient();
-  const notifications = await getNotifications(supabase);
+  const [notifications, bookmarks] = await Promise.all([
+    getNotifications(supabase),
+    getBookmarkedSessionIds(supabase),
+  ]);
 
   return (
     <main className="w-full">
@@ -18,7 +22,10 @@ export default async function AlertsPage() {
         <p className="mt-2 text-sm text-text-muted">
           Automatic session updates — live the moment they happen.
         </p>
-        <AlertsClient initialNotifications={notifications} />
+        <AlertsClient
+          initialNotifications={notifications}
+          initialBookmarkedIds={bookmarks}
+        />
       </div>
     </main>
   );

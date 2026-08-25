@@ -82,6 +82,22 @@ export async function getSessionsWithSpeakers(
   return (data as unknown as SessionRow[]).map(toSessionWithSpeakers);
 }
 
+export async function getSessionById(
+  client: QueryClient,
+  sessionId: string,
+): Promise<SessionWithSpeakers | null> {
+  const { data } = await client
+    .from("sessions")
+    .select(
+      "id, title, description, room, start_time, end_time, status, session_speakers(speakers_sponsors(id, name, role, organization))",
+    )
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (!data) return null;
+  return toSessionWithSpeakers(data as unknown as SessionRow);
+}
+
 export async function getBookmarkedSessionIds(
   client: QueryClient,
 ): Promise<string[]> {

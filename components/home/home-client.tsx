@@ -20,7 +20,7 @@ import { displayStatus } from "@/lib/format";
 import { EmptyComet } from "@/components/empty-states";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
-import { SessionModal } from "./session-modal";
+import { SessionModal } from "@/components/sessions/session-modal";
 import { ScrollToNow } from "./scroll-to-now";
 
 type View = "all" | "flow";
