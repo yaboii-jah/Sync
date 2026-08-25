@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { LogOut, User } from "lucide-react";
-import { signOut } from "@/app/(app)/home/actions";
+import { User } from "lucide-react";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export function AppHeader() {
   return (
@@ -19,15 +19,7 @@ export function AppHeader() {
         >
           <User className="h-5 w-5" />
         </Link>
-        <form action={signOut}>
-          <button
-            type="submit"
-            aria-label="Sign out"
-            className="rounded-lg p-2 text-text-muted transition-colors hover:text-text-primary"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
-        </form>
+        <SignOutButton variant="icon" />
       </div>
     </header>
   );

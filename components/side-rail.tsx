@@ -5,13 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   House,
-  LogOut,
   MoreHorizontal,
   QrCode,
   User,
   type LucideIcon,
 } from "lucide-react";
-import { signOut } from "@/app/(app)/home/actions";
+import { SignOutButton } from "@/components/sign-out-button";
 
 interface RailItem {
   label: string;
@@ -84,15 +83,7 @@ export function SideRail() {
           <User className="h-5 w-5" />
           <span className="text-sm font-bold">Account</span>
         </Link>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-text-muted transition-colors hover:bg-accent-primary/20 hover:text-text-primary"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="text-sm font-bold">Sign out</span>
-          </button>
-        </form>
+        <SignOutButton variant="labeled" />
       </div>
     </aside>
   );
