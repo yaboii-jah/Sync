@@ -26,6 +26,7 @@ export function SessionCard({
 }: SessionCardProps) {
   const status = displayStatus(session.start_time, session.end_time, now);
   const ongoing = status === "ongoing";
+  const finished = status === "finished";
   const relative = relativeStartLabel(session.start_time, now);
 
   return (
