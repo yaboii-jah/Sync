@@ -1,0 +1,688 @@
+# Sync — The Complete App Guide
+
+> A beginner-friendly walkthrough of everything Sync does, how it works visually, and what every part of the codebase is doing under the hood.
+
+**Written for:** you, the owner of this codebase, treated as a beginner software engineer.
+**Read alongside:** `project-overview.md`, `architecture.md`, `ui-context.md` (the formal docs). This guide is the informal teacher.
+
+---
+
+## Table of Contents
+
+1. [What is Sync?](#1-what-is-sync)
+2. [The Attendee Journey (screen by screen)](#2-the-attendee-journey)
+3. [The Tech Stack, Explained Simply](#3-the-tech-stack)
+4. [Tour of the Codebase](#4-tour-of-the-codebase)
+5. [How Each Feature Works](#5-how-each-feature-works)
+   - 5.1 [Landing Page](#51-landing-page--the-poster)
+   - 5.2 [LinkedIn Sign-In](#52-linkedin-sign-in--oauth-explained-like-a-story)
+   - 5.3 [Onboarding Gate](#53-onboarding--the-blocking-gate)
+   - 5.4 [Home Dashboard](#54-home-dashboard--the-happening-now-machine)
+   - 5.5 [Live Updates (Realtime)](#55-live-updates--realtime)
+   - 5.6 [My Flow Bookmarks](#56-my-flow-bookmarks--optimistic-ui)
+   - 5.7 [Push Notifications](#57-push-notifications--the-full-pipeline)
+   - 5.8 [Alerts Feed](#58-alerts-feed)
+   - 5.9 [Connect Page (QR)](#59-connect-page--the-qr-networking-card)
+   - 5.10 [More Page (Directory)](#510-more-page--directory-and-quick-links)
+   - 5.11 [Account Settings](#511-account-settings)
+6. [The Database in Plain English](#6-the-database-in-plain-english)
+7. [The Security Model (RLS)](#7-the-security-model--row-level-security)
+8. [The Automation (pg_cron)](#8-the-automation--the-minute-job-that-runs-the-event)
+9. [Glossary](#9-glossary)
+10. ["How Do I…?" Cheat-Sheet](#10-how-do-i--cheat-sheet)
+
+---
+
+## 1. What is Sync?
+
+**Sync** is a companion web app for **AWS Student Community Day Manila 2026** — a one-day event (Sep 11, 2026, 9:30 AM–6:00 PM, Asia Pacific College) where students learn about cloud computing.
+
+Attendees install Sync on their phone like a native app. During the event it answers four questions instantly:
+
+- **What's happening right now?** → the Home dashboard
+- **What changed?** → push notifications + the Alerts feed
+- **Who is this person I just met?** → the Connect QR card
+- **Who's speaking today?** → the More directory
+
+It is **not** a social network, not a ticketing system, and has **no admin panel** — all event content lives directly in the Supabase database, managed by the organizers with plain SQL.
+
+The name of the game: **zero manual posting on event day**. Session statuses, notifications, and pushes all happen automatically because they're derived from the schedule's timestamps.
+
+---
+
+## 2. The Attendee Journey
+
+Here is what a real attendee experiences, from start to finish:
+
+```
+1. Opens the link          → Landing page (dark-teal poster, comets, "SYNC" in gold)
+2. Taps "Sign in with LinkedIn" → LinkedIn asks permission → back in the app
+3. First time only         → "Paste your LinkedIn profile URL" screen
+4. Lands on Home           → Countdown or "Happening Now" card + full schedule
+5. Taps a session          → Modal with description, room, speaker, bookmark button
+6. Bookmarks sessions      → "My Flow" — their personal schedule
+7. Gets a phone notification → "Opening Keynote is live — head over to Main Hall."
+8. Meets someone           → Opens Connect tab, shows their QR code
+9. Curious about a speaker → More tab, taps a face, reads their bio
+10. End of day             → "That's a wrap" card, alerts feed shows everything that happened
+```
+
+**Visually**, the app is dark-only: dark-teal backgrounds (`#024056`), pale-lime text (`#E6FFC9`), gold hairline borders (`#BC8330`) instead of drop shadows. The landing page gets the full ceremonial treatment (starfield, comets, city silhouette, animated sheen on the logo). Everything after sign-in is deliberately plain and legible — data screens don't get glitter.
+
+**On desktop** (≥1024px), the bottom tab bar is replaced by a left sidebar ("rail"), and Home splits into two panes: the Happening Now card pins on the left while the schedule scrolls on the right.
+
+---
+
+## 3. The Tech Stack
+
+| Technology | What it is (plain words) | What it does in Sync |
+|---|---|---|
+| **Next.js 16** | A React framework that runs code both in the browser and on a server | Renders every page; decides what's public vs private |
+| **React 19** | A library for building UI from components | All buttons, cards, modals, forms |
+| **Tailwind CSS v4** | Write styles as short class names (`bg-bg-base`) instead of CSS files | The entire look — colors come from brand tokens |
+| **Supabase Postgres** | A real PostgreSQL database with a friendly API | Stores everything: profiles, sessions, bookmarks… |
+| **Supabase Auth** | Login-as-a-service | The LinkedIn sign-in and session cookies |
+| **Supabase Realtime** | A websocket service that yells "the database changed!" | Live schedule updates and the live Alerts feed |
+| **Supabase Edge Functions** | Small server programs that run on-demand | Sends push notifications |
+| **pg_cron** | A database alarm clock (SQL job scheduler) | Flips session statuses every minute, automatically |
+| **pg_net** | Lets the database make HTTP requests | Wakes up the push Edge Function |
+| **Web Push + FCM** | The browser/phone notification system | Delivers notifications when the app is closed |
+| **Vercel** (planned) | Hosting for Next.js apps | Will serve the app in production |
+
+**Key idea:** there is no traditional "backend server" you wrote. The Next.js server components + Supabase + database triggers *are* the backend. This style is common now and it's why the codebase is small.
+
+---
+
+## 4. Tour of the Codebase
+
+```
+sync/
+├── app/                      ← Every screen lives here (Next.js routing)
+│   ├── page.tsx              ← Landing page ("/")
+│   ├── login/                ← Sign-in page (now a shim to "/")
+│   ├── onboarding/           ← First-time LinkedIn URL capture
+│   ├── auth/callback/        ← OAuth return stop
+│   └── (app)/                ← Route group: pages WITH the nav rail/tabs
+│       ├── layout.tsx        ← Sidebar + tab bar wrap every page below
+│       ├── home/             ← Dashboard (+ actions.ts = server actions)
+│       ├── alerts/           ← Notifications feed
+│       ├── connect/          ← QR networking card
+│       ├── more/             ← Quick links + directory
+│       └── settings/         ← Account editing (+ actions.ts)
+├── components/               ← Reusable UI pieces
+│   ├── home/                 ← Hero card, session cards, modal, dashboard shell
+│   ├── alerts/               ← Alerts feed client
+│   ├── connect/              ← The QR networking card
+│   ├── more/                 ← Directory + bio modal
+│   ├── push/                 ← Permission gate, install chip, SW registration
+│   ├── settings/             ← Profile edit form
+│   ├── bottom-tabs.tsx       ← Mobile bottom nav
+│   ├── side-rail.tsx         ← Desktop left nav
+│   └── status-badge.tsx      ← Not Started / Ongoing / Finished badge
+├── hooks/                    ← React hooks (reusable behavior)
+│   └── use-realtime-refetch.ts ← Subscribes to DB changes, refetches
+├── lib/                      ← Non-UI logic
+│   ├── supabase/             ← Clients (browser + server), types, queries
+│   ├── format.ts             ← Manila-time + relative-time formatters
+│   ├── linkedin.ts           ← URL validation + normalization
+│   └── push.ts               ← Browser push subscription helpers
+├── proxy.ts                  ← Traffic cop: refreshes sessions, gates private routes
+├── public/                   ← Static files: sw.js (service worker), icons, manifest
+├── supabase/
+│   ├── migrations/           ← Versioned SQL that shaped the database
+│   └── functions/send-push/  ← Edge Function that sends pushes
+├── scripts/generate-icons.mjs ← Regenerates the PWA icons
+└── docs/                     ← You are here
+```
+
+**The three most important ideas in the folder layout:**
+
+1. **`app/` = URLs.** A folder named `alerts` inside `app/(app)/` becomes the `/alerts` page. Special files: `page.tsx` (the screen), `layout.tsx` (wrapping chrome), `route.ts` (a plain API endpoint), `actions.ts` (server functions the UI can call).
+2. **`components/` = reusable pieces.** If two screens need the same modal or badge, it lives here, not copied twice.
+3. **`lib/` and `hooks/` = brains without UI.** Database queries, date formatting, validation — logic that both server and browser can share.
+
+---
+
+## 5. How Each Feature Works
+
+Each section follows the same pattern: **what you see → what happens under the hood → the files involved.**
+
+---
+
+### 5.1 Landing Page — "The Poster"
+
+**What you see:** a dark-teal sky with twinkling stars, a comet streaking by every ~20 seconds, a glowing city skyline at the bottom, the word **SYNC** with a light-band sweeping across it, and a yellow "Sign in with LinkedIn" button.
+
+**Under the hood:** there's no video and no image files. Everything is **pure CSS and one inline SVG**:
+
+- Stars = two `<div>` layers whose backgrounds are stacks of `radial-gradient` dots. Each layer's `opacity` animates up and down on a loop (7s and 9s, deliberately different so the pattern feels random).
+- Comet = one thin gradient line with `animation: comet-fall …` that translates diagonally across the screen. Six comets exist, each with its own start position, speed, and delay — the delays are **negative**, meaning the shower is already mid-flight the instant the page loads.
+- The sheen on SYNC = the text is actually transparent; a moving gradient shows *through* the letters using `background-clip: text`.
+- Accessibility: everything animated is switched off for people whose OS requests `prefers-reduced-motion`, and the comets fall back to static faint streaks.
+
+**Files:** `app/page.tsx` (markup), `app/globals.css` (all animation keyframes), `app/layout.tsx` (loads the Lato + Perandory fonts).
+
+**One lesson baked in:** the sign-in button is a `<form action={signInWithLinkedIn}>`. That `signInWithLinkedIn` is a **Server Action** — a function that runs *on the server* even though it's wired to a plain HTML form. No API endpoint needed.
+
+---
+
+### 5.2 LinkedIn Sign-In — OAuth Explained Like a Story
+
+**What you see:** tap the button → LinkedIn's page asks you to log in and approve → you're back in the app, already signed in with your real name and photo.
+
+**The story of what actually happened:**
+
+```
+You (browser)                Our server/Supabase            LinkedIn
+     │  1. tap button               │                          │
+     │ ──signInWithOAuth()─────────▶│                          │
+     │                              │ 2. build authorize URL   │
+     │ ◀── redirect to LinkedIn ────│─────────────────────────▶│
+     │  3. consent screen           │                          │
+     │ ────────────── you approve ────────────────────────────▶│
+     │                              │ 4. LinkedIn calls back   │
+     │                              │◀── with a one-time code ─│
+     │  5. redirect to /auth/callback?code=…                   │
+     │ ── exchange code ────────────▶│                          │
+     │ ◀── session cookies set ──────│  + profile row created   │
+```
+
+1. **Tap.** A server action calls `supabase.auth.signInWithOAuth({ provider: "linkedin_oidc" })`. Supabase generates a LinkedIn URL that embeds *where you want to end up* (`/auth/callback`).
+2. **Consent.** LinkedIn authenticates you and asks permission for `openid`, `email`, `profile` — that's all we request.
+3. **Callback to Supabase.** LinkedIn hands a secret code to `https://…supabase.co/auth/v1/callback` (this exact URL must be registered in the LinkedIn Developer app).
+4. **Supabase creates your account** — an `auth.users` row with your name/photo — and a **database trigger** (`handle_new_user`, see §6) instantly creates your matching `profiles` row.
+5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`, a route handler in our app trades the code for a **session** (HTTP-only cookies), then routes you to `/onboarding` (first time) or `/home`.
+
+**The code that decides where you land** (`app/auth/callback/route.ts`):
+
+```ts
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("linkedin_url")
+  .eq("id", user.id)
+  .maybeSingle();
+
+const destination = profile?.linkedin_url ? "/home" : "/onboarding";
+```
+
+**War story #1 — the redirect loop.** Early on, sign-ins kept failing with the browser landing on `/login?code=…` going in circles. Two causes, both fixed and worth remembering:
+
+- Supabase only honors a redirect target if it's **allowlisted** in the dashboard (Authentication → URL Configuration). Anything else silently falls back to the Site URL.
+- Our own `proxy.ts` was intercepting `/auth/callback` and bouncing signed-out users — with the OAuth `code` still in the URL — into a loop with the login page. Lesson: **OAuth callbacks must be reachable while signed out**, and proxies should strip query params when redirecting.
+
+As a safety net, the landing page still detects a stray `?code=` and forwards it to `/auth/callback` so sign-in completes even if configuration drifts again.
+
+**Files:** `app/actions.ts` (start of flow), `app/auth/callback/route.ts` (end of flow), `proxy.ts` (session refresh + gating), `app/login/page.tsx` (self-heal shim).
+
+---
+
+### 5.3 Onboarding — The Blocking Gate
+
+**What you see:** after first sign-in, a card: *"Welcome, {Your Name} — paste your LinkedIn profile URL."* You can't reach Home without doing it once.
+
+**Why it exists:** LinkedIn's standard login scopes give us your name and photo but **not** your public profile URL. That URL powers your networking QR code (§5.9), so we ask once, manually.
+
+**Under the hood, three layers of defense:**
+
+1. **Route guard** — `requireCompleteProfile()` (in `lib/supabase/profile.ts`) runs at the top of every private page. If your profile has no `linkedin_url`, it calls `redirect("/onboarding")` before anything renders.
+2. **Client validation** — `lib/linkedin.ts` accepts real-world pasted URLs (http/https, `www.`, `m.`, sub-page paths, query junk like `?originalSubdomain=ph`).
+3. **Server + database validation** — the server action re-validates and **canonicalizes** before saving, and the database itself has a CHECK constraint as a final backstop.
+
+```ts
+// lib/linkedin.ts — the normalizer
+export function normalizeLinkedInProfileUrl(value: string): string | null {
+  const trimmed = value.trim().replace(/[.,;)]+$/, "");
+  if (!isValidLinkedInProfileUrl(trimmed)) return null;
+  const match = trimmed.match(/linkedin\.com\/in\/([a-z0-9\-_%]+)/i);
+  if (!match) return null;
+  return `https://www.linkedin.com/in/${match[1].toLowerCase()}`;
+}
+```
+
+So whether you paste `http://www.linkedin.com/in/Me/Details/` or `https://linkedin.com/in/me?trk=x`, the database stores exactly `https://www.linkedin.com/in/me`. Canonical data = reliable QR codes.
+
+**Files:** `app/(app)/onboarding/`, `lib/linkedin.ts`, `lib/supabase/profile.ts`.
+
+---
+
+### 5.4 Home Dashboard — The "Happening Now" Machine
+
+**What you see (mobile):** your name/photo-free clean header, the hero card, a segmented **All | My Flow** toggle, and stacked session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right.
+
+**The hero card's four brains** (`components/home/hero-card.tsx`). It re-renders every second with the device clock and picks a state:
+
+```ts
+const startsAt = new Date(event.starts_at).getTime();
+const endsAt   = new Date(event.ends_at).getTime();
+
+if (now >= endsAt) → "That's a wrap" card
+
+const current = sessions.find(s => now >= s.start && now < s.end);
+if (current)  → "Happening Now" + title + room (gold glow)
+
+const next = sessions.find(s => s.start > now);
+if (next && now >= startsAt) → "Up Next" preview card
+
+otherwise → "Starts In" countdown (D/H/M/S boxes)
+```
+
+**The key insight:** status is **computed from timestamps, not stored in the UI**. The database *also* stores a `status` column (the cron job keeps it fresh — §8), but the screen doesn't trust it for display; it trusts math. That means the UI can never show a stale badge, even if the cron is a few seconds late.
+
+**The status badge component** (`components/status-badge.tsx`) maps the computed status to fixed colors — the same mapping everywhere in the app, per the code standards:
+
+| Status | Look |
+|---|---|
+| Not Started | yellow-green outline |
+| Ongoing | light-green fill + soft pulsing glow |
+| Finished | dimmed text |
+
+**Files:** `app/(app)/home/page.tsx` (server: fetches everything once), `components/home/home-client.tsx` (client: owns the data state), `hero-card.tsx`, `session-card.tsx`, `session-modal.tsx`, `lib/format.ts` (Manila-time formatting — every time on screen is Asia/Manila regardless of the phone's settings).
+
+---
+
+### 5.5 Live Updates — Realtime
+
+**What you see:** with the app open, an organizer edits a session (say, changes the room) — and your screen updates by itself. No refresh.
+
+**Under the hood, in three acts:**
+
+**Act 1 — the database shouts.** Supabase Realtime watches specific tables. We told it which ones:
+
+```sql
+-- supabase/migrations/20260822132000_enable_realtime.sql
+alter publication supabase_realtime add table public.sessions;
+alter publication supabase_realtime add table public.my_flow_bookmarks;
+alter publication supabase_realtime add table public.events;
+```
+
+A "publication" is Postgres's way of saying *"broadcast changes to these tables."*
+
+**Act 2 — the browser listens.** A reusable hook opens one channel and reacts to any change by refetching fresh data:
+
+```ts
+// hooks/use-realtime-refetch.ts (simplified)
+const supabase = createClient();
+
+// CRITICAL: recover the session BEFORE joining the channel.
+await supabase.auth.getSession();
+
+channel = supabase.channel("realtime:" + tableKey);
+for (const table of tables) {
+  channel = channel.on("postgres_changes",
+    { event: "*", schema: "public", table }, scheduleRefetch);
+}
+channel.subscribe();
+```
+
+Any event triggers a **debounced refetch** (at most one refetch per 250ms even if ten changes land at once), and the fresh data replaces the component's state.
+
+**War story #2 — the invisible bug.** The first version subscribed *without* waiting for the session to recover. The websocket joined as "anonymous," and since every table's RLS says "authenticated users only," Realtime silently filtered out **every payload** — no errors, no data. The lesson: **authorize the socket before subscribing**, always. (This also required adding `notifications` to the publication later — a table created after the original migration is *not* automatically broadcast.)
+
+**Files:** `hooks/use-realtime-refetch.ts`, `hooks/use-program-flow-realtime.ts` (thin wrapper listing Home's tables), `components/home/home-client.tsx` (owns the live state), `components/alerts/alerts-client.tsx` (same pattern for the feed).
+
+---
+
+### 5.6 My Flow Bookmarks — Optimistic UI
+
+**What you see:** tap the bookmark icon on a session card → it fills gold instantly. Toggle **My Flow** and only your saved sessions show.
+
+**"Optimistic UI"** means the screen updates *before* the server confirms. The pattern (`components/home/home-client.tsx`):
+
+```ts
+function handleToggleBookmark(sessionId: string) {
+  // 1. Update the screen immediately (pretend it worked)
+  setBookmarks(previous => {
+    const next = new Set(previous);
+    next.has(sessionId) ? next.delete(sessionId) : next.add(sessionId);
+    return next;
+  });
+
+  // 2. Now actually tell the server
+  startTransition(async () => {
+    const result = await toggleBookmark(sessionId);
+    if (result.error) {
+      // 3. Server said no → undo the pretend change
+      setBookmarks(/* flip it back */);
+    }
+  });
+}
+```
+
+The server action (`app/(app)/home/actions.ts`) checks who you are, then inserts or deletes **your own** row in `my_flow_bookmarks` — the database's RLS (§7) would reject anything else even if the code tried.
+
+---
+
+### 5.7 Push Notifications — The Full Pipeline
+
+**What you see:** your phone buzzes: *"Opening Keynote is live — Head over to Main Hall."* The app wasn't even open.
+
+This is the most connected feature in the app — five systems passing a baton:
+
+```
+ ┌──────────┐   1. flip status    ┌───────────────┐  2. INSERT row   ┌───────────────┐
+ │ pg_cron  │ ──────────────────▶ │ sessions      │ ───────────────▶ │ notifications │
+ │ (minute) │    (only if real)   │ status column │    trigger       │    table      │
+ └──────────┘                     └───────────────┘                  └───────┬───────┘
+                                                                      3. pg_net webhook
+                                                                      POST /functions/v1/
+                                                                             send-push
+                                                                             │
+                                                            4. Edge Function ▼
+                                                            ┌─────────────────────────┐
+                                                            │ check secret header     │
+                                                            │ load ALL subscriptions  │
+                                                            │ web-push → FCM/APNs     │
+                                                            │ prune dead endpoints    │
+                                                            └───────────┬─────────────┘
+                                                              5. push   │
+                                                                ┌───────▼───────┐
+                                                                │ Your phone 📱 │
+                                                                └───────────────┘
+```
+
+**Hop by hop:**
+
+1. **pg_cron** (§8) flips a session's status — but *only writes* when the status genuinely changed (no spam).
+2. The same job **inserts a `notifications` row** using the agreed templates: `"{title} is live — Head over to {room}."` or `"{title} just wrapped up."`
+3. An AFTER-INSERT **database trigger** calls `net.http_post(...)` — the database itself makes an HTTP request — to the `send-push` Edge Function. The request carries a shared secret from a private table.
+4. The **Edge Function** (`supabase/functions/send-push/index.ts`) checks that secret (403 if wrong), loads every row from `push_subscriptions`, and sends a VAPID-signed Web Push to each. Endpoints that answer 404/410 (phone reset, app removed) are **pruned automatically**.
+5. The **service worker** (`public/sw.js`) — a small script the browser runs in the background — receives the push and calls `showNotification(...)`. Tapping it focuses or reopens the app.
+
+**How your device subscribed in the first place:** after onboarding, the home screen shows the *"Get session alerts"* explainer. Granting permission triggers `pushManager.subscribe()` with our **VAPID public key** (a key pair that proves to push services that *we* are allowed to send), and the subscription (endpoint URL + encryption keys) is stored in `push_subscriptions` via a server action.
+
+**War story #3 — the silent 403.** The first live test produced no notification and no error. The debug trail (a temporary service-role-only RPC exposing pg_net's HTTP log) showed our own function answering **403 Forbidden**: the database trigger signed requests with a secret from the database, while the function compared against a *different* secret set earlier via CLI. Two generators, zero overlap. Fix: the function's secret is now always synced from the DB's `private.app_secrets`. Lesson: **a shared secret must have exactly one source of truth.**
+
+**Files:** `supabase/migrations/20260822140000_notifications_and_push.sql` (tables + trigger + cron extension), `supabase/functions/send-push/index.ts`, `public/sw.js`, `lib/push.ts`, `components/push/push-gate.tsx`, `app/(app)/settings/../home/actions.ts` (`savePushSubscription`).
+
+---
+
+### 5.8 Alerts Feed
+
+**What you see:** the **Alerts** tab — a reverse-chronological list of cards. Live alerts get a pulsing green **Live** badge; ended ones a dimmed **Wrapped**. Timestamps read like "2 minutes ago."
+
+**Under the hood:** one query, newest-first, limited to 50; a realtime subscription (§5.5) makes new alerts appear **without refreshing**; `formatRelativeTime` (in `lib/format.ts`, built on `Intl.RelativeTimeFormat`) turns timestamps into human phrases. Cards are intentionally **static** — no click-through — because they're ephemeral event-day info.
+
+**Files:** `app/(app)/alerts/page.tsx`, `components/alerts/alerts-client.tsx`, `lib/supabase/queries/notifications.ts`.
+
+---
+
+### 5.9 Connect Page — The QR Networking Card
+
+**What you see:** your photo in a gold ring, your name, a big pale-lime QR tile, and two buttons: **Open my LinkedIn** and **Save QR**.
+
+**Under the hood:**
+
+- The QR encodes your **canonical** LinkedIn URL (§5.3) — that's why onboarding normalized your paste.
+- Rendered by `qrcode.react` as an **SVG** (`QRCodeSVG`) in brand colors: dark-teal modules on pale-lime. Dark-on-light is what scanners want; the brand just happens to agree.
+- **Save QR** works via a hidden **canvas** twin (`QRCodeCanvas`, 512px): clicking grabs `canvas.toDataURL("image/png")` and triggers a download. SVG for crisp screens, canvas for exportable pixels.
+- Your photo loads from LinkedIn's CDN via `next/image` (configured in `next.config.ts` with a `media.licdn.com` remote pattern). If there's no photo, a gold-ring initial-letter avatar appears instead.
+
+**Files:** `app/(app)/connect/page.tsx`, `components/connect/connect-card.tsx`, `next.config.ts`.
+
+---
+
+### 5.10 More Page — Directory and Quick Links
+
+**What you see:** three stacked sections — **Quick Links** (icon cards opening the event website/photo booth), an **Account Settings** row, and **Speakers & Sponsors**: filter chips (All · Speakers · Hosts & Panelists · Sponsors) over person cards. Tap a person → their **bio modal** (role tag, photo, organization, bio, LinkedIn button).
+
+**Under the hood:**
+
+- Filtering is pure client-side array filtering with `useMemo` — instant, no server round-trips:
+
+```ts
+const visible = useMemo(
+  () => people.filter(p => matchesFilter(p, filter)),
+  [people, filter],
+);
+
+function matchesFilter(person: Person, filter: FilterKey): boolean {
+  if (filter === "all") return true;
+  if (filter === "host_panelist")
+    return person.role === "host" || person.role === "panelist";
+  return person.role === filter;
+}
+```
+
+- The bio modal is the same visual language as the session modal (rounded-3xl, blurred backdrop, gold glow) — one design system, reused.
+- Quick links come from the `quick_links` table, so organizers add a link with one INSERT — no deploy.
+
+**Files:** `app/(app)/more/page.tsx`, `components/more/directory-client.tsx`, `lib/supabase/queries/directory.ts`, `…/quick-links.ts`.
+
+---
+
+### 5.11 Account Settings
+
+**What you see:** a form with your name and LinkedIn URL prefilled. Save → "Profile saved." and every screen reflects the change.
+
+**Under the hood:** the `updateProfile` server action validates exactly like onboarding (same functions — one source of truth for the rules), updates **your own** profile row, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data.
+
+**Files:** `app/(app)/settings/page.tsx`, `…/actions.ts`, `components/settings/settings-form.tsx`.
+
+---
+
+## 6. The Database in Plain English
+
+Nine tables. Here's each one's job and how they hold hands:
+
+```mermaid
+erDiagram
+    auth_users ||--o| profiles : "has exactly one"
+    events ||--o{ sessions : "contains"
+    sessions ||--o{ session_speakers : ""
+    speakers_sponsors ||--o{ session_speakers : ""
+    auth_users ||--o{ my_flow_bookmarks : "saves"
+    sessions ||--o{ my_flow_bookmarks : "saved in"
+    sessions ||--o{ notifications : "generates"
+    auth_users ||--o{ push_subscriptions : "registers"
+    sessions ||--o{ notifications : "about (optional)"
+
+    events {
+      uuid id
+      text name
+      text venue
+      timestamptz starts_at
+      timestamptz ends_at
+      text status
+    }
+    sessions {
+      uuid id
+      uuid event_id
+      text title
+      text room
+      timestamptz start_time
+      timestamptz end_time
+      text status
+    }
+    speakers_sponsors {
+      uuid id
+      text name
+      text role
+      text organization
+      text bio
+    }
+    profiles {
+      uuid id
+      text name
+      text photo_url
+      text linkedin_url
+      text pass_type
+    }
+    my_flow_bookmarks {
+      uuid user_id
+      uuid session_id
+    }
+    notifications {
+      uuid id
+      text type
+      text title
+      text body
+    }
+    push_subscriptions {
+      uuid id
+      uuid user_id
+      text endpoint
+    }
+    quick_links {
+      uuid id
+      text label
+      text url
+    }
+    session_speakers {
+      uuid session_id
+      uuid speaker_id
+    }
+```
+
+**Table-by-table, in one breath each:**
+
+| Table | Job | Who writes it |
+|---|---|---|
+| `profiles` | Your public identity: name, photo, canonical LinkedIn URL, pass type | Created by a trigger on signup; **you** edit it in Settings |
+| `events` | The event itself — one row: name, venue, time span, status | Organizers via SQL; status auto-flips |
+| `sessions` | Every slot in the program: title, description, room, times, status | Organizers via SQL; status auto-flips |
+| `speakers_sponsors` | People: name, photo, role (speaker/host/panelist/sponsor), org, bio, LinkedIn | Organizers via SQL |
+| `session_speakers` | Join table: which person appears in which session | Organizers via SQL |
+| `my_flow_bookmarks` | Your saved sessions (user_id + session_id) | **You**, via the bookmark button |
+| `notifications` | The automatic alert log — also the push trigger | The cron job, automatically |
+| `push_subscriptions` | Your device's push endpoint + encryption keys | **You**, when enabling alerts |
+| `quick_links` | The More page link cards | Organizers via SQL |
+
+**Why `session_speakers` is its own table:** one speaker can appear in multiple sessions, and one panel has multiple people. A join table expresses "many-to-many" without duplicating anyone.
+
+**Migrations** (`supabase/migrations/*.sql`) are the database's version history — numbered files applied in order. Never edit an applied one; always add a new file. `lib/supabase/database.types.ts` is **generated** from the schema (`npx supabase gen types typescript --linked`) so TypeScript knows every table's shape — never hand-edit it.
+
+---
+
+## 7. The Security Model — Row Level Security
+
+**The problem RLS solves:** your browser talks straight to the database (through Supabase's API) with your credentials. If the database itself doesn't enforce rules, any user could query anyone's data by typing a URL. App-level checks are not enough — the database must be the bouncer.
+
+**How it works:** every table has RLS **enabled**, and **policies** — SQL rules deciding who sees or changes which rows. Ours, in plain English:
+
+```sql
+-- Everyone content table: signed-in users read, nobody writes
+create policy "Authenticated users can view sessions"
+  on public.sessions for select to authenticated using (true);
+
+-- Personal tables: strictly your own rows
+create policy "Users can delete own bookmarks"
+  on public.my_flow_bookmarks for delete to authenticated
+  using ((select auth.uid()) = user_id);
+```
+
+`auth.uid()` is a Supabase function that reads **your identity from your login token (JWT)**. The `(select auth.uid())` wrapping is a performance idiom — it caches the answer once per query instead of evaluating per row.
+
+**The resulting rulebook:**
+
+| You are… | You can… | You cannot… |
+|---|---|---|
+| Signed out | See the landing page | See *any* data at all |
+| Signed in | Read all event content; edit your own profile, bookmarks, push subscription | See another user's profile or bookmarks; write to any content table; delete anything you don't own |
+
+**War story #4 — proof it works.** During testing we deliberately tried to insert a bookmark with someone else's (or no) user ID. The database rejected it with a policy violation — the app code never even got a chance to be wrong. That's RLS doing its job.
+
+**Also worth knowing:** Realtime (§5.5) applies these same policies to its websocket payloads, and the push webhook's trigger runs as a **security definer** function reading a secret from a schema that anonymous users can't even see (`private.app_secrets`).
+
+---
+
+## 8. The Automation — The Minute Job That Runs the Event
+
+The single most important piece of "zero manual posting" is one function on a timer:
+
+```sql
+-- supabase/migrations/…130000 (simplified)
+create or replace function public.sync_program_flow_statuses()
+returns void language plpgsql as $$
+begin
+  -- For every session whose stored status no longer matches reality…
+  for flipped in
+    select s.id, s.title, s.room,
+           case when now() < s.start_time then 'not_started'
+                when now() > s.end_time   then 'finished'
+                else 'ongoing' end as new_status
+      from public.sessions s
+     where s.status is distinct from (…same case…)
+  loop
+    -- …flip it…
+    update public.sessions set status = flipped.new_status where id = flipped.id;
+
+    -- …and if it just went live or just ended, write an alert.
+    if flipped.new_status = 'ongoing' then
+      insert into public.notifications (type, title, body, related_session_id)
+      values ('session_live', flipped.title || ' is live',
+              'Head over to ' || coalesce(flipped.room, 'the venue') || '.', flipped.id);
+    elsif flipped.new_status = 'finished' then
+      insert into public.notifications (type, title, body, related_session_id)
+      values ('session_ended', flipped.title || ' just wrapped up', null, flipped.id);
+    end if;
+  end loop;
+  -- (events.status gets the same treatment)
+end; $$;
+
+select cron.schedule('sync-program-flow-statuses', '* * * * *',
+  $$select public.sync_program_flow_statuses()$$);
+```
+
+Read the `where s.status is distinct from (...)` clause carefully — it's the quiet genius of the design:
+
+- Sessions only get **written** when their status *actually changed* → no pointless database churn, no spam.
+- A write is exactly what Realtime (§5.5) and the notification trigger (§5.7) are waiting for → the whole machine advances itself.
+- Status can never drift more than ~60 seconds from the truth, because the job runs every minute.
+
+This is why event day needs no organizer at the controls: at 10:00 AM the keynote flips itself, your phone buzzes, the badge turns green, and nobody typed anything.
+
+---
+
+## 9. Glossary
+
+| Term | Plain-English meaning |
+|---|---|
+| **RLS (Row Level Security)** | Database rules deciding which rows each user may see/change. The bouncer. |
+| **JWT** | Your signed login badge — a token proving who you are, attached to every request. |
+| **Server Component** | React code that runs only on the server; can query the database directly, can't have buttons that respond instantly. Default in this app. |
+| **Client Component** | React code that also runs in the browser (`"use client"`); needed for countdowns, toggles, modals. |
+| **Server Action** | A server function a form/button can call directly (`"use server"`) — no manual API endpoint. |
+| **Service Worker** | A background script the browser runs even with the app closed; receives pushes, caches files. |
+| **OAuth / OIDC** | The "Sign in with…" dance: you approve on LinkedIn, we get a verified identity without ever seeing your password. |
+| **PKCE** | The proof-key trick making the OAuth code exchange safe for public apps. |
+| **Edge Function** | A small program deployed to Supabase that runs on demand (Deno runtime). |
+| **pg_cron** | In-database scheduler — SQL on an alarm clock. |
+| **pg_net** | In-database HTTP client — lets SQL call a URL. |
+| **Publication (Realtime)** | Postgres's list of tables whose changes get broadcast live. |
+| **Optimistic UI** | Update the screen first, confirm with the server second, roll back on failure. |
+| **VAPID keys** | A key pair identifying our server to push services — "these pushes are really from Sync." |
+| **Canonical data** | One agreed stored form of messy input (all LinkedIn URLs saved the same way). |
+| **Migration** | A numbered SQL file describing a database change; applied in order, never edited after the fact. |
+| **Hydration** | The moment server-rendered HTML comes alive in the browser. Mismatches between the two cause bugs. |
+
+---
+
+## 10. "How Do I…?" Cheat-Sheet
+
+**…change the schedule?**
+Insert/update/delete rows in the `sessions` table (Supabase dashboard → Table Editor or SQL). Statuses, notifications, and pushes adjust automatically. Remember: the seed data is placeholder — swap it wholesale with one SQL script when the real timeline arrives.
+
+**…add a quick link?**
+`insert into quick_links (label, url, icon) values ('Label', 'https://…', 'globe');` — `icon` accepts `globe` or `camera` (mapped in `app/(app)/more/page.tsx`).
+
+**…add a speaker?**
+Insert into `speakers_sponsors`, then link them to sessions via `session_speakers`. Photos: put any external URL in `photo_url` (LinkedIn CDN already allowed in `next.config.ts`).
+
+**…replace the placeholder PWA icons?**
+Overwrite `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (or edit `scripts/generate-icons.mjs` and rerun it).
+
+**…test push notifications myself?**
+Set a session's `start_time`/`end_time` to bracket the current moment, wait up to a minute for cron, and watch. (Your OS must allow notifications for the browser!)
+
+**…add a new private page?**
+Create `app/(app)/your-page/page.tsx` — it automatically gets the rail + tab chrome. Add a `requireCompleteProfile()` call at the top if it should be members-only, and an entry in `bottom-tabs.tsx` + `side-rail.tsx`.
+
+**…know if the database changed shape?**
+Run `npx supabase gen types typescript --linked --schema public` and commit the refreshed `lib/supabase/database.types.ts`.
+
+**…deploy for production?**
+Hosting isn't finalized (Vercel + Supabase Cloud is the assumed pairing). When it happens: add the production domain to Supabase's redirect allowlist **and** LinkedIn's app settings, set the same env vars on the host, and deploy the Edge Function again.
+
+---
+
+*End of guide. When something in the code confuses you, find the feature above, open the named files, and read them next to the explanation — the whole app fits in your head once you've traced one feature end to end.*

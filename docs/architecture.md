@@ -7,21 +7,22 @@
 | Framework | Next.js | Pages, routing, server-side rendering, API routes |
 | Backend / DB | Supabase (Postgres) | Database, Auth, Realtime, Row Level Security |
 | Auth | Supabase Auth — `linkedin_oidc` | Sign in with LinkedIn (OpenID Connect) |
-| Offline / Installable | PWA (`next-pwa` or `@serwist/next`) | Service worker, manifest, home-screen install |
-| Push Delivery | Web Push API (via service worker) | Notifications when the app isn't open |
+| Offline / Installable | Hand-authored static service worker (`public/sw.js`) + web manifest | Service worker, offline shell caching, home-screen install. (Note: `next-pwa`/`@serwist/next` are webpack plugins and incompatible with Next 16's default Turbopack builds — do not reintroduce them) |
+| Push Delivery | Web Push API — pg_cron → `notifications` INSERT → pg_net webhook → `send-push` Edge Function → FCM/Web Push | Notifications when the app isn't open |
 | Hosting (typical pairing, not yet finalized) | Vercel (frontend) + Supabase Cloud (backend) | Deployment |
 
 ## System Boundaries
 
-- `app/` — Next.js routes for all attendee-facing screens: Home, Session Detail, Notifications, Connect, More, Account Settings
+- `app/` — Next.js routes for all attendee-facing screens: `/home` (dashboard + session-detail modal), `/alerts` (notifications feed), `/connect` (QR networking card), `/more` (quick links, account link, speakers/sponsors directory + bio modals), `/settings` (name + LinkedIn URL editing), plus `/onboarding` (first-login LinkedIn URL capture)
 - Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, and `/login` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
-- `lib/supabase/` — Supabase client setup and typed queries/mutations for sessions, speakers, notifications, and profiles
-- `components/` — Shared UI building blocks: session cards, live status badges, QR code display, tab navigation
-- `public/` + service worker config — PWA manifest, icons, and the service worker handling offline caching and push notification delivery
+- `lib/supabase/` — Supabase client setup, generated database types, and typed queries/mutations for program flow, directory, quick links, notifications, and profiles
+- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card, directory + bio modals, side rail / bottom tab navigation
+- `public/sw.js` + `public/manifest.webmanifest` + `public/icons/` — hand-authored service worker (offline shell caching + push/notification-click handlers), PWA manifest, and icons; the service worker is source code, never build-generated
 
 ## Storage Model
 
-- **Database (Supabase Postgres)**: profiles, events, sessions, session-speaker links, speakers/sponsors, notifications, quick links, and My Flow bookmarks (attendee-saved sessions). Session/event statuses flip automatically from schedule times via a pg_cron job running every minute — no manual posting, no drift beyond ~60s. Capacity columns are deferred together with workshop tables. Deferred workshop tables (workshops, workshop slots, workshop registrations) will live here too once that phase starts. LinkedIn profile URLs are validated loosely at input but stored canonically as `https://www.linkedin.com/in/<slug>`.
+- **Database (Supabase Postgres)**: profiles, events, sessions, session-speaker links, speakers/sponsors, notifications, quick links, My Flow bookmarks (attendee-saved sessions), and push subscriptions (one row per attendee device endpoint, own-row RLS). Session/event statuses flip automatically from schedule times via a pg_cron job running every minute — no manual posting, no drift beyond ~60s — and each real session flip also writes a `notifications` row from agreed templates. Capacity columns are deferred together with workshop tables. Deferred workshop tables (workshops, workshop slots, workshop registrations) will live here too once that phase starts. LinkedIn profile URLs are validated loosely at input but stored canonically as `https://www.linkedin.com/in/<slug>`.
+- **Push delivery pipeline**: a pg_net AFTER-INSERT trigger on `notifications` POSTs to the `send-push` Edge Function (shared secret stored in `private.app_secrets`, mirrored into the function's `PUSH_WEBHOOK_SECRET`; the function authenticates via that header, so the gateway runs with `--no-verify-jwt`). The function fans out Web Push messages through VAPID-signed requests (keys in function secrets, subject `mailto:jahmelldorias17@gmail.com`) to every stored subscription and prunes endpoints that answer 404/410.
 - **Blob/File Storage**: not yet needed — profile photos come directly from LinkedIn's OAuth response as external URLs; speaker/sponsor photos can stay as external URLs or move to Supabase Storage later if that becomes necessary.
 
 ## Auth and Access Model
@@ -29,13 +30,13 @@
 - Every user signs in via Supabase Auth using LinkedIn (OIDC) — no separate registration form beyond a one-time LinkedIn profile URL entry
 - Each user's profile is a single row tied 1:1 to their auth identity — no shared or delegated ownership
 - Attendees have read-only access to sessions, speakers/sponsors, and notifications, enforced via Row Level Security — not just app-level checks
-- A user can only write to their own profile row and their own My Flow bookmarks — nothing else
+- A user can only write to their own profile row, their own My Flow bookmarks, and their own push subscriptions — nothing else
 - There is no admin/organizer role in the app itself — session, speaker, and notification data is managed directly in the database, outside the app's access model entirely
 
 ## Invariants
 
 1. Session, speaker/sponsor, and notification tables have no client-side write path — RLS enforces read-only access for attendees, with no app-level admin bypass
 2. Session status changes are always derived from schedule time/status data — never from a manually typed notification
-3. A user can only ever modify their own profile row and their own My Flow bookmarks — never another user's rows or any content table
+3. A user can only ever modify their own profile row, their own My Flow bookmarks, and their own push subscriptions — never another user's rows or any content table
 4. No feature may depend on a custom admin interface, since none is being built for this version
 5. Push notifications are only ever triggered by a session status change — there is no freeform announcement-sending path in this version
