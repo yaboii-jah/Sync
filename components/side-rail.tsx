@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { useAlertsCount } from "@/components/alerts-count-provider";
 
 interface RailItem {
   label: string;
@@ -27,6 +28,7 @@ const RAIL_ITEMS: RailItem[] = [
 
 export function SideRail() {
   const pathname = usePathname();
+  const { unreadCount } = useAlertsCount();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[232px] flex-col border-r border-border-default bg-bg-base lg:flex">
@@ -38,6 +40,8 @@ export function SideRail() {
         {RAIL_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = item.href != null && pathname.startsWith(item.href);
+          const showBadge =
+            item.label === "Alerts" && item.href != null && unreadCount > 0;
 
           if (!item.href) {
             return (
@@ -63,7 +67,14 @@ export function SideRail() {
                   : "text-text-muted hover:bg-accent-primary/20 hover:text-text-primary"
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <span className="relative">
+                <Icon className="h-5 w-5" />
+                {showBadge ? (
+                  <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-state-error px-1 text-[0.6rem] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                ) : null}
+              </span>
               <span className="text-sm font-bold">{item.label}</span>
             </Link>
           );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, House, MoreHorizontal, QrCode, type LucideIcon } from "lucide-react";
+import { useAlertsCount } from "@/components/alerts-count-provider";
 
 interface TabConfig {
   label: string;
@@ -19,6 +20,7 @@ const TABS: TabConfig[] = [
 
 export function BottomTabs() {
   const pathname = usePathname();
+  const { unreadCount } = useAlertsCount();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border-default bg-bg-base lg:hidden">
@@ -26,6 +28,7 @@ export function BottomTabs() {
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = tab.href != null && pathname.startsWith(tab.href);
+          const showBadge = tab.label === "Alerts" && unreadCount > 0;
 
           if (!tab.href) {
             return (
@@ -34,7 +37,14 @@ export function BottomTabs() {
                 aria-disabled
                 className="flex flex-1 flex-col items-center gap-1 py-1 text-text-muted opacity-40"
               >
-                <Icon className="h-5 w-5" />
+                <span className="relative">
+                  <Icon className="h-5 w-5" />
+                  {showBadge ? (
+                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-state-error px-1 text-[0.6rem] font-bold text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="text-[0.62rem] font-bold tracking-wide uppercase">
                   {tab.label}
                 </span>
@@ -53,7 +63,14 @@ export function BottomTabs() {
                   : "text-text-muted hover:text-text-primary"
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <span className="relative">
+                <Icon className="h-5 w-5" />
+                {showBadge ? (
+                  <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-state-error px-1 text-[0.6rem] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                ) : null}
+              </span>
               <span className="text-[0.62rem] font-bold tracking-wide uppercase">
                 {tab.label}
               </span>

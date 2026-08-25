@@ -22,6 +22,7 @@ import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
 import { SessionModal } from "@/components/sessions/session-modal";
 import { ScrollToNow } from "./scroll-to-now";
+import { LiveMiniBar } from "./live-mini-bar";
 
 type View = "all" | "flow";
 
@@ -117,7 +118,14 @@ export function HomeClient({
 
   return (
     <>
-        <div className="lg:flex lg:items-start lg:gap-12">
+      {liveSession ? (
+        <LiveMiniBar
+          targetId={`session-${liveSession.id}`}
+          title={liveSession.title}
+        />
+      ) : null}
+
+      <div className="lg:flex lg:items-start lg:gap-12">
           <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
             <HeroCard event={event} sessions={sessions} now={now} />
           <p className="mt-4 hidden text-sm text-text-muted lg:block">

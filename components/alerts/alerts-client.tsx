@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { NotificationRow } from "@/lib/supabase/queries/notifications";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
@@ -9,6 +9,7 @@ import { getSessionById } from "@/lib/supabase/queries/program-flow";
 import { formatRelativeTime } from "@/lib/format";
 import { useRealtimeRefetch } from "@/hooks/use-realtime-refetch";
 import { useToast } from "@/components/toast/toast-provider";
+import { useAlertsCount } from "@/components/alerts-count-provider";
 import { SessionModal } from "@/components/sessions/session-modal";
 import { EmptyCity } from "@/components/empty-states";
 import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/actions";
@@ -58,6 +59,12 @@ export function AlertsClient({
   const [activeSession, setActiveSession] =
     useState<SessionWithSpeakers | null>(null);
   const { toast } = useToast();
+  const { markAllRead } = useAlertsCount();
+
+  useEffect(() => {
+    markAllRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function refetchNotifications() {
     const client = createClient();

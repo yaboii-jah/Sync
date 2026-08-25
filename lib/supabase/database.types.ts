@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_read_state: {
+        Row: {
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           ends_at: string
@@ -219,6 +234,7 @@ export type Database = {
           end_time: string
           event_id: string
           id: string
+          reminder_sent_at: string | null
           room: string | null
           start_time: string
           status: string
@@ -229,6 +245,7 @@ export type Database = {
           end_time: string
           event_id: string
           id?: string
+          reminder_sent_at?: string | null
           room?: string | null
           start_time: string
           status?: string
@@ -239,6 +256,7 @@ export type Database = {
           end_time?: string
           event_id?: string
           id?: string
+          reminder_sent_at?: string | null
           room?: string | null
           start_time?: string
           status?: string
