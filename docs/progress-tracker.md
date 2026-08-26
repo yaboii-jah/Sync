@@ -13,6 +13,7 @@ change.
 
 ## Completed
 
+- Fixed /home infinite reload loop: a signed-in user with no `profiles` row bounced `/home` ↔ `/login` forever (server `requireCompleteProfile` redirected to `/login`, proxy redirected `/login` → `/home`). Added an INSERT RLS policy (`20260822170000_profiles_insert_policy.sql`) and made `getAuthenticatedProfile` self-heal a missing row via upsert, so a missing trigger deploy or a deleted profile on an existing `auth.users` can never hard-loop the app. Migration pushed to prod; code committed + pushed (077f9d9)
 - Project overview defined: purpose, user flow, user stories, feature list, scope (project-overview.md)
 - Architecture defined: stack, system boundaries, storage model, auth/access model, invariants (architecture.md)
 - Code standards defined (code-standards.md)
