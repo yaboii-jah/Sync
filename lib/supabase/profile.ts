@@ -18,11 +18,32 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | 
 
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (!profile) {
+    // Self-heal: the on_auth_user_created trigger should normally create this
+    // row, but it only fires on auth.users INSERT. If the profile is missing
+    // (trigger not deployed, or the row was deleted while the user remains),
+    // create it now so the app never hard-loops between /home and /login.
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      name: user.user_metadata?.name ?? "",
+      photo_url:
+        user.user_metadata?.picture ?? user.user_metadata?.avatar_url ?? null,
+    });
+
+    const { data: created } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    profile = created;
+  }
 
   return { user, profile };
 }
