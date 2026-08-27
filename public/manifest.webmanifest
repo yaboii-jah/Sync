@@ -1,5 +1,5 @@
 {
-  "name": "Sync — Student Edition",
+  "name": "Sync \u2014 Student Edition",
   "short_name": "Sync",
   "description": "Your companion app for AWS Student Community Day Mega Manila 2026.",
   "start_url": "/home",
@@ -7,13 +7,30 @@
   "background_color": "#024056",
   "theme_color": "#024056",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
     {
       "src": "/icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

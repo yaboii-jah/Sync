@@ -52,3 +52,37 @@ export function linkedInScanTarget(
 
   return `https://www.linkedin.com/search/results/people/?keywords=${keywords}`;
 }
+
+/**
+ * Pulls a LinkedIn profile URL out of arbitrary shared text.
+ *
+ * The Web Share Target hands over whatever the sharing app decided to send, and
+ * LinkedIn's share sheet wraps the URL in a sentence rather than sending it
+ * bare. Chrome also documents that on Android the `url` field is frequently
+ * empty and the link arrives inside `text`, or occasionally `title` — a handler
+ * reading only `url` works on a few devices and looks broken on most, so all
+ * three are scanned.
+ *
+ * Returns the canonical form via the shared normalizer, or null when the text
+ * holds no profile link. Anything shared that is not a LinkedIn profile — a
+ * post, a company page, a job listing — simply misses and is ignored.
+ */
+export function extractLinkedInProfileUrl(
+  ...candidates: (string | null | undefined)[]
+): string | null {
+  const pattern =
+    /https?:\/\/(?:[a-z0-9-]+\.)?linkedin\.com\/in\/[a-z0-9\-_%]+/i;
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    const match = candidate.match(pattern);
+
+    if (match) {
+      const normalized = normalizeLinkedInProfileUrl(match[0]);
+      if (normalized) return normalized;
+    }
+  }
+
+  return null;
+}
