@@ -41,7 +41,16 @@ export async function proxy(request: NextRequest) {
   if (!user && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
-    redirectUrl.search = "";
+    /*
+     * Carry the destination through the login bounce.
+     *
+     * Scanned QR codes land on `/u/<id>`, and a scanner who is not signed in
+     * yet would otherwise be dropped on `/home` after authenticating, having
+     * lost the card they were trying to open — the scan would simply appear to
+     * do nothing. Only the path is kept, never the original query, so an OAuth
+     * code can still never leak onto a public page.
+     */
+    redirectUrl.search = `?next=${encodeURIComponent(pathname)}`;
     return NextResponse.redirect(redirectUrl);
   }
 

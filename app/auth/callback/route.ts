@@ -27,7 +27,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=oauth", origin));
   }
 
-  // Straight to the app. There is no longer a LinkedIn-URL step to detour
-  // through — see the note in `requireCompleteProfile`.
-  return NextResponse.redirect(new URL("/home", origin));
+  /*
+   * Straight to the app — there is no longer a LinkedIn-URL step to detour
+   * through (see the note in `requireCompleteProfile`) — unless the proxy
+   * captured a destination first, which is how a scanned QR survives a
+   * sign-in. Re-validated here rather than trusted: this value has been out to
+   * LinkedIn and back, so it is treated as untrusted input on return.
+   */
+  const next = searchParams.get("next");
+  const destination =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+
+  return NextResponse.redirect(new URL(destination, origin));
 }
