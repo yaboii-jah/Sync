@@ -43,25 +43,43 @@ export function AlertsCountProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    void Promise.resolve().then(() => {
-      if (!cancelled) void refresh();
-    });
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null =
+      null;
+    let channelClient: ReturnType<typeof createClient> | null = null;
 
-    const supabase = createClient();
-    const channel = supabase
-      .channel("alerts-count")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
-        () => {
-          if (!cancelled) void refresh();
-        },
-      )
-      .subscribe();
+    void (async () => {
+      try {
+        const c = createClient();
+        await c.auth.getSession();
+      } catch {}
+      if (cancelled) return;
+      void refresh();
+    })();
+
+    void (async () => {
+      const supabase = createClient();
+      channelClient = supabase;
+      try {
+        await supabase.auth.getSession();
+      } catch {}
+      if (cancelled) return;
+      channel = supabase
+        .channel("alerts-count")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications" },
+          () => {
+            if (!cancelled) void refresh();
+          },
+        )
+        .subscribe();
+    })();
 
     return () => {
       cancelled = true;
-      void supabase.removeChannel(channel);
+      if (channel && channelClient) {
+        void channelClient.removeChannel(channel);
+      }
     };
   }, []);
 
