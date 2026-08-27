@@ -250,23 +250,116 @@ arrival, add their URL that evening, and every connection made earlier gains the
 link retroactively. The current design cannot do this — no URL, no QR, no
 connection, permanently lost.
 
+## Third pass — the solution, with the spec left intact
+
+The owner's ruling: this is an event product, LinkedIn's native QR is not a
+competitor and not a reason to reopen the feature's purpose. The requirement
+stands as written. What follows removes the friction **without amending
+anything** — no spec change, no RLS change, no invariant change.
+
+The earlier passes both attacked the wrong half. They asked how to obtain the
+URL *without the user*, hit the wall, and moved to redesigning the QR. But the
+spec never said the machine must obtain it. It says the attendee supplies it
+once (Core User Flow 3). The friction is not that a human is involved — it is
+that the human has to **type**, on a phone, a string they do not have memorised.
+
+So: keep the human, delete the typing.
+
+### The move — Sync is a PWA, so it can be a share target
+
+Sync is installable (`public/manifest.webmanifest`, `display: standalone`). Any
+installed PWA can register itself in the Android share sheet through the **Web
+Share Target API**, and receive data other apps share into it.
+
+LinkedIn's mobile app already has *Share profile via…*. With a share target
+registered, **Sync appears in that share sheet**. The attendee taps
+Share → Sync, and their profile URL arrives in the app directly.
+
+Zero characters typed. No clipboard. No memorising a slug.
+
+The manifest addition is small:
+
+```json
+"share_target": {
+  "action": "/onboarding/share",
+  "method": "GET",
+  "params": { "title": "title", "text": "text", "url": "url" }
+}
+```
+
+The handler at `/onboarding/share` reads the query params, normalizes through
+the existing `normalizeLinkedInProfileUrl`, saves, and redirects to `/home`.
+
+**The trap, documented by Chrome and worth stating before anyone implements
+it:** on Android the `url` param is frequently **empty**, and the shared URL
+arrives inside `text` — occasionally inside `title`. A handler that reads only
+`url` will look broken on most devices and work on a few. Scan all three params
+for a `linkedin.com/in/` match.
+
+**Requirements and coverage, honestly:**
+
+- The PWA **must be installed** to the home screen. Chrome requires this before
+  an app may register as a share target; it is a deliberate anti-abuse rule.
+- **Chrome on Android 76+.** iOS Safari does not implement Web Share Target.
+
+So this is a fast path for installed Android users, not a universal one. It
+needs the layer below.
+
+### The layers beneath it
+
+Each is independently useful and none conflicts with the spec:
+
+1. **Share target** — installed Android. Zero typing.
+2. **One-tap paste.** LinkedIn's *Share profile → Copy link* puts the URL on the
+   clipboard in two taps. A "Paste my LinkedIn link" button calling
+   `navigator.clipboard.readText()` behind the user gesture turns the third step
+   into one tap, on iOS as well as Android. *Not device-tested — the permission
+   prompt behaviour on iOS Safari needs checking on real hardware before this is
+   claimed to work.*
+3. **Accept a bare slug.** Whatever route the string arrives by, the current
+   validator rejects `linkedin.com/in/<slug>` — no scheme — and the input is
+   `type="url"` + `required`, so the browser blocks it before the app sees it.
+   This is a plain defect and it undercuts both layers above.
+
+Layer 3 is a prerequisite, not an optional extra: LinkedIn's own share sheet and
+copy-link both produce strings the current validator will refuse.
+
+### Why this needs no amendment
+
+`project-overview.md` Core User Flow 3 reads *"User pastes their LinkedIn
+profile URL once."* A share target **is** that step, performed once, with the
+typing removed. Success Criteria 3 — the QR resolves to the LinkedIn profile —
+stays true. Networking feature description stays true. `profiles` RLS is
+untouched. No new table, so Invariant 3 is untouched.
+
+The app-owned QR from the second pass remains a valid, larger idea, and it is
+the only thing here that requires the owner's sign-off. It is now decoupled:
+this solution ships without it.
+
 ## Recommendation
 
-1. **Ship the bare-slug fix now.** Small, no spec conflict, removes a real
-   failure. Independent of everything below.
-2. **Put the strategic question to jah before building anything else:** if the
-   Connect QR only opens a LinkedIn profile, it duplicates a free feature
-   already in every attendee's LinkedIn app, and the mandatory paste makes
-   Sync's copy the worse of the two. Recording the scan is the one thing
-   LinkedIn's version cannot do.
-3. If that lands, the app-owned QR becomes a **spec amendment** — amending
-   `project-overview.md` Success Criteria 3 and the Networking feature, plus
-   `architecture.md` for the widened `profiles` read access and Invariant 3.
+Ship in this order. Each step stands alone and none needs a spec amendment.
 
-**Not verified:** the photo-URL derivation was reasoned from URL structure
-rather than tested against a live profile; and whether attendees would in
-practice prefer an interstitial card over landing directly on LinkedIn is a
-product judgement no research here can settle.
+1. **Accept a bare slug.** One validator, plus dropping `type="url"`.
+   Prerequisite for everything else — LinkedIn's own copy-link and share sheet
+   both emit strings the current check refuses.
+2. **Register the share target.** Manifest entry plus one route handler. Turns
+   the onboarding step into Share → Sync, with nothing typed. Read `text` and
+   `title` as well as `url`.
+3. **Add the one-tap paste button** as the iOS and not-installed fallback.
+4. **Separately**, take the app-owned QR to jah as a spec amendment. It is a
+   bigger idea and now fully decoupled from the friction fix.
+
+**Not verified, and it matters:**
+
+- The share-target flow has **not been tested on a device**. It requires an
+  installed PWA on Android Chrome, and the `url`/`text`/`title` behaviour varies
+  by sharing app — LinkedIn's specific share payload has not been inspected.
+  Nothing here should be reported as working until it has been shared from the
+  real LinkedIn app into an installed build.
+- iOS clipboard permission behaviour is untested on real hardware.
+- The photo-URL derivation in the second pass was reasoned from URL structure
+  rather than tested against a live profile.
 
 ## Sources
 
@@ -274,3 +367,5 @@ product judgement no research here can settle.
 - [LinkedIn OIDC discovery document](https://www.linkedin.com/oauth/.well-known/openid-configuration)
 - [LinkedIn Partner Program 2026 — approval reality](https://www.getphyllo.com/post/linkedin-api-access-in-2026-partner-program-approval-timeline-alternatives)
 - [Using a LinkedIn QR Code to Connect with Members — LinkedIn Help](https://www.linkedin.com/help/linkedin/answer/a525286/using-a-linkedin-qr-code-to-connect-with-members)
+- [Receiving shared data with the Web Share Target API — Chrome for Developers](https://developer.chrome.com/docs/capabilities/web-apis/web-share-target)
+- [share_target — MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/share_target)
