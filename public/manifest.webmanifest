@@ -1,7 +1,7 @@
 {
   "name": "Sync — Student Edition",
   "short_name": "Sync",
-  "description": "Your companion app for AWS Student Community Day Manila 2026.",
+  "description": "Your companion app for AWS Student Community Day Mega Manila 2026.",
   "start_url": "/home",
   "display": "standalone",
   "background_color": "#024056",

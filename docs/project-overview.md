@@ -2,7 +2,7 @@
 
 ## Overview
 
-Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Manila 2026 — a budget-friendly, student-focused alternative to the main AWS Community Day Manila event. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based LinkedIn networking, installable to a phone's home screen like a native app. It's an enhanced version of the original Sync app used at the main event, rebuilt with LinkedIn sign-in and no admin-side management overhead.
+Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based LinkedIn networking, installable to a phone's home screen like a native app. It's an enhanced version of the original Sync app, rebuilt with LinkedIn sign-in and no admin-side management overhead.
 
 ## Goals
 
@@ -18,7 +18,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 3. User pastes their LinkedIn profile URL once, generating their networking QR code
 4. User lands on the Home dashboard showing the current session and what's next
 5. User taps into a session to view its description, room, and speaker
-6. User receives a real-time notification when a session starts or ends
+6. User receives schedule-driven session reminders and start/end notifications for sessions saved to My Flow
 7. User opens Connect to show their QR code to another attendee for networking
 8. User browses the More page for the speaker/sponsor directory and quick links (event website, photo booth)
 
@@ -26,7 +26,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ### Authentication
 - Sign in with LinkedIn — auto-fills name and profile photo
-- One-time manual entry of LinkedIn profile URL, used for the networking QR code
+- One-time manual entry of a valid `linkedin.com/in/` profile URL, normalized for the networking QR code
 
 ### Program Flow
 - "Happening Now" live banner
@@ -35,7 +35,10 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Session detail view — description, time, room, speaker info
 
 ### Real-Time Notifications
-- Session start/end alerts, generated automatically from schedule data — no manual posting needed
+- Session reminder and start/end alerts generated automatically from schedule data
+- Bookmark-targeted Web Push for session-linked notifications
+- Organizer announcements inserted directly in the database and broadcast to all subscribed devices
+- Real-time Alerts feed with persisted unread state; session-linked alerts open the session detail modal
 
 ### Networking (Connect)
 - Personal networking card with auto-generated QR code linking to LinkedIn profile
@@ -49,7 +52,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Link to the photo booth
 
 ### Account Settings
-- View/update name and LinkedIn profile URL
+- View/update name and LinkedIn profile URL from the authenticated header or desktop navigation rail
 
 ### Platform
 - Installable as a PWA (home screen icon, standalone app-like experience)
@@ -60,7 +63,9 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 - LinkedIn OAuth sign-in
 - Real-time program flow with automatic session status
-- Automatic, schedule-driven notifications (session start/end only)
+- Automatic, schedule-driven session reminders and start/end notifications
+- Organizer announcements managed directly in the database
+- Persisted unread alert count and session-linked alert detail access
 - QR-based LinkedIn networking
 - Speaker/sponsor directory
 - Quick links to external providers
@@ -70,7 +75,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 - Workshop registration and slot management (deferred to a later phase)
 - Admin/organizer interface — session, speaker, and notification data is managed directly in the database, not through a built app
-- Semi-automatic or manual notification types (schedule-change alerts, freeform announcements)
+- An in-app announcement composer or other organizer/admin posting interface
 
 ## Success Criteria
 
@@ -78,4 +83,4 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 2. Session status badges update in real time across all connected clients with no manual re-posting
 3. A user can generate a networking QR code that correctly resolves to their LinkedIn profile
 4. A user can install the app to a device home screen and launch it as a standalone PWA
-5. A user can browse the full speaker/sponsor directory and open any entry's LinkedIn profile
+5. A user can browse the full speaker/sponsor directory and open an entry's LinkedIn profile when one is provided

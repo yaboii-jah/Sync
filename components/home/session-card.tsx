@@ -79,23 +79,25 @@ export function SessionCard({
           </p>
         ) : null}
       </button>
-      <div className="flex items-center justify-end px-3 pb-2">
-        <button
-          type="button"
-          aria-label={bookmarked ? "Remove from My Flow" : "Add to My Flow"}
-          aria-pressed={bookmarked}
-          onClick={() => onToggleBookmark(session.id)}
-          className={`rounded-lg p-2 transition-all hover:scale-110 active:scale-90 ${
-            bookmarked ? "text-pastel-yellow" : "text-text-muted hover:text-text-primary"
-          }`}
-        >
-          <Bookmark
-            key={bookmarked ? "on" : "off"}
-            className={`h-5 w-5 ${bookmarked ? "animate-[bookmark-pop_0.4s_ease]" : ""}`}
-            fill={bookmarked ? "currentColor" : "none"}
-          />
-        </button>
-      </div>
+      {!finished ? (
+        <div className="flex items-center justify-end px-3 pb-2">
+          <button
+            type="button"
+            aria-label={bookmarked ? "Remove from My Flow" : "Add to My Flow"}
+            aria-pressed={bookmarked}
+            onClick={() => onToggleBookmark(session.id)}
+            className={`rounded-lg p-2 transition-all hover:scale-110 active:scale-90 ${
+              bookmarked ? "text-pastel-yellow" : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <Bookmark
+              key={bookmarked ? "on" : "off"}
+              className={`h-5 w-5 ${bookmarked ? "animate-[bookmark-pop_0.4s_ease]" : ""}`}
+              fill={bookmarked ? "currentColor" : "none"}
+            />
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }

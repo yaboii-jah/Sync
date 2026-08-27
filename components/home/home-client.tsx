@@ -109,7 +109,11 @@ export function HomeClient({
   const visible =
     view === "all"
       ? sessions
-      : sessions.filter((session) => bookmarks.has(session.id));
+      : sessions.filter(
+          (session) =>
+            bookmarks.has(session.id) &&
+            displayStatus(session.start_time, session.end_time, now) !== "finished",
+        );
 
   const segmentedButtonClass = (active: boolean) =>
     `flex-1 rounded-lg px-4 py-2 text-xs font-bold tracking-[0.14em] uppercase transition-colors ${

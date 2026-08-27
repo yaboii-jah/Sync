@@ -35,7 +35,7 @@
 
 ## 1. What is Sync?
 
-**Sync** is a companion web app for **AWS Student Community Day Manila 2026** — a one-day event (Sep 11, 2026, 9:30 AM–6:00 PM, Asia Pacific College) where students learn about cloud computing.
+**Sync** is a companion web app for **AWS Student Community Day Mega Manila 2026** — a one-day event (Sep 11, 2026, 9:30 AM–6:00 PM, Asia Pacific College) where students learn about cloud computing.
 
 Attendees install Sync on their phone like a native app. During the event it answers four questions instantly:
 
@@ -46,7 +46,7 @@ Attendees install Sync on their phone like a native app. During the event it ans
 
 It is **not** a social network, not a ticketing system, and has **no admin panel** — all event content lives directly in the Supabase database, managed by the organizers with plain SQL.
 
-The name of the game: **zero manual posting on event day**. Session statuses, notifications, and pushes all happen automatically because they're derived from the schedule's timestamps.
+The name of the game: **zero manual posting on event day** for scheduled activity. Session statuses, reminders, and live/wrapped notifications happen automatically because they're derived from the schedule's timestamps; organizers can intentionally add announcements through SQL.
 
 ---
 
@@ -60,8 +60,8 @@ Here is what a real attendee experiences, from start to finish:
 3. First time only         → "Paste your LinkedIn profile URL" screen
 4. Lands on Home           → Countdown or "Happening Now" card + full schedule
 5. Taps a session          → Modal with description, room, speaker, bookmark button
-6. Bookmarks sessions      → "My Flow" — their personal schedule
-7. Gets a phone notification → "Opening Keynote is live — head over to Main Hall."
+6. Bookmarks sessions      → "My Flow" — their personal schedule; finished sessions leave the flow automatically
+7. Gets a phone notification → bookmarked sessions send reminders plus live/wrapped updates
 8. Meets someone           → Opens Connect tab, shows their QR code
 9. Curious about a speaker → More tab, taps a face, reads their bio
 10. End of day             → "That's a wrap" card, alerts feed shows everything that happened
@@ -105,13 +105,14 @@ sync/
 │   └── (app)/                ← Route group: pages WITH the nav rail/tabs
 │       ├── layout.tsx        ← Sidebar + tab bar wrap every page below
 │       ├── home/             ← Dashboard (+ actions.ts = server actions)
-│       ├── alerts/           ← Notifications feed
+│       ├── alerts/           ← Notifications feed + session modal access
 │       ├── connect/          ← QR networking card
 │       ├── more/             ← Quick links + directory
-│       └── settings/         ← Account editing (+ actions.ts)
+│       └── settings/         ← Account editing, linked from header/rail (+ actions.ts)
 ├── components/               ← Reusable UI pieces
-│   ├── home/                 ← Hero card, session cards, modal, dashboard shell
+│   ├── home/                 ← Hero card, session cards, dashboard shell
 │   ├── alerts/               ← Alerts feed client
+│   ├── sessions/             ← Shared session modal used by Home + Alerts
 │   ├── connect/              ← The QR networking card
 │   ├── more/                 ← Directory + bio modal
 │   ├── push/                 ← Permission gate, install chip, SW registration
@@ -241,7 +242,7 @@ export function normalizeLinkedInProfileUrl(value: string): string | null {
 
 So whether you paste `http://www.linkedin.com/in/Me/Details/` or `https://linkedin.com/in/me?trk=x`, the database stores exactly `https://www.linkedin.com/in/me`. Canonical data = reliable QR codes.
 
-**Files:** `app/(app)/onboarding/`, `lib/linkedin.ts`, `lib/supabase/profile.ts`.
+**Files:** `app/onboarding/`, `lib/linkedin.ts`, `lib/supabase/profile.ts`.
 
 ---
 
@@ -276,7 +277,7 @@ otherwise → "Starts In" countdown (D/H/M/S boxes)
 | Ongoing | light-green fill + soft pulsing glow |
 | Finished | dimmed text |
 
-**Files:** `app/(app)/home/page.tsx` (server: fetches everything once), `components/home/home-client.tsx` (client: owns the data state), `hero-card.tsx`, `session-card.tsx`, `session-modal.tsx`, `lib/format.ts` (Manila-time formatting — every time on screen is Asia/Manila regardless of the phone's settings).
+**Files:** `app/(app)/home/page.tsx` (server: fetches everything once), `components/home/home-client.tsx` (client: owns the data state), `components/home/hero-card.tsx`, `components/home/session-card.tsx`, `components/sessions/session-modal.tsx`, `lib/format.ts` (Manila-time formatting — every time on screen is Asia/Manila regardless of the phone's settings).
 
 ---
 
@@ -324,7 +325,7 @@ Any event triggers a **debounced refetch** (at most one refetch per 250ms even i
 
 ### 5.6 My Flow Bookmarks — Optimistic UI
 
-**What you see:** tap the bookmark icon on a session card → it fills gold instantly. Toggle **My Flow** and only your saved sessions show.
+**What you see:** tap the bookmark icon on an upcoming or ongoing session card → it fills gold instantly. Toggle **My Flow** and only your saved, unfinished sessions show. Finished sessions have no bookmark action and leave My Flow automatically.
 
 **"Optimistic UI"** means the screen updates *before* the server confirms. The pattern (`components/home/home-client.tsx`):
 
@@ -348,20 +349,20 @@ function handleToggleBookmark(sessionId: string) {
 }
 ```
 
-The server action (`app/(app)/home/actions.ts`) checks who you are, then inserts or deletes **your own** row in `my_flow_bookmarks` — the database's RLS (§7) would reject anything else even if the code tried.
+The server action (`app/(app)/home/actions.ts`) checks who you are and rejects new bookmarks for finished sessions, then inserts or deletes **your own** row in `my_flow_bookmarks` — the database's RLS (§7) would reject anything else even if the code tried. The scheduled status job removes finished-session bookmark rows after creating the ended notification.
 
 ---
 
 ### 5.7 Push Notifications — The Full Pipeline
 
-**What you see:** your phone buzzes: *"Opening Keynote is live — Head over to Main Hall."* The app wasn't even open.
+**What you see:** your phone buzzes: *"Opening Keynote is live — Head over to Main Hall."* or reminds you that a bookmarked session starts soon. The app wasn't even open.
 
 This is the most connected feature in the app — five systems passing a baton:
 
 ```
- ┌──────────┐   1. flip status    ┌───────────────┐  2. INSERT row   ┌───────────────┐
+ ┌──────────┐  1. schedule event  ┌───────────────┐  2. INSERT row   ┌───────────────┐
  │ pg_cron  │ ──────────────────▶ │ sessions      │ ───────────────▶ │ notifications │
- │ (minute) │    (only if real)   │ status column │    trigger       │    table      │
+ │ (minute) │  flip or reminder   │ status/time   │  cron/organizer │    table      │
  └──────────┘                     └───────────────┘                  └───────┬───────┘
                                                                       3. pg_net webhook
                                                                       POST /functions/v1/
@@ -370,7 +371,7 @@ This is the most connected feature in the app — five systems passing a baton:
                                                             4. Edge Function ▼
                                                             ┌─────────────────────────┐
                                                             │ check secret header     │
-                                                            │ load ALL subscriptions  │
+                                                            │ choose push recipients  │
                                                             │ web-push → FCM/APNs     │
                                                             │ prune dead endpoints    │
                                                             └───────────┬─────────────┘
@@ -382,27 +383,27 @@ This is the most connected feature in the app — five systems passing a baton:
 
 **Hop by hop:**
 
-1. **pg_cron** (§8) flips a session's status — but *only writes* when the status genuinely changed (no spam).
-2. The same job **inserts a `notifications` row** using the agreed templates: `"{title} is live — Head over to {room}."` or `"{title} just wrapped up."`
+1. **pg_cron** (§8) flips a session's status only when it genuinely changed and also creates a deduplicated reminder about ten minutes before a session starts. Organizers may separately insert `announcement` rows through SQL; there is no announcement composer in the app.
+2. Each reminder or real status transition **inserts a `notifications` row** using the agreed templates. Every row appears in the Alerts feed.
 3. An AFTER-INSERT **database trigger** calls `net.http_post(...)` — the database itself makes an HTTP request — to the `send-push` Edge Function. The request carries a shared secret from a private table.
-4. The **Edge Function** (`supabase/functions/send-push/index.ts`) checks that secret (403 if wrong), loads every row from `push_subscriptions`, and sends a VAPID-signed Web Push to each. Endpoints that answer 404/410 (phone reset, app removed) are **pruned automatically**.
+4. The **Edge Function** (`supabase/functions/send-push/index.ts`) checks that secret (403 if wrong) and loads stored push subscriptions. If the notification links to a session, it sends a VAPID-signed Web Push only to attendees who bookmarked that session. An announcement has no session link, so it broadcasts to every stored subscription. Endpoints that answer 404/410 (phone reset, app removed) are **pruned automatically**.
 5. The **service worker** (`public/sw.js`) — a small script the browser runs in the background — receives the push and calls `showNotification(...)`. Tapping it focuses or reopens the app.
 
 **How your device subscribed in the first place:** after onboarding, the home screen shows the *"Get session alerts"* explainer. Granting permission triggers `pushManager.subscribe()` with our **VAPID public key** (a key pair that proves to push services that *we* are allowed to send), and the subscription (endpoint URL + encryption keys) is stored in `push_subscriptions` via a server action.
 
 **War story #3 — the silent 403.** The first live test produced no notification and no error. The debug trail (a temporary service-role-only RPC exposing pg_net's HTTP log) showed our own function answering **403 Forbidden**: the database trigger signed requests with a secret from the database, while the function compared against a *different* secret set earlier via CLI. Two generators, zero overlap. Fix: the function's secret is now always synced from the DB's `private.app_secrets`. Lesson: **a shared secret must have exactly one source of truth.**
 
-**Files:** `supabase/migrations/20260822140000_notifications_and_push.sql` (tables + trigger + cron extension), `supabase/functions/send-push/index.ts`, `public/sw.js`, `lib/push.ts`, `components/push/push-gate.tsx`, `app/(app)/settings/../home/actions.ts` (`savePushSubscription`).
+**Files:** `supabase/migrations/20260822140000_notifications_and_push.sql`, `supabase/migrations/20260822160000_smart_notifications.sql`, `supabase/functions/send-push/index.ts`, `public/sw.js`, `lib/push.ts`, `components/push/push-gate.tsx`, `app/(app)/home/actions.ts` (`savePushSubscription`).
 
 ---
 
 ### 5.8 Alerts Feed
 
-**What you see:** the **Alerts** tab — a reverse-chronological list of cards. Live alerts get a pulsing green **Live** badge; ended ones a dimmed **Wrapped**. Timestamps read like "2 minutes ago."
+**What you see:** the **Alerts** tab — a reverse-chronological list of cards. Live alerts get a pulsing green **Live** badge, reminders get **Soon**, announcements get a gold badge, and ended sessions get a dimmed **Wrapped** badge. Timestamps read like "2 minutes ago." The navigation icon shows a persisted unread count and opening Alerts marks the current feed as read.
 
-**Under the hood:** one query, newest-first, limited to 50; a realtime subscription (§5.5) makes new alerts appear **without refreshing**; `formatRelativeTime` (in `lib/format.ts`, built on `Intl.RelativeTimeFormat`) turns timestamps into human phrases. Cards are intentionally **static** — no click-through — because they're ephemeral event-day info.
+**Under the hood:** one query, newest-first, limited to 50; a realtime subscription (§5.5) makes new alerts appear **without refreshing**; `formatRelativeTime` (in `lib/format.ts`, built on `Intl.RelativeTimeFormat`) turns timestamps into human phrases. A session-linked card is tappable and loads the shared session modal, including bookmark and calendar actions. Announcements have no related session and remain static. The `alert_read_state` table stores one `last_read_at` timestamp per attendee; notification INSERT events refresh the badge count in real time.
 
-**Files:** `app/(app)/alerts/page.tsx`, `components/alerts/alerts-client.tsx`, `lib/supabase/queries/notifications.ts`.
+**Files:** `app/(app)/alerts/page.tsx`, `components/alerts/alerts-client.tsx`, `components/alerts-count-provider.tsx`, `components/sessions/session-modal.tsx`, `lib/supabase/queries/notifications.ts`, `lib/supabase/queries/alert-reads.ts`.
 
 ---
 
@@ -423,7 +424,7 @@ This is the most connected feature in the app — five systems passing a baton:
 
 ### 5.10 More Page — Directory and Quick Links
 
-**What you see:** three stacked sections — **Quick Links** (icon cards opening the event website/photo booth), an **Account Settings** row, and **Speakers & Sponsors**: filter chips (All · Speakers · Hosts & Panelists · Sponsors) over person cards. Tap a person → their **bio modal** (role tag, photo, organization, bio, LinkedIn button).
+**What you see:** two stacked sections — **Quick Links** (icon cards opening the event website/photo booth) and **Speakers & Sponsors**: filter chips (All · Speakers · Hosts & Panelists · Sponsors) over person cards. Tap a person → their **bio modal** (role tag, photo, organization, bio, LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
 
 **Under the hood:**
 
@@ -454,15 +455,15 @@ function matchesFilter(person: Person, filter: FilterKey): boolean {
 
 **What you see:** a form with your name and LinkedIn URL prefilled. Save → "Profile saved." and every screen reflects the change.
 
-**Under the hood:** the `updateProfile` server action validates exactly like onboarding (same functions — one source of truth for the rules), updates **your own** profile row, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data.
+**Under the hood:** the `updateProfile` server action validates exactly like onboarding (same functions — one source of truth for the rules), updates **your own** profile row, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data. The page also shows current-device push status: enabling requests permission and stores the browser subscription, while disabling unsubscribes the browser and removes its own subscription row. Unsupported or denied browsers show guidance instead of an actionable toggle. A Back button returns through in-app history and falls back to `/home`.
 
-**Files:** `app/(app)/settings/page.tsx`, `…/actions.ts`, `components/settings/settings-form.tsx`.
+**Files:** `app/(app)/settings/page.tsx`, `app/(app)/settings/actions.ts`, `components/settings/settings-form.tsx`, `components/settings/notification-settings.tsx`, `components/settings/settings-back-button.tsx`, `app/(app)/home/actions.ts`.
 
 ---
 
 ## 6. The Database in Plain English
 
-Nine tables. Here's each one's job and how they hold hands:
+Ten public tables. Here's each one's job and how they hold hands:
 
 ```mermaid
 erDiagram
@@ -474,6 +475,7 @@ erDiagram
     sessions ||--o{ my_flow_bookmarks : "saved in"
     sessions ||--o{ notifications : "generates"
     auth_users ||--o{ push_subscriptions : "registers"
+    auth_users ||--o| alert_read_state : "tracks alerts read"
     sessions ||--o{ notifications : "about (optional)"
 
     events {
@@ -520,7 +522,12 @@ erDiagram
     push_subscriptions {
       uuid id
       uuid user_id
+      text device_id
       text endpoint
+    }
+    alert_read_state {
+      uuid user_id
+      timestamptz last_read_at
     }
     quick_links {
       uuid id
@@ -543,8 +550,9 @@ erDiagram
 | `speakers_sponsors` | People: name, photo, role (speaker/host/panelist/sponsor), org, bio, LinkedIn | Organizers via SQL |
 | `session_speakers` | Join table: which person appears in which session | Organizers via SQL |
 | `my_flow_bookmarks` | Your saved sessions (user_id + session_id) | **You**, via the bookmark button |
-| `notifications` | The automatic alert log — also the push trigger | The cron job, automatically |
-| `push_subscriptions` | Your device's push endpoint + encryption keys | **You**, when enabling alerts |
+| `notifications` | The alert log and push trigger: session reminders, live/wrapped updates, and announcements | The cron job automatically; organizers insert announcements via SQL |
+| `push_subscriptions` | Your device ID, push endpoint, and encryption keys | **You**, when enabling alerts; one device can replace its endpoint without affecting other devices |
+| `alert_read_state` | Your latest Alerts-feed read timestamp, used for the unread badge | **You**, when opening Alerts |
 | `quick_links` | The More page link cards | Organizers via SQL |
 
 **Why `session_speakers` is its own table:** one speaker can appear in multiple sessions, and one panel has multiple people. A join table expresses "many-to-many" without duplicating anyone.
@@ -577,7 +585,7 @@ create policy "Users can delete own bookmarks"
 | You are… | You can… | You cannot… |
 |---|---|---|
 | Signed out | See the landing page | See *any* data at all |
-| Signed in | Read all event content; edit your own profile, bookmarks, push subscription | See another user's profile or bookmarks; write to any content table; delete anything you don't own |
+| Signed in | Read all event content; edit your own profile, bookmarks, push subscriptions, and alert read state | See another user's profile, bookmarks, subscriptions, or alert state; write to any content table; delete anything you don't own |
 
 **War story #4 — proof it works.** During testing we deliberately tried to insert a bookmark with someone else's (or no) user ID. The database rejected it with a policy violation — the app code never even got a chance to be wrong. That's RLS doing its job.
 
@@ -598,7 +606,7 @@ begin
   for flipped in
     select s.id, s.title, s.room,
            case when now() < s.start_time then 'not_started'
-                when now() > s.end_time   then 'finished'
+               when now() >= s.end_time  then 'finished'
                 else 'ongoing' end as new_status
       from public.sessions s
      where s.status is distinct from (…same case…)
@@ -616,6 +624,9 @@ begin
       values ('session_ended', flipped.title || ' just wrapped up', null, flipped.id);
     end if;
   end loop;
+  -- Finished-session bookmark rows are removed after their ended notification
+  -- is inserted; the trigger snapshots recipients before this cleanup.
+  -- A second pass writes one reminder around 10 minutes before each session.
   -- (events.status gets the same treatment)
 end; $$;
 
@@ -629,7 +640,7 @@ Read the `where s.status is distinct from (...)` clause carefully — it's the q
 - A write is exactly what Realtime (§5.5) and the notification trigger (§5.7) are waiting for → the whole machine advances itself.
 - Status can never drift more than ~60 seconds from the truth, because the job runs every minute.
 
-This is why event day needs no organizer at the controls: at 10:00 AM the keynote flips itself, your phone buzzes, the badge turns green, and nobody typed anything.
+This is why scheduled event-day behavior needs no organizer at the controls: reminders and status transitions write themselves, targeted phones receive pushes, and open clients update through Realtime. Organizers only use SQL when they intentionally need to add an announcement.
 
 ---
 
@@ -666,7 +677,7 @@ Insert/update/delete rows in the `sessions` table (Supabase dashboard → Table 
 `insert into quick_links (label, url, icon) values ('Label', 'https://…', 'globe');` — `icon` accepts `globe` or `camera` (mapped in `app/(app)/more/page.tsx`).
 
 **…add a speaker?**
-Insert into `speakers_sponsors`, then link them to sessions via `session_speakers`. Photos: put any external URL in `photo_url` (LinkedIn CDN already allowed in `next.config.ts`).
+Insert into `speakers_sponsors`, then link them to sessions via `session_speakers`. The current Next.js image configuration permits LinkedIn CDN photos (`media.licdn.com`); add another explicit `remotePatterns` host before using a different external image provider.
 
 **…replace the placeholder PWA icons?**
 Overwrite `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (or edit `scripts/generate-icons.mjs` and rerun it).

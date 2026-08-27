@@ -19,7 +19,7 @@ const perandory = localFont({
 export const metadata: Metadata = {
   title: "Sync — Student Edition",
   description:
-    "Your companion app for AWS Student Community Day Manila 2026.",
+    "Your companion app for AWS Student Community Day Mega Manila 2026.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [{ url: "/icons/icon-192.png", type: "image/png" }],

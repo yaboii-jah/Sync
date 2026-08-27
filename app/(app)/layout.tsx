@@ -12,13 +12,13 @@ export const metadata: Metadata = {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-full bg-bg-base">
-      <SideRail />
-      <div className="relative flex min-h-full flex-col pb-24 lg:ml-[232px] lg:pb-0">
-        <ToastProvider>
-          <AlertsCountProvider>{children}</AlertsCountProvider>
-        </ToastProvider>
-      </div>
-      <BottomTabs />
+      <AlertsCountProvider>
+        <SideRail />
+        <div className="relative flex min-h-full flex-col pb-24 lg:ml-[232px] lg:pb-0">
+          <ToastProvider>{children}</ToastProvider>
+        </div>
+        <BottomTabs />
+      </AlertsCountProvider>
     </div>
   );
 }

@@ -218,6 +218,8 @@ body {
   .comet,
   .modal-backdrop,
   .modal-card,
+  .push-modal-backdrop,
+  .push-modal-card,
   .toast-in {
     animation: none;
   }
@@ -278,6 +280,14 @@ body {
 
 .modal-card {
   animation: modal-card-in 0.25s ease-out;
+}
+
+.push-modal-backdrop {
+  animation: modal-backdrop-in 0.3s ease-out;
+}
+
+.push-modal-card {
+  animation: modal-card-in 0.3s ease-out;
 }
 
 @keyframes toast-in {

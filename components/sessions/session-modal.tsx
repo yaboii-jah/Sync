@@ -108,16 +108,18 @@ export function SessionModal({
           </div>
         ) : null}
 
-        <button
-          type="button"
-          onClick={() => onToggleBookmark(session.id)}
-          aria-pressed={bookmarked}
-          className={`mt-6 w-full rounded-full px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all active:scale-95 ${
-            bookmarked ? "bg-state-success" : "bg-pastel-yellow hover:bg-light-green"
-          }`}
-        >
-          {bookmarked ? "Saved to My Flow" : "Add to My Flow"}
-        </button>
+        {status !== "finished" ? (
+          <button
+            type="button"
+            onClick={() => onToggleBookmark(session.id)}
+            aria-pressed={bookmarked}
+            className={`mt-6 w-full rounded-full px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all active:scale-95 ${
+              bookmarked ? "bg-state-success" : "bg-pastel-yellow hover:bg-light-green"
+            }`}
+          >
+            {bookmarked ? "Saved to My Flow" : "Add to My Flow"}
+          </button>
+        ) : null}
 
         <div className="mt-3 grid grid-cols-2 gap-3">
           <a

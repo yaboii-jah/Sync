@@ -95,7 +95,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
         <p className="text-[0.68rem] font-bold tracking-[0.24em] text-text-muted uppercase">
-          AWS Community Day Mega Manila 2026
+          AWS Student Community Day Mega Manila 2026
         </p>
         <h1 className="lockup-sheen mt-6 font-display text-[clamp(2.75rem,14vw,7rem)] uppercase">
           Sync
