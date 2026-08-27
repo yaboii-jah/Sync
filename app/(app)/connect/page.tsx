@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { AppHeader } from "@/components/app-header";
 import { ConnectCard } from "@/components/connect/connect-card";
+import { linkedInScanTarget } from "@/lib/linkedin";
 
 export const metadata: Metadata = {
   title: "Connect — Sync",
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 
 export default async function ConnectPage() {
   const { profile } = await requireCompleteProfile();
+  const name = profile.name || "Attendee";
 
   return (
     <main className="w-full">
@@ -22,9 +24,9 @@ export default async function ConnectPage() {
         </p>
         <div className="mt-6">
           <ConnectCard
-            name={profile.name || "Attendee"}
+            name={name}
             photoUrl={profile.photo_url}
-            linkedinUrl={profile.linkedin_url ?? ""}
+            linkedinUrl={linkedInScanTarget(profile.linkedin_url, name)}
           />
         </div>
       </div>

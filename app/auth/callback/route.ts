@@ -27,13 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=oauth", origin));
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("linkedin_url")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const destination = profile?.linkedin_url ? "/home" : "/onboarding";
-
-  return NextResponse.redirect(new URL(destination, origin));
+  // Straight to the app. There is no longer a LinkedIn-URL step to detour
+  // through — see the note in `requireCompleteProfile`.
+  return NextResponse.redirect(new URL("/home", origin));
 }
