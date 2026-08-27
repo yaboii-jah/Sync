@@ -38,8 +38,10 @@ export async function requireCompleteProfile(): Promise<{
    * No LinkedIn-URL gate. The QR now resolves through `linkedInScanTarget`,
    * which falls back to a name search when the profile URL is absent, so the
    * whole app — including Connect — works from first sign-in with nothing
-   * typed. `/onboarding` still exists and is still reachable from Settings for
-   * anyone who wants the exact profile link instead of a name search.
+   * typed. Setting a URL is now an upgrade rather than a requirement: Settings
+   * carries its own LinkedIn field, and the moment an attendee fills it their
+   * QR switches from the name search to their exact profile. The `/onboarding`
+   * route still exists but nothing links to it any more.
    */
 
   return { user: result.user, profile: result.profile };

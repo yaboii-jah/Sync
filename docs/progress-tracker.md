@@ -57,6 +57,9 @@ change.
 
 ## Open Questions
 
+- `/onboarding` is now an orphaned route — removing the LinkedIn-URL gate left nothing linking to it, and Settings already carries the same field with the same validators. Either delete the route or give it a purpose; leaving it reachable only by typing the URL is the worst of the three
+- Nothing verifies that a `linkedin_url` an attendee types actually belongs to them — Settings accepts any valid `linkedin.com/in/` string, so a QR can be pointed at someone else's profile. This predates the gate removal rather than being caused by it, and the name-search fallback is the more trustworthy default since it derives from the name LinkedIn itself supplied at sign-in. Worth deciding whether that matters for an event of this size
+
 - App name: resolved — **Sync** (per project-overview.md)
 - Hosting not yet finalized — Vercel + Supabase Cloud is the assumed pairing, not a locked decision
 - Workshop registration system design (slot concurrency, QR check-in flow) still unaddressed in detail — deferred until that phase starts
