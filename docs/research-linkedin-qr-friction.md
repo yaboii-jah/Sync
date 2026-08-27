@@ -187,16 +187,90 @@ These reduce the same friction without touching the QR target:
 
 Item 1 is a plain defect against the existing spec and can proceed on its own.
 
+## Second pass — working the wall systematically
+
+The first pass found one move. A second pass, working every angle in order,
+found the one that actually matters. Recorded in full so the dead ends are not
+re-explored.
+
+**Wall re-verified against the primary source.** The first pass cited Microsoft
+Learn, whose page is stamped 2024-08-08 — old enough that the constraint could
+have expired. Fetching LinkedIn's live discovery document directly returns the
+identical set today:
+
+```
+scopes_supported:       ["openid", "profile", "email"]
+claims_supported:       [iss, aud, iat, exp, sub, name, given_name,
+                         family_name, picture, email, email_verified, locale]
+subject_types_supported: ["pairwise"]
+```
+
+Corroborated by the app's own consumption path: `handle_new_user()` in
+`20260822090000_create_profiles.sql` reads exactly `name` and `picture` from
+`raw_user_meta_data` and nothing else. The wall is real and current.
+
+**Dead ends, so nobody re-walks them:**
+
+- *Derive the slug from the photo URL.* The `picture` claim is a
+  `media.licdn.com` asset URL whose path segment is an opaque media identifier
+  (LinkedIn's own sample: `C5F03AQHqK8v7tB1HCQ`), not the member's vanity name.
+  Reasoned from the URL format, not tested against a live profile — but there is
+  no mechanism by which a CDN asset ID would encode a vanity slug.
+- *Derive it from `sub`.* Closed by `pairwise`, as above.
+- *Ask a third party.* This is LinkFinderAI. Already shipped and reverted for
+  returning real profiles for fake emails.
+
+**The finding that changes the recommendation — move 8, "ask what it is for".**
+
+**LinkedIn already ships this exact feature.** Every member has a personal QR
+code built into the LinkedIn mobile app (search bar → QR icon), free, with
+"My code" and "Scan" tabs; scanning opens the member's profile with a Connect
+button ready to tap. It is still current in 2026.
+
+So the feature as currently specified — a QR that resolves to a LinkedIn
+profile — is a **strictly worse copy of a free native feature**. Sync's version
+demands a manual URL paste first. LinkedIn's does not. Both end on the same
+profile page. The friction buys nothing at all.
+
+That reframes the problem. The question is not "how do we remove the paste".
+It is **"what can this QR do that LinkedIn's own cannot?"**
+
+Per LinkedIn's own documentation of the feature, the answer is specific:
+LinkedIn's QR offers **no scan tracking** — a member cannot learn who scanned
+them or when. Neither can Sync today, because the scan resolves entirely
+outside it.
+
+That is the whole differentiator, and it is exactly what an app-owned QR target
+unlocks. The app-owned QR is therefore not a nicer alternative to the current
+design; it is the only version of this feature that justifies its own existence.
+
+**One further property, from move 5 (change when).** With an app-owned target
+the QR works *before* the LinkedIn URL exists. An attendee can be scanned on
+arrival, add their URL that evening, and every connection made earlier gains the
+link retroactively. The current design cannot do this — no URL, no QR, no
+connection, permanently lost.
+
 ## Recommendation
 
-1. Ship the bare-slug fix now — small, no spec conflict, removes a real failure.
-2. Take the app-owned QR to jah as a **spec amendment**, not a patch. It deletes
-   the blocking step outright and turns a dead-end scan into connection data,
-   but it changes a documented success criterion and widens `profiles` read
-   access. Both belong to the owner.
+1. **Ship the bare-slug fix now.** Small, no spec conflict, removes a real
+   failure. Independent of everything below.
+2. **Put the strategic question to jah before building anything else:** if the
+   Connect QR only opens a LinkedIn profile, it duplicates a free feature
+   already in every attendee's LinkedIn app, and the mandatory paste makes
+   Sync's copy the worse of the two. Recording the scan is the one thing
+   LinkedIn's version cannot do.
+3. If that lands, the app-owned QR becomes a **spec amendment** — amending
+   `project-overview.md` Success Criteria 3 and the Networking feature, plus
+   `architecture.md` for the widened `profiles` read access and Invariant 3.
+
+**Not verified:** the photo-URL derivation was reasoned from URL structure
+rather than tested against a live profile; and whether attendees would in
+practice prefer an interstitial card over landing directly on LinkedIn is a
+product judgement no research here can settle.
 
 ## Sources
 
 - [Sign In with LinkedIn using OpenID Connect — Microsoft Learn](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2)
 - [LinkedIn OIDC discovery document](https://www.linkedin.com/oauth/.well-known/openid-configuration)
 - [LinkedIn Partner Program 2026 — approval reality](https://www.getphyllo.com/post/linkedin-api-access-in-2026-partner-program-approval-timeline-alternatives)
+- [Using a LinkedIn QR Code to Connect with Members — LinkedIn Help](https://www.linkedin.com/help/linkedin/answer/a525286/using-a-linkedin-qr-code-to-connect-with-members)
