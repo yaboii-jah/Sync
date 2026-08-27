@@ -8,12 +8,23 @@ import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 interface ConnectCardProps {
   name: string;
   photoUrl: string | null;
+  /**
+   * What the QR encodes — a Sync scan URL, not a LinkedIn one.
+   *
+   * This is the whole reason the code can exist from first sign-in. Encoding
+   * the LinkedIn URL meant the URL had to be typed before a QR could render;
+   * encoding a Sync URL means the scan resolves against data the LinkedIn
+   * sign-in already provided.
+   */
+  qrValue: string;
+  /** Where "Open my LinkedIn" points. Separate from the QR by design. */
   linkedinUrl: string;
 }
 
 export function ConnectCard({
   name,
   photoUrl,
+  qrValue,
   linkedinUrl,
 }: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
@@ -49,19 +60,21 @@ export function ConnectCard({
 
       <h2 className="mt-4 text-xl font-bold text-text-primary">{name}</h2>
       <p className="mt-1 text-sm text-text-muted">
-        Scan my code to find me on LinkedIn
+        Show this code. No setup needed.
       </p>
 
       <div className="mx-auto mt-6 w-fit rounded-2xl border border-border-default bg-pastel-yellow p-4 shadow-[0_0_24px_rgba(188,131,48,0.25)]">
         <QRCodeSVG
-          value={linkedinUrl}
+          value={qrValue}
           size={220}
           fgColor="#024056"
           bgColor="#E6FFC9"
         />
       </div>
 
-      <p className="mt-3 break-all text-xs text-text-muted">{linkedinUrl}</p>
+      <p className="mt-3 text-xs text-text-muted">
+        Scan to open my card
+      </p>
 
       <div className="mt-6 flex flex-col gap-3">
         <a
@@ -84,7 +97,7 @@ export function ConnectCard({
       </div>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">
-        <QRCodeCanvas value={linkedinUrl} size={512} fgColor="#024056" bgColor="#FFFFFF" />
+        <QRCodeCanvas value={qrValue} size={512} fgColor="#024056" bgColor="#FFFFFF" />
       </div>
     </div>
   );

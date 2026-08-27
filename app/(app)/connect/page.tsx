@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { AppHeader } from "@/components/app-header";
 import { ConnectCard } from "@/components/connect/connect-card";
@@ -11,6 +12,18 @@ export const metadata: Metadata = {
 export default async function ConnectPage() {
   const { profile } = await requireCompleteProfile();
   const name = profile.name || "Attendee";
+
+  /*
+   * The QR must carry an absolute URL — a scanner's camera has no origin to
+   * resolve a relative path against. `origin` is preferred over the env var so
+   * a preview deployment produces a code that points at itself rather than at
+   * production.
+   */
+  const headerList = await headers();
+  const origin =
+    headerList.get("origin") ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    `https://${headerList.get("host") ?? ""}`;
 
   return (
     <main className="w-full">
@@ -26,6 +39,7 @@ export default async function ConnectPage() {
           <ConnectCard
             name={name}
             photoUrl={profile.photo_url}
+            qrValue={`${origin}/u/${profile.id}`}
             linkedinUrl={linkedInScanTarget(profile.linkedin_url, name)}
           />
         </div>
