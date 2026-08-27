@@ -1,5 +1,5 @@
 const LINKEDIN_URL_PATTERN =
-  /^https?:\/\/([a-z0-9\-]+\.)?linkedin\.com\/in\/[a-z0-9\-_%]+(?:\/[^\s?#]*)*(?:\?[^\s#]*)?(?:#\S*)?\/?$/i;
+  /^https?:\/\/(www\.|m\.)?linkedin\.com\/in\/[a-z0-9\-_%]+(?:\/[^\s?#]*)*(?:\?[^\s#]*)?(?:#\S*)?\/?$/i;
 
 export function isValidLinkedInProfileUrl(value: string): boolean {
   return LINKEDIN_URL_PATTERN.test(value.trim());
