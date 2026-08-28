@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { signInWithLinkedIn } from "./actions";
 
 interface LandingPageProps {
-  searchParams: Promise<{ error?: string; code?: string; detail?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    code?: string;
+    detail?: string;
+    next?: string;
+  }>;
 }
 
 interface CometConfig {
@@ -36,7 +41,7 @@ function cometStyle(comet: CometConfig): CSSProperties {
 }
 
 export default async function LandingPage({ searchParams }: LandingPageProps) {
-  const { error, code, detail } = await searchParams;
+  const { error, code, detail, next } = await searchParams;
 
   if (code) {
     redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
@@ -113,6 +118,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         ) : null}
 
         <form action={signInWithLinkedIn} className="mt-10">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <button
             type="submit"
             className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
