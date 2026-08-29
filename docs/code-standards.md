@@ -43,4 +43,4 @@
 - `app/` — Next.js routes for attendee-facing screens (Home, Session Detail, Notifications, Connect, More, Account Settings)
 - `lib/supabase/` — Supabase client setup and typed queries/mutations for sessions, speakers, notifications, and profiles
 - `components/` — Shared UI building blocks: session cards, status badges, QR code display, tab navigation
-- `public/` + service worker config — PWA manifest, icons, and the service worker handling offline caching and push delivery
+- `public/` + service worker config — PWA manifest, icons, and the service worker handling static-asset caching and push delivery; never cache authenticated routes or Next.js route data

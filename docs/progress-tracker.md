@@ -5,7 +5,7 @@ change.
 
 ## Current Phase
 
-- Core attendee app is implemented. Documentation has been reconciled with the current app, the unread-count provider wraps both navigation variants, and the approved alert/bookmark improvements are implemented. The Edge Function and database cleanup/snapshot migrations are applied remotely; migrations `20260827151507` and `20260827155934` were marked applied after SQL Editor deployments. Remaining work is content replacement (real timeline, brand icons, photo-booth URL), synchronizing older remote-only migration files, and the production-testing punch list.
+- Core attendee app is implemented. Documentation has been reconciled with the current app, the unread-count provider wraps both navigation variants, and the approved alert/bookmark improvements are implemented. The Edge Function and database cleanup/snapshot migrations are applied remotely; migrations `20260827151507` and `20260827155934` were marked applied after SQL Editor deployments. Remaining work is content replacement (real timeline, brand icons, photo-booth URL), synchronizing remote-only migration `20260822164000`, and the production-testing punch list.
 
 ## Current Goal
 
@@ -13,6 +13,7 @@ change.
 
 ## Completed
 
+- Auth reload-loop regression fixed: authenticated users with a missing `profiles` row are now repaired through an ownership-scoped upsert instead of being redirected `/home` → `/login` while the proxy redirects them back; Supabase auth/profile query failures now reach the bounded app error screen rather than being treated as missing data. The canonical remote-only `20260822170000_profiles_insert_policy.sql` migration was restored locally. Service-worker cache `sync-shell-v1` was replaced with `sync-static-v2`, which caches only manifest/icons and never personalized routes or Next.js route data.
 - Web Share Target: `share_target` in the manifest plus `app/share/route.ts` — an attendee taps Share profile → Sync inside the LinkedIn app and their URL is saved with no typing, upgrading their QR card from a name search to a direct profile link. `extractLinkedInProfileUrl` scans `url`, `text` and `title` because Chrome documents Android usually leaving `url` empty; verified against realistic payloads including country subdomains and trailing punctuation, with company pages and posts correctly missing. A share with no profile URL redirects unchanged rather than erroring, and Connect reports the outcome so the save is not silent. Chrome-on-Android only and requires the PWA installed, so it is strictly an upgrade — the QR works without it. **Not device-tested** against the real LinkedIn share sheet
 
 - Connect QR resolves inside Sync: the code now encodes `<origin>/u/<profile id>` instead of the LinkedIn URL, and the new `/u/[id]` route renders the scanned attendee's card (photo, name, Connect on LinkedIn). `name` and `photo_url` both come from the LinkedIn sign-in, so a card is complete at first sign-in with nothing typed by anyone. Reading another attendee's card goes through `get_scan_profile(uuid)` (`20260828093000_scan_profile.sql`) — a security definer function returning exactly id/name/photo_url/linkedin_url, granted to `authenticated` only, chosen over a widened SELECT policy because RLS is row-level while column privileges are global, so a broad policy would also have exposed `pass_type`. Invariant 3 is untouched: it reads, never writes. The proxy now carries `?next=<pathname>` through the login bounce (path only, validated twice as a single-slash internal path) so a scanner who is not signed in still reaches the card instead of landing on `/home` with no idea what they scanned. Identification is exact in every case; only the hop out to LinkedIn falls back to a name search, and only for attendees who never set a URL. Verified on a dev server: signed-out `/u/abc123` → 307 → `/?next=%2Fu%2Fabc123`, hidden field present, protocol-relative value refused; build, lint and typecheck pass. **The migration has NOT been applied to the Supabase project** — `get_scan_profile` does not exist in the database yet, so `/u/[id]` will render "Card not found" until it is pushed
@@ -54,7 +55,7 @@ change.
 ## Next Up
 
 - Backlog (content, awaiting inputs): real event timeline · brand PWA icons · real photo-booth URL
-- Synchronize remote-only migrations `20260822164000` and `20260822170000` into this checkout before the next database push
+- Synchronize remote-only migration `20260822164000` into this checkout before the next database push
 - Deferred UI candidates: pull-to-refresh (Realtime already keeps data fresh)
 - Production testing punch list (user-driven, post-deploy)
 
