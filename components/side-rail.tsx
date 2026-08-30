@@ -7,6 +7,7 @@ import {
   House,
   MoreHorizontal,
   QrCode,
+  ShieldCheck,
   User,
   type LucideIcon,
 } from "lucide-react";
@@ -26,7 +27,7 @@ const RAIL_ITEMS: RailItem[] = [
   { label: "More", icon: MoreHorizontal, href: "/more" },
 ];
 
-export function SideRail() {
+export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const { unreadCount } = useAlertsCount();
 
@@ -82,6 +83,15 @@ export function SideRail() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-1 px-3 pb-6">
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-pastel-yellow transition-colors hover:bg-accent-primary/20"
+          >
+            <ShieldCheck className="h-5 w-5" />
+            <span className="text-sm font-bold">Admin view</span>
+          </Link>
+        ) : null}
         <Link
           href="/settings"
           aria-current={pathname.startsWith("/settings") ? "page" : undefined}

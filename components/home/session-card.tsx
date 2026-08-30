@@ -3,7 +3,8 @@
 import { Bookmark } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
-  displayStatus,
+  effectiveSessionStatus,
+  formatRelativeTime,
   formatTimeRange,
   relativeStartLabel,
 } from "@/lib/format";
@@ -24,10 +25,18 @@ export function SessionCard({
   onToggleBookmark,
   onOpen,
 }: SessionCardProps) {
-  const status = displayStatus(session.start_time, session.end_time, now);
+  const status = effectiveSessionStatus(session, now);
   const ongoing = status === "ongoing";
   const finished = status === "finished";
-  const relative = relativeStartLabel(session.start_time, now);
+  const relative =
+    session.status_override === "finished" && session.actual_ended_at
+      ? `ended ${formatRelativeTime(session.actual_ended_at, now)}`
+      : relativeStartLabel(
+          session.status_override === "ongoing" && session.actual_started_at
+            ? session.actual_started_at
+            : session.start_time,
+          now,
+        );
 
   return (
     <article
@@ -73,6 +82,11 @@ export function SessionCard({
           {session.title}
         </h3>
         <p className="mt-1 text-sm text-text-muted">{session.room ?? "TBA"}</p>
+        {session.status_override ? (
+          <p className="mt-2 text-xs font-bold tracking-wide text-pastel-yellow uppercase">
+            Live status updated by event operations
+          </p>
+        ) : null}
         {session.speakers.length > 0 ? (
           <p className="mt-2 text-sm text-text-muted">
             {session.speakers.map((speaker) => speaker.name).join(" · ")}

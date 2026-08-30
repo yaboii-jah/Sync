@@ -16,7 +16,7 @@ import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/acti
 import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
 import { useNow } from "@/hooks/use-now";
 import { useToast } from "@/components/toast/toast-provider";
-import { displayStatus } from "@/lib/format";
+import { effectiveSessionStatus } from "@/lib/format";
 import { EmptyComet } from "@/components/empty-states";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
@@ -43,16 +43,16 @@ export function HomeClient({
     () => new Set(initialBookmarks),
   );
   const [view, setView] = useState<View>("all");
-  const [activeSession, setActiveSession] = useState<SessionWithSpeakers | null>(
-    null,
-  );
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const now = useNow(1000);
   const { toast } = useToast();
+  const activeSession =
+    sessions.find((session) => session.id === activeSessionId) ?? null;
 
   const liveSession =
     sessions.find(
-      (session) => displayStatus(session.start_time, session.end_time, now) === "ongoing",
+      (session) => effectiveSessionStatus(session, now) === "ongoing",
     ) ?? null;
 
   async function refetchProgramFlow() {
@@ -112,7 +112,7 @@ export function HomeClient({
       : sessions.filter(
           (session) =>
             bookmarks.has(session.id) &&
-            displayStatus(session.start_time, session.end_time, now) !== "finished",
+            effectiveSessionStatus(session, now) !== "finished",
         );
 
   const segmentedButtonClass = (active: boolean) =>
@@ -172,7 +172,7 @@ export function HomeClient({
                   bookmarked={bookmarks.has(session.id)}
                   now={now}
                   onToggleBookmark={handleToggleBookmark}
-                  onOpen={setActiveSession}
+                  onOpen={(session) => setActiveSessionId(session.id)}
                 />
               ))}
               {visible.length === 0 ? (
@@ -194,7 +194,7 @@ export function HomeClient({
           session={activeSession}
           bookmarked={bookmarks.has(activeSession.id)}
           onToggleBookmark={handleToggleBookmark}
-          onClose={() => setActiveSession(null)}
+          onClose={() => setActiveSessionId(null)}
         />
       ) : null}
 

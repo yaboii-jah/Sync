@@ -5,7 +5,7 @@
 - Keep modules small and single-purpose — a session card component shouldn't also know how to format notification text
 - Fix root causes, don't layer workarounds — if Realtime data arrives in the wrong shape, fix the query or the schema, don't patch it in the UI layer
 - Don't mix unrelated concerns in one component or route — auth logic, data fetching, and presentation stay separated
-- Don't build toward deferred scope (workshop registration, admin tooling) — nothing in the current codebase should assume those exist yet
+- Don't build toward deferred scope such as workshop registration or general content management; admin work remains limited to the approved event-operations surface
 
 ## TypeScript
 
@@ -29,6 +29,7 @@
 
 - Validate and parse request input before any logic runs
 - Enforce auth before any mutation — no route trusts a client-supplied user ID
+- Every admin mutation must verify the database allowlist, use a request UUID for idempotency, and append its audit record transactionally
 - Return consistent, predictable response shapes across all routes
 - Reserve custom routes and Supabase Edge Functions for what RLS and the Supabase client can't handle directly — primarily, sending a Web Push notification when a session's status changes
 
@@ -37,10 +38,11 @@
 - Metadata (sessions, speakers/sponsors, notifications, profiles) belongs in the Supabase Postgres database
 - Profile and speaker photos are referenced by external URL (e.g. from LinkedIn) — no blob storage needed unless that changes later
 - Don't store large or generated content directly in the database
+- Administrators do not receive broad table-write grants; privileged operations use narrowly granted functions with explicit allowlist checks
 
 ## File Organization
 
-- `app/` — Next.js routes for attendee-facing screens (Home, Session Detail, Notifications, Connect, More, Account Settings)
+- `app/` — separate route groups for attendee-facing screens and the protected admin operations workspace
 - `lib/supabase/` — Supabase client setup and typed queries/mutations for sessions, speakers, notifications, and profiles
 - `components/` — Shared UI building blocks: session cards, status badges, QR code display, tab navigation
 - `public/` + service worker config — PWA manifest, icons, and the service worker handling static-asset caching and push delivery; never cache authenticated routes or Next.js route data

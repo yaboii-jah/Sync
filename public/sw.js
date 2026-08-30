@@ -64,18 +64,24 @@ self.addEventListener("push", (event) => {
       body: payload.body || "",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
+      data: { url: payload.url || "/alerts" },
+      tag: payload.id || undefined,
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const targetUrl = event.notification.data?.url || "/alerts";
   event.waitUntil(
     self.clients.matchAll({ type: "window" }).then((clients) => {
       for (const client of clients) {
+        if ("navigate" in client) {
+          return client.navigate(targetUrl).then(() => client.focus());
+        }
         if ("focus" in client) return client.focus();
       }
-      return self.clients.openWindow("/home");
+      return self.clients.openWindow(targetUrl);
     }),
   );
 });

@@ -4,8 +4,9 @@ import { useEffect } from "react";
 import { CalendarPlus, X } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
-  displayStatus,
+  effectiveSessionStatus,
   formatManilaDate,
+  formatRelativeTime,
   formatTimeRange,
 } from "@/lib/format";
 import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
@@ -39,7 +40,7 @@ export function SessionModal({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const status = displayStatus(session.start_time, session.end_time);
+  const status = effectiveSessionStatus(session);
 
   return (
     <div
@@ -75,6 +76,17 @@ export function SessionModal({
           </span>
         </div>
         <p className="mt-1 text-sm text-text-muted">{session.room ?? "TBA"}</p>
+        {session.status_override ? (
+          <p className="mt-2 text-xs font-bold tracking-wide text-pastel-yellow uppercase">
+            Live status updated by event operations
+            {session.status_override === "ongoing" && session.actual_started_at
+              ? ` · started ${formatRelativeTime(session.actual_started_at)}`
+              : null}
+            {session.status_override === "finished" && session.actual_ended_at
+              ? ` · ended ${formatRelativeTime(session.actual_ended_at)}`
+              : null}
+          </p>
+        ) : null}
 
         {session.description ? (
           <p className="mt-4 leading-relaxed text-text-primary/90">

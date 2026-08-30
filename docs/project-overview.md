@@ -2,7 +2,7 @@
 
 ## Overview
 
-Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based LinkedIn networking, installable to a phone's home screen like a native app. It's an enhanced version of the original Sync app, rebuilt with LinkedIn sign-in and no admin-side management overhead.
+Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based LinkedIn networking, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
 
 ## Goals
 
@@ -10,6 +10,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 2. Surface session status (not started / ongoing / finished) in real time, with zero manual posting required from anyone
 3. Let an attendee generate and share a LinkedIn networking QR code without retyping their profile URL more than once
 4. Make the app installable as a PWA so it behaves like a native app from the home screen
+5. Give approved event operators a secure, auditable way to correct live program state and communicate with attendees
 
 ## Core User Flow
 
@@ -54,6 +55,15 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 ### Account Settings
 - View/update name and LinkedIn profile URL from the authenticated header or desktop navigation rail
 
+### Admin Operations
+- Database-allowlisted administrators switch between attendee and admin views in the same app
+- Responsive operations dashboard for current program state, attendee reachability, recent sends, and failures
+- Immediate title/body notifications sent to everyone or explicitly selected attendees
+- Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
+- Manual Start, End, and Resume Auto controls persist against schedule automation; manual timestamps become the attendee-facing live state
+- Searchable read-only attendee directory, notification history, delivery results, and immutable mutation audit log
+- `profiles.pass_type` remains dormant and is not used for targeting, authorization, filtering, or dashboard metrics
+
 ### Platform
 - Installable as a PWA (home screen icon, standalone app-like experience)
 
@@ -70,12 +80,14 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Speaker/sponsor directory
 - Quick links to external providers
 - PWA installability
+- Protected event-operations admin workspace
 
 ### Out of Scope
 
 - Workshop registration and slot management (deferred to a later phase)
-- Admin/organizer interface — session, speaker, and notification data is managed directly in the database, not through a built app
-- An in-app announcement composer or other organizer/admin posting interface
+- Session creation, schedule-time editing, speaker management, and other content-management tooling
+- Scheduled notifications, drafts, resend, external notification links, and multi-admin approval
+- Attendee editing, access suspension, deletion, or pass-type management
 
 ## Success Criteria
 
@@ -84,3 +96,4 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 3. A user can generate a networking QR code that correctly resolves to their LinkedIn profile
 4. A user can install the app to a device home screen and launch it as a standalone PWA
 5. A user can browse the full speaker/sponsor directory and open an entry's LinkedIn profile when one is provided
+6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override

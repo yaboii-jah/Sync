@@ -69,6 +69,7 @@ Not yet decided. If a library is adopted later (e.g. shadcn/ui), its default the
 - **Modals/overlays** (session detail, speaker bio): centered, generously rounded, backdrop blur, a glowing hairline border in place of a hard modal edge.
 - **Connect page**: the networking QR lives on a dedicated `/connect` page (not an overlay) — QR rendered brand-tinted, dark-teal modules on a pale-lime tile with gold hairline border.
 - **Desktop (`≥1024px`)**: the bottom tab bar yields to a 232px labeled left rail — dark-teal ground, gold hairline right border, Perandory wordmark on top, sign-out pinned at the bottom. The home screen splits into a sticky hero pane (~38%, stays pinned while the schedule scrolls) beside the schedule list; content is capped at 1280px and centered on ultrawides. The mobile layout below the breakpoint is untouched.
+- **Admin operations**: `/admin` uses a distinct control-room shell rather than attendee tabs: compact horizontal navigation on mobile and a 256px operations rail on desktop. Dense metrics and status controls remain dark-teal with gold hairlines; success/error colors carry operational meaning, and every destructive or broadcast action requires a confirmation surface.
 
 ## Icons
 

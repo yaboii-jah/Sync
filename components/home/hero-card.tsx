@@ -1,7 +1,11 @@
 "use client";
 
 import type { EventInfo, SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
-import { formatManilaDate, formatTimeRange } from "@/lib/format";
+import {
+  effectiveSessionStatus,
+  formatManilaDate,
+  formatTimeRange,
+} from "@/lib/format";
 
 interface HeroCardProps {
   event: EventInfo;
@@ -23,7 +27,11 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
   const startsAt = new Date(event.starts_at).getTime();
   const endsAt = new Date(event.ends_at).getTime();
 
-  if (now >= endsAt) {
+  const current = sessions.find(
+    (session) => effectiveSessionStatus(session, now) === "ongoing",
+  );
+
+  if (!current && now >= endsAt) {
     return (
       <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
         <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
@@ -39,12 +47,6 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
     );
   }
 
-  const current = sessions.find((session) => {
-    const start = new Date(session.start_time).getTime();
-    const end = new Date(session.end_time).getTime();
-    return now >= start && now < end;
-  });
-
   if (current) {
     return (
       <div className="relative rounded-2xl border border-border-default bg-bg-base px-5 py-6 shadow-[0_0_28px_rgba(188,131,48,0.35)]">
@@ -57,12 +59,21 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
         <p className="mt-2 text-sm text-text-muted">
           {current.room ?? "TBA"} · {formatTimeRange(current.start_time, current.end_time)}
         </p>
+        {current.status_override && current.actual_started_at ? (
+          <p className="mt-2 text-xs font-bold tracking-wide text-pastel-yellow uppercase">
+            Started live at {new Intl.DateTimeFormat("en-PH", {
+              hour: "numeric",
+              minute: "2-digit",
+              timeZone: "Asia/Manila",
+            }).format(new Date(current.actual_started_at))}
+          </p>
+        ) : null}
       </div>
     );
   }
 
   const next = sessions.find(
-    (session) => new Date(session.start_time).getTime() > now,
+    (session) => effectiveSessionStatus(session, now) === "not_started",
   );
 
   if (next && now >= startsAt) {
@@ -76,6 +87,22 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
         </p>
         <p className="mt-2 text-sm text-text-muted">
           {formatTimeRange(next.start_time, next.end_time)} · {next.room ?? "TBA"}
+        </p>
+      </div>
+    );
+  }
+
+  if (now >= startsAt) {
+    return (
+      <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
+        <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
+          Program update
+        </p>
+        <p className="mt-3 font-display text-2xl text-text-primary uppercase">
+          No session is live
+        </p>
+        <p className="mt-2 text-sm text-text-muted">
+          Check the program flow for the latest event status.
         </p>
       </div>
     );

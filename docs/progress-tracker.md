@@ -5,14 +5,15 @@ change.
 
 ## Current Phase
 
-- Core attendee app is implemented. Documentation has been reconciled with the current app, the unread-count provider wraps both navigation variants, and the approved alert/bookmark improvements are implemented. The Edge Function and database cleanup/snapshot migrations are applied remotely; migrations `20260827151507` and `20260827155934` were marked applied after SQL Editor deployments. Remaining work is content replacement (real timeline, brand icons, photo-booth URL), synchronizing remote-only migration `20260822164000`, and the production-testing punch list.
+- Admin operations implementation: the attendee app remains complete while a protected `/admin` workspace, recipient-scoped notifications, durable delivery reporting, and persistent live-session overrides are being added.
 
 ## Current Goal
 
-- Prepare the implemented attendee app for production by replacing placeholder event content, finalizing deployment configuration, and completing device/browser acceptance testing.
+- Deliver the approved event-operations scope without weakening attendee RLS: allowlisted admin access, immediate broadcast/selected notifications, session Start/End/Resume Auto, read-only attendee search, operational dashboard, notification history/results, and mutation audit history. Pass type remains dormant.
 
 ## Completed
 
+- Admin operations application layer: updated scope/architecture invariants; restored canonical migration `20260822164000`; added forward migration `20260830133303_admin_operations.sql` with database allowlist, recipient-scoped Alerts RLS, immutable audience snapshots, durable dispatch/device results, persistent session overrides, idempotent audited admin RPCs, database-time alert reads, retry scheduling, and dormant pass-type protection. Added separate responsive `/admin` shell with dashboard, immediate everyone/selected composer and confirmation, polling notification results, Start/End/Resume Auto controls, read-only attendee search, audit history, and attendee/admin switches. Attendee Home now honors manual status and actual action timestamps; the Edge Function atomically claims canonical dispatches, fences stale attempts, paginates subscriptions, sends with bounded concurrency, records push-service outcomes, and opens `/alerts`. Transport retries reuse frozen request IDs, and session detail state follows Realtime refreshes. Remote migrations `20260828093000` and `20260830133303` are applied, `20260830150000_fix_admin_session_status.sql` fixes the database-lint ambiguity, `database.types.ts` is regenerated, `send-push` is deployed and active, and `jahmelldorias17@gmail.com` is provisioned as the first admin. Database lint, application lint, production build, service-worker syntax, and diff checks pass. Full authenticated browser, RLS, and real-device push acceptance remains user-driven.
 - Auth reload-loop regression fixed: authenticated users with a missing `profiles` row are now repaired through an ownership-scoped upsert instead of being redirected `/home` → `/login` while the proxy redirects them back; Supabase auth/profile query failures now reach the bounded app error screen rather than being treated as missing data. The canonical remote-only `20260822170000_profiles_insert_policy.sql` migration was restored locally. Service-worker cache `sync-shell-v1` was replaced with `sync-static-v2`, which caches only manifest/icons and never personalized routes or Next.js route data.
 - Web Share Target: `share_target` in the manifest plus `app/share/route.ts` — an attendee taps Share profile → Sync inside the LinkedIn app and their URL is saved with no typing, upgrading their QR card from a name search to a direct profile link. `extractLinkedInProfileUrl` scans `url`, `text` and `title` because Chrome documents Android usually leaving `url` empty; verified against realistic payloads including country subdomains and trailing punctuation, with company pages and posts correctly missing. A share with no profile URL redirects unchanged rather than erroring, and Connect reports the outcome so the save is not silent. Chrome-on-Android only and requires the PWA installed, so it is strictly an upgrade — the QR works without it. **Not device-tested** against the real LinkedIn share sheet
 
@@ -50,18 +51,18 @@ change.
 
 ## In Progress  
 
-- None. Auth feature unit fully verified end-to-end against the live project (LinkedIn provider configured and live). The only unautomatable step is the human LinkedIn consent screen — everything before and after it was verified programmatically.
+- Post-deployment authenticated browser and real-device acceptance testing for the admin operations unit.
 
 ## Next Up
 
 - Backlog (content, awaiting inputs): real event timeline · brand PWA icons · real photo-booth URL
-- Synchronize remote-only migration `20260822164000` into this checkout before the next database push
+- Sign in with the provisioned admin account, exercise `/admin`, send a self-targeted test alert, and execute the admin RLS/idempotency/device tests
 - Deferred UI candidates: pull-to-refresh (Realtime already keeps data fresh)
 - Production testing punch list (user-driven, post-deploy)
 
 ## Open Questions
 
-- **`supabase/migrations/20260828093000_scan_profile.sql` still needs pushing to the Supabase project**, and `database.types.ts` regenerating with the CLI afterwards so `getScanProfile` can drop its cast. Until the migration is applied every scanned card renders "Card not found"
+- `database.types.ts` now includes the deployed scan-card RPC; the remaining scan-card check is a real signed-in browser test
 - Should a scan be recorded, so an attendee leaves the event with a list of who they met? The QR now resolves inside Sync, which makes this possible for the first time — it was never possible while the code pointed at LinkedIn. It needs a new table and would touch Invariant 3, so it is a deliberate scope decision rather than a follow-on
 
 - `/onboarding` is now an orphaned route — removing the LinkedIn-URL gate left nothing linking to it, and Settings already carries the same field with the same validators. Either delete the route or give it a purpose; leaving it reachable only by typing the URL is the worst of the three
@@ -84,8 +85,8 @@ change.
 
 - **Next.js + Supabase, with PWA integration** — chosen for a single stack covering frontend, auth, database, and realtime, plus an installable home-screen experience for attendees
 - **LinkedIn OAuth via Supabase's `linkedin_oidc` provider for sign-in** — auto-fills name, email, and photo; the LinkedIn profile URL still needs a one-time manual entry because standard OIDC scopes don't expose it, and full profile API access requires LinkedIn Partner Program approval
-- **No custom admin/organizer interface** — session, speaker, and notification data is managed directly in the Supabase database instead of through a built admin app, to keep the initial build focused on the attendee-facing experience
-- **Smart notification model** — pg_cron creates session reminders and live/wrapped alerts; all notification rows appear in the Alerts feed; session-linked pushes target attendees who bookmarked that session; organizer-inserted SQL announcements broadcast to every stored subscription. No in-app organizer posting interface is built.
+- **Allowlisted admin operations workspace** — `/admin` provides event-day notification, delivery, session-state, attendee lookup, and audit tools; authorization is enforced by `admin_users`, admin-only RPCs, and RLS rather than route visibility alone.
+- **Smart notification model** — pg_cron creates session reminders and live/wrapped alerts; all eligible notification rows appear in Alerts; automated session alerts target snapshotted bookmarkers, while admins can immediately send to everyone or selected attendees. Every push dispatch records recipient/device outcomes and retries bounded transient failures.
 - **Workshop registration deferred to a later phase** — the 3-workshop, 39-slot, QR-check-in system (with a decided ~24h Pro-pass early-access window) is out of scope for the initial build
 - **Two-layer realtime design** — Supabase Realtime (Postgres change subscriptions) keeps the app in sync while open; Web Push API via the service worker handles notifications when the app is closed. These are treated as separate systems, not one feature
 

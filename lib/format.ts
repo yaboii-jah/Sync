@@ -50,6 +50,26 @@ export function displayStatus(
   return "ongoing";
 }
 
+export function effectiveSessionStatus(
+  session: {
+    status: string;
+    status_override: string | null;
+    start_time: string;
+    end_time: string;
+  },
+  now: number = Date.now(),
+): DisplayStatus {
+  if (
+    session.status_override &&
+    (session.status === "not_started" ||
+      session.status === "ongoing" ||
+      session.status === "finished")
+  ) {
+    return session.status;
+  }
+  return displayStatus(session.start_time, session.end_time, now);
+}
+
 export function relativeStartLabel(
   startIso: string,
   now: number = Date.now(),

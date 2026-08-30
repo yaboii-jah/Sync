@@ -44,9 +44,9 @@ Attendees install Sync on their phone like a native app. During the event it ans
 - **Who is this person I just met?** → the Connect QR card
 - **Who's speaking today?** → the More directory
 
-It is **not** a social network, not a ticketing system, and has **no admin panel** — all event content lives directly in the Supabase database, managed by the organizers with plain SQL.
+It is **not** a social network or ticketing system. General event content still lives directly in Supabase, while a narrow allowlisted `/admin` control room handles event-day alerts, live status correction, delivery monitoring, attendee lookup, and mutation auditing.
 
-The name of the game: **zero manual posting on event day** for scheduled activity. Session statuses, reminders, and live/wrapped notifications happen automatically because they're derived from the schedule's timestamps; organizers can intentionally add announcements through SQL.
+The name of the game remains automation-first: session statuses, reminders, and live/wrapped notifications derive from schedule timestamps. When the real event drifts, an admin Start or End override remains authoritative until Resume Auto, and approved operators can send immediate audited alerts from the app.
 
 ---
 
@@ -383,11 +383,11 @@ This is the most connected feature in the app — five systems passing a baton:
 
 **Hop by hop:**
 
-1. **pg_cron** (§8) flips a session's status only when it genuinely changed and also creates a deduplicated reminder about ten minutes before a session starts. Organizers may separately insert `announcement` rows through SQL; there is no announcement composer in the app.
-2. Each reminder or real status transition **inserts a `notifications` row** using the agreed templates. Every row appears in the Alerts feed.
-3. An AFTER-INSERT **database trigger** calls `net.http_post(...)` — the database itself makes an HTTP request — to the `send-push` Edge Function. The request carries a shared secret from a private table.
-4. The **Edge Function** (`supabase/functions/send-push/index.ts`) checks that secret (403 if wrong) and loads stored push subscriptions. If the notification links to a session, it sends a VAPID-signed Web Push only to attendees who bookmarked that session. An announcement has no session link, so it broadcasts to every stored subscription. Endpoints that answer 404/410 (phone reset, app removed) are **pruned automatically**.
-5. The **service worker** (`public/sw.js`) — a small script the browser runs in the background — receives the push and calls `showNotification(...)`. Tapping it focuses or reopens the app.
+1. **pg_cron** (§8) flips only non-overridden sessions and creates deduplicated reminders. Admin Start/End actions use the same transactional notification path when the operator confirms a send.
+2. Every notification snapshots its recipients. Automatic session alerts snapshot bookmarkers; admin alerts snapshot everyone or explicit attendee IDs. Only those recipients can read the row in Alerts.
+3. An AFTER-INSERT trigger creates a durable dispatch and calls `send-push` with only the notification ID and a shared secret.
+4. The Edge Function claims that dispatch once, loads canonical recipients/subscriptions, sends in bounded batches, records accepted/failed/pruned device outcomes, counts recipients without push, and prunes 404/410 endpoints.
+5. The service worker displays the push and opens `/alerts`. Admin “accepted” results mean the push service accepted the message, not that the device visibly displayed it.
 
 **How your device subscribed in the first place:** after onboarding, the home screen shows the *"Get session alerts"* explainer. Granting permission triggers `pushManager.subscribe()` with our **VAPID public key** (a key pair that proves to push services that *we* are allowed to send), and the subscription (endpoint URL + encryption keys) is stored in `push_subscriptions` via a server action.
 
@@ -401,7 +401,7 @@ This is the most connected feature in the app — five systems passing a baton:
 
 **What you see:** the **Alerts** tab — a reverse-chronological list of cards. Live alerts get a pulsing green **Live** badge, reminders get **Soon**, announcements get a gold badge, and ended sessions get a dimmed **Wrapped** badge. Timestamps read like "2 minutes ago." The navigation icon shows a persisted unread count and opening Alerts marks the current feed as read.
 
-**Under the hood:** one query, newest-first, limited to 50; a realtime subscription (§5.5) makes new alerts appear **without refreshing**; `formatRelativeTime` (in `lib/format.ts`, built on `Intl.RelativeTimeFormat`) turns timestamps into human phrases. A session-linked card is tappable and loads the shared session modal, including bookmark and calendar actions. Announcements have no related session and remain static. The `alert_read_state` table stores one `last_read_at` timestamp per attendee; notification INSERT events refresh the badge count in real time.
+**Under the hood:** one recipient-filtered query, newest-first, limited to 50; RLS requires a matching immutable `notification_recipients` row. Realtime makes new permitted alerts appear without refreshing. Session-linked cards still open the shared modal, while announcements remain static. `alert_read_state` uses database time so device-clock skew cannot incorrectly mark future alerts as read.
 
 **Files:** `app/(app)/alerts/page.tsx`, `components/alerts/alerts-client.tsx`, `components/alerts-count-provider.tsx`, `components/sessions/session-modal.tsx`, `lib/supabase/queries/notifications.ts`, `lib/supabase/queries/alert-reads.ts`.
 
@@ -544,13 +544,13 @@ erDiagram
 
 | Table | Job | Who writes it |
 |---|---|---|
-| `profiles` | Your public identity: name, photo, canonical LinkedIn URL, pass type | Created by a trigger on signup; **you** edit it in Settings |
+| `profiles` | Your identity: name, photo, canonical LinkedIn URL; pass type remains dormant | Created by a trigger on signup; **you** edit supported fields in Settings |
 | `events` | The event itself — one row: name, venue, time span, status | Organizers via SQL; status auto-flips |
-| `sessions` | Every slot in the program: title, description, room, times, status | Organizers via SQL; status auto-flips |
+| `sessions` | Every slot plus effective status, manual override, and actual action timestamps | Schedule automation or audited admin Start/End/Resume Auto |
 | `speakers_sponsors` | People: name, photo, role (speaker/host/panelist/sponsor), org, bio, LinkedIn | Organizers via SQL |
 | `session_speakers` | Join table: which person appears in which session | Organizers via SQL |
 | `my_flow_bookmarks` | Your saved sessions (user_id + session_id) | **You**, via the bookmark button |
-| `notifications` | The alert log and push trigger: session reminders, live/wrapped updates, and announcements | The cron job automatically; organizers insert announcements via SQL |
+| `notifications` | Alert content, source, audience metadata, and dispatch trigger | Schedule automation or audited admin functions |
 | `push_subscriptions` | Your device ID, push endpoint, and encryption keys | **You**, when enabling alerts; one device can replace its endpoint without affecting other devices |
 | `alert_read_state` | Your latest Alerts-feed read timestamp, used for the unread badge | **You**, when opening Alerts |
 | `quick_links` | The More page link cards | Organizers via SQL |

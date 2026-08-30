@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
+import { markAlertsReadAtDatabaseTime } from "./admin";
 
 export async function getLastReadAt(
   client: SupabaseClient<Database>,
@@ -30,15 +31,12 @@ export async function getUnreadAlertCount(
 export async function markAlertsRead(
   client: SupabaseClient<Database>,
 ): Promise<void> {
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  if (!user) return;
-
-  const { error } = await client.from("alert_read_state").upsert({
-    user_id: user.id,
-    last_read_at: new Date().toISOString(),
-  });
-
-  if (error) console.error("[alerts] mark-read failed:", error.message);
+  try {
+    await markAlertsReadAtDatabaseTime(client);
+  } catch (error) {
+    console.error(
+      "[alerts] mark-read failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
 }

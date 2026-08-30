@@ -1,75 +1,48 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 import webpush from "npm:web-push@3.6.7";
 
 const VAPID_SUBJECT = "mailto:jahmelldorias17@gmail.com";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SEND_CONCURRENCY = 20;
+const PAGE_SIZE = 1000;
 
-interface NotificationPayload {
+interface WebhookPayload {
   id: string;
-  type: "session_live" | "session_ended" | "session_reminder" | "announcement";
-  title: string;
-  body: string | null;
-  related_session_id: string | null;
-  target_user_ids: string[] | null;
 }
 
 interface SubscriptionRow {
   id: string;
   user_id: string;
+  device_id: string;
   endpoint: string;
   p256dh: string;
   auth: string;
 }
 
-const NOTIFICATION_TYPES = new Set<NotificationPayload["type"]>([
-  "session_live",
-  "session_ended",
-  "session_reminder",
-  "announcement",
-]);
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+interface DeliveryResult {
+  notification_id: string;
+  user_id: string;
+  subscription_id: string;
+  device_id: string;
+  status: "accepted" | "failed" | "pruned";
+  status_code: number | null;
+  error: string | null;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseNotificationPayload(value: unknown): NotificationPayload | null {
-  if (!isRecord(value)) return null;
-
-  const { id, type, title, body, related_session_id, target_user_ids } = value;
-  if (
-    typeof id !== "string" ||
-    !UUID_PATTERN.test(id) ||
-    typeof type !== "string" ||
-    !NOTIFICATION_TYPES.has(type as NotificationPayload["type"]) ||
-    typeof title !== "string" ||
-    title.trim().length === 0 ||
-    (body !== null && typeof body !== "string") ||
-    (related_session_id !== null &&
-      (typeof related_session_id !== "string" ||
-        !UUID_PATTERN.test(related_session_id)))
-  ) {
+function parsePayload(value: unknown): WebhookPayload | null {
+  if (!isRecord(value) || typeof value.id !== "string" || !UUID_PATTERN.test(value.id)) {
     return null;
   }
+  return { id: value.id };
+}
 
-  if (
-    target_user_ids !== undefined &&
-    target_user_ids !== null &&
-    (!Array.isArray(target_user_ids) ||
-      target_user_ids.some(
-        (userId) => typeof userId !== "string" || !UUID_PATTERN.test(userId),
-      ))
-  ) {
-    return null;
-  }
-
-  return {
-    id,
-    type: type as NotificationPayload["type"],
-    title,
-    body: body as string | null,
-    related_session_id: related_session_id as string | null,
-    target_user_ids: (target_user_ids as string[] | null | undefined) ?? null,
-  };
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message.slice(0, 500);
+  return String(error).slice(0, 500);
 }
 
 Deno.serve(async (req) => {
@@ -89,7 +62,7 @@ Deno.serve(async (req) => {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const payload = parseNotificationPayload(input);
+  const payload = parsePayload(input);
   if (!payload) {
     return new Response("Invalid notification payload", { status: 400 });
   }
@@ -104,84 +77,208 @@ Deno.serve(async (req) => {
   }
 
   webpush.setVapidDetails(VAPID_SUBJECT, vapidPublicKey, vapidPrivateKey);
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
 
-  const admin = createClient(
-    supabaseUrl,
-    serviceRoleKey,
-    { auth: { persistSession: false } },
-  );
+  const { data: dispatch, error: dispatchError } = await admin
+    .from("notification_dispatches")
+    .select("status, attempt_count")
+    .eq("notification_id", payload.id)
+    .maybeSingle();
 
-  const { data: subscriptions, error } = await admin
-    .from("push_subscriptions")
-    .select("id, user_id, endpoint, p256dh, auth");
+  if (dispatchError || !dispatch) {
+    console.error("dispatch not found:", dispatchError?.message ?? payload.id);
+    return new Response("Dispatch not found", { status: 404 });
+  }
 
-  if (error) {
-    console.error("failed to load subscriptions:", error.message);
+  if (dispatch.status !== "pending") {
+    return Response.json({ notification_id: payload.id, status: dispatch.status });
+  }
+
+  const claimedAttempt = dispatch.attempt_count + 1;
+  const { data: claimed, error: claimError } = await admin
+    .from("notification_dispatches")
+    .update({
+      status: "running",
+      started_at: new Date().toISOString(),
+      attempt_count: claimedAttempt,
+      last_error: null,
+    })
+    .eq("notification_id", payload.id)
+    .eq("status", "pending")
+    .eq("attempt_count", dispatch.attempt_count)
+    .select("notification_id")
+    .maybeSingle();
+
+  if (claimError) {
+    console.error("failed to claim dispatch:", claimError.message);
     return new Response("Internal error", { status: 500 });
   }
-
-  let recipients: SubscriptionRow[] = (subscriptions ?? []) as SubscriptionRow[];
-
-  // The trigger snapshots session bookmarkers before finished rows are deleted.
-  // The bookmark lookup remains as a compatibility fallback for older payloads.
-  if (payload.target_user_ids !== null) {
-    const targetUserIds = new Set(payload.target_user_ids);
-    recipients = recipients.filter((sub) => targetUserIds.has(sub.user_id));
-  } else if (payload.related_session_id) {
-    const { data: bookmarks, error: bookmarkError } = await admin
-      .from("my_flow_bookmarks")
-      .select("user_id")
-      .eq("session_id", payload.related_session_id);
-
-    if (bookmarkError) {
-      console.error("failed to load bookmarks:", bookmarkError.message);
-      return new Response("Internal error", { status: 500 });
-    }
-
-    const bookmarkedUserIds = new Set((bookmarks ?? []).map((row) => row.user_id));
-    recipients = recipients.filter((sub) => bookmarkedUserIds.has(sub.user_id));
+  if (!claimed) {
+    return Response.json({ notification_id: payload.id, status: "already_claimed" });
   }
 
-  const body = JSON.stringify({
-    title: payload.title,
-    body: payload.body ?? "",
-  });
+  try {
+    const { data: notification, error: notificationError } = await admin
+      .from("notifications")
+      .select("title, body")
+      .eq("id", payload.id)
+      .single();
 
-  const results = await Promise.allSettled(
-    recipients.map((sub) =>
-      webpush
-        .sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          body,
-        )
-        .then(() => null)
-        .catch((err: { statusCode?: number }) => ({ sub, err })),
-    ),
-  );
-
-  let delivered = 0;
-  const dead: string[] = [];
-
-  for (const result of results) {
-    if (result.status !== "fulfilled") continue;
-    if (result.value === null) {
-      delivered++;
-      continue;
+    if (notificationError || !notification) {
+      throw new Error(notificationError?.message ?? "Notification not found");
     }
-    const { sub, err } = result.value;
-    console.error(`push to ${sub.endpoint} failed:`, err.statusCode ?? err);
-    if (err.statusCode === 404 || err.statusCode === 410) {
-      dead.push(sub.id);
+    const recipientIds = new Set<string>();
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data: page, error } = await admin
+        .from("notification_recipients")
+        .select("user_id")
+        .eq("notification_id", payload.id)
+        .order("user_id")
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) throw new Error(error.message);
+      for (const row of page ?? []) recipientIds.add(row.user_id);
+      if (!page || page.length < PAGE_SIZE) break;
     }
-  }
 
-  if (dead.length > 0) {
-    await admin.from("push_subscriptions").delete().in("id", dead);
-  }
+    const allSubscriptions: SubscriptionRow[] = [];
+    let lastSubscriptionId: string | null = null;
+    for (;;) {
+      let query = admin
+        .from("push_subscriptions")
+        .select("id, user_id, device_id, endpoint, p256dh, auth")
+        .order("id")
+        .limit(PAGE_SIZE);
+      if (lastSubscriptionId) query = query.gt("id", lastSubscriptionId);
+      const { data: page, error } = await query;
+      if (error) throw new Error(error.message);
+      allSubscriptions.push(...((page ?? []) as SubscriptionRow[]));
+      if (!page || page.length < PAGE_SIZE) break;
+      lastSubscriptionId = page[page.length - 1].id;
+    }
 
-  return Response.json({
-    delivered,
-    pruned: dead.length,
-    targeted: recipients.length,
-  });
+    const targets = allSubscriptions.filter((subscription) =>
+      recipientIds.has(subscription.user_id)
+    );
+    const usersWithPush = new Set(targets.map((subscription) => subscription.user_id));
+    const noSubscriptionCount = [...recipientIds].filter(
+      (userId) => !usersWithPush.has(userId),
+    ).length;
+    const pushBody = JSON.stringify({
+      title: notification.title,
+      body: notification.body ?? "",
+      url: "/alerts",
+      id: payload.id,
+    });
+
+    const deliveryResults: DeliveryResult[] = [];
+    for (let offset = 0; offset < targets.length; offset += SEND_CONCURRENCY) {
+      const batch = targets.slice(offset, offset + SEND_CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map(async (subscription): Promise<DeliveryResult> => {
+          try {
+            await webpush.sendNotification(
+              {
+                endpoint: subscription.endpoint,
+                keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+              },
+              pushBody,
+            );
+            return {
+              notification_id: payload.id,
+              user_id: subscription.user_id,
+              subscription_id: subscription.id,
+              device_id: subscription.device_id,
+              status: "accepted",
+              status_code: null,
+              error: null,
+            };
+          } catch (error) {
+            const statusCode = isRecord(error) && typeof error.statusCode === "number"
+              ? error.statusCode
+              : null;
+            return {
+              notification_id: payload.id,
+              user_id: subscription.user_id,
+              subscription_id: subscription.id,
+              device_id: subscription.device_id,
+              status: statusCode === 404 || statusCode === 410 ? "pruned" : "failed",
+              status_code: statusCode,
+              error: errorMessage(error),
+            };
+          }
+        }),
+      );
+      deliveryResults.push(...batchResults);
+    }
+
+    if (deliveryResults.length > 0) {
+      const { error: deliveryError } = await admin
+        .from("notification_deliveries")
+        .upsert(deliveryResults, { onConflict: "notification_id,subscription_id" });
+      if (deliveryError) throw new Error(deliveryError.message);
+    }
+
+    const deadIds = deliveryResults
+      .filter((result) => result.status === "pruned")
+      .map((result) => result.subscription_id);
+    if (deadIds.length > 0) {
+      const { error: pruneError } = await admin
+        .from("push_subscriptions")
+        .delete()
+        .in("id", deadIds);
+      if (pruneError) console.error("failed to prune subscriptions:", pruneError.message);
+    }
+
+    const acceptedCount = deliveryResults.filter((result) => result.status === "accepted").length;
+    const failedCount = deliveryResults.filter((result) => result.status === "failed").length;
+    const prunedCount = deliveryResults.filter((result) => result.status === "pruned").length;
+    const { data: completed, error: completeError } = await admin
+      .from("notification_dispatches")
+      .update({
+        status: "completed",
+        recipient_count: recipientIds.size,
+        target_device_count: targets.length,
+        accepted_count: acceptedCount,
+        failed_count: failedCount,
+        pruned_count: prunedCount,
+        no_subscription_count: noSubscriptionCount,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("notification_id", payload.id)
+      .eq("status", "running")
+      .eq("attempt_count", claimedAttempt)
+      .select("notification_id")
+      .maybeSingle();
+    if (completeError) throw new Error(completeError.message);
+    if (!completed) {
+      return Response.json({ notification_id: payload.id, status: "superseded" });
+    }
+
+    return Response.json({
+      notification_id: payload.id,
+      status: "completed",
+      recipients: recipientIds.size,
+      targeted_devices: targets.length,
+      accepted: acceptedCount,
+      failed: failedCount,
+      pruned: prunedCount,
+      no_subscription: noSubscriptionCount,
+    });
+  } catch (error) {
+    const message = errorMessage(error);
+    console.error("push dispatch failed:", message);
+    await admin
+      .from("notification_dispatches")
+      .update({
+        status: "failed",
+        last_error: message,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("notification_id", payload.id)
+      .eq("status", "running")
+      .eq("attempt_count", claimedAttempt);
+    return new Response("Internal error", { status: 500 });
+  }
 });
