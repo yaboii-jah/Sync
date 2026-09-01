@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { Avatar, Card, Typography } from "@heroui/react";
+import { ExternalLink, UserX } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
+import { EmptyState } from "@/components/empty-states";
 import { getScanProfile } from "@/lib/supabase/queries/scan";
 import { linkedInScanTarget } from "@/lib/linkedin";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import {
+  primaryLinkClass,
+  secondaryLinkClass,
+} from "@/components/ui/link-button";
 
 export const metadata: Metadata = {
   title: "Connection — Sync",
@@ -41,69 +47,70 @@ export default async function ScanPage({
 
   return (
     <main className="w-full">
-      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:pt-10">
+      <div className="mx-auto w-full max-w-md px-4 pt-8 pb-8 lg:pt-10">
         <AppHeader />
 
         {profile ? (
           <>
-            <p className="mt-6 text-xs font-bold tracking-[0.18em] text-text-muted uppercase">
+            <Typography type="body-sm" color="muted" className="mt-6">
               You met
-            </p>
+            </Typography>
 
-            <div className="mt-4 rounded-2xl border border-border-default bg-bg-base px-6 py-8 text-center">
-              <div className="mx-auto h-24 w-24 overflow-hidden rounded-full border-2 border-border-default">
-                {profile.photo_url ? (
-                  <Image
-                    src={profile.photo_url}
-                    alt=""
-                    width={96}
-                    height={96}
-                    unoptimized
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-surface font-display text-4xl text-text-primary">
+            <Card className="mt-2">
+              <Card.Content className="flex flex-col items-center gap-4 py-8 text-center">
+                <Avatar size="lg" className="size-24">
+                  {profile.photo_url ? (
+                    <Avatar.Image asChild src={profile.photo_url}>
+                      <Image
+                        src={profile.photo_url}
+                        alt=""
+                        width={96}
+                        height={96}
+                        unoptimized
+                      />
+                    </Avatar.Image>
+                  ) : null}
+                  <Avatar.Fallback>
                     {(profile.name || "?").charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
+                  </Avatar.Fallback>
+                </Avatar>
 
-              <h1 className="mt-4 font-display text-2xl text-text-primary uppercase">
-                {profile.name || "Attendee"}
-              </h1>
+                <Typography.Heading level={1} className="text-xl">
+                  {profile.name || "Attendee"}
+                </Typography.Heading>
+              </Card.Content>
 
-              <a
-                href={linkedInScanTarget(
-                  profile.linkedin_url,
-                  profile.name || "",
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Connect on LinkedIn
-              </a>
-            </div>
+              <Card.Footer>
+                <a
+                  href={linkedInScanTarget(
+                    profile.linkedin_url,
+                    profile.name || "",
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${primaryLinkClass} w-full`}
+                >
+                  <ExternalLink className="size-4" aria-hidden />
+                  Connect on LinkedIn
+                </a>
+              </Card.Footer>
+            </Card>
           </>
         ) : (
-          <div className="mt-6 rounded-2xl border border-border-default bg-bg-base px-6 py-10 text-center">
-            <h1 className="font-display text-xl text-text-primary uppercase">
-              Card not found
-            </h1>
-            <p className="mt-2 text-sm text-text-muted">
-              That code doesn&apos;t match an attendee. Ask them to open Connect
-              and show it again.
-            </p>
-          </div>
+          <Card className="mt-6">
+            <EmptyState
+              icon={<UserX />}
+              title="Card not found"
+              description="That code does not match an attendee. Ask them to open Connect and show it again."
+            />
+          </Card>
         )}
 
-        <Link
-          href="/home"
-          className="mt-6 flex w-full items-center justify-center rounded-full border border-border-default px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-primary uppercase transition-all hover:bg-accent-primary/30 active:scale-95"
-        >
-          Back to Sync
-        </Link>
+        <div className="mt-6">
+          <Link href="/home" className={`${secondaryLinkClass} w-full`}>
+            Back to Sync
+          </Link>
+        </div>
       </div>
     </main>
   );

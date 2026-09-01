@@ -2,8 +2,18 @@
 
 import Image from "next/image";
 import { useRef } from "react";
+import { Avatar, Button, Card, Typography } from "@heroui/react";
 import { Download, ExternalLink } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
+import { primaryLinkClass } from "@/components/ui/link-button";
+
+/*
+ * The QR tile keeps a fixed light ground in both themes. Scanners need a light
+ * background and dark modules, so this is a functional constant, not a colour
+ * choice: near-black modules on white.
+ */
+const QR_FOREGROUND = "#171717";
+const QR_BACKGROUND = "#FFFFFF";
 
 interface ConnectCardProps {
   name: string;
@@ -40,65 +50,71 @@ export function ConnectCard({
   }
 
   return (
-    <div className="rounded-2xl border border-border-default bg-bg-base px-6 py-8 text-center">
-      <div className="mx-auto h-20 w-20 overflow-hidden rounded-full border-2 border-border-default">
-        {photoUrl ? (
-          <Image
-            src={photoUrl}
-            alt=""
-            width={80}
-            height={80}
-            unoptimized
-            className="h-full w-full object-cover"
+    <Card>
+      <Card.Content className="flex flex-col items-center gap-1 py-8 text-center">
+        <Avatar size="lg" className="size-20">
+          {photoUrl ? (
+            <Avatar.Image asChild src={photoUrl}>
+              <Image
+                src={photoUrl}
+                alt=""
+                width={80}
+                height={80}
+                unoptimized
+              />
+            </Avatar.Image>
+          ) : null}
+          <Avatar.Fallback>{name.charAt(0).toUpperCase()}</Avatar.Fallback>
+        </Avatar>
+
+        <Typography type="h5" className="mt-4">
+          {name}
+        </Typography>
+        <Typography type="body-sm" color="muted">
+          Show this code. No setup needed.
+        </Typography>
+
+        <div
+          className="border-border mt-6 w-fit rounded-2xl border p-4"
+          style={{ backgroundColor: QR_BACKGROUND }}
+        >
+          <QRCodeSVG
+            value={qrValue}
+            size={220}
+            fgColor={QR_FOREGROUND}
+            bgColor={QR_BACKGROUND}
           />
-        ) : (
-          <span className="flex h-full w-full items-center justify-center bg-surface font-display text-3xl text-text-primary">
-            {name.charAt(0).toUpperCase()}
-          </span>
-        )}
-      </div>
+        </div>
 
-      <h2 className="mt-4 text-xl font-bold text-text-primary">{name}</h2>
-      <p className="mt-1 text-sm text-text-muted">
-        Show this code. No setup needed.
-      </p>
+        <Typography type="body-xs" color="muted" className="mt-3">
+          Scan to open my card
+        </Typography>
+      </Card.Content>
 
-      <div className="mx-auto mt-6 w-fit rounded-2xl border border-border-default bg-pastel-yellow p-4 shadow-[0_0_24px_rgba(188,131,48,0.25)]">
-        <QRCodeSVG
-          value={qrValue}
-          size={220}
-          fgColor="#024056"
-          bgColor="#E6FFC9"
-        />
-      </div>
-
-      <p className="mt-3 text-xs text-text-muted">
-        Scan to open my card
-      </p>
-
-      <div className="mt-6 flex flex-col gap-3">
+      <Card.Footer className="flex flex-col gap-3">
         <a
           href={linkedinUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95"
+          className={`${primaryLinkClass} w-full`}
         >
-          <ExternalLink className="h-4 w-4" />
+          <ExternalLink className="size-4" aria-hidden />
           Open my LinkedIn
         </a>
-        <button
-          type="button"
-          onClick={saveQr}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-border-default px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-primary uppercase transition-all hover:bg-accent-primary/30 active:scale-95"
-        >
-          <Download className="h-4 w-4" />
+        <Button variant="secondary" fullWidth onPress={saveQr}>
+          <Download className="size-4" aria-hidden />
           Save QR
-        </button>
-      </div>
+        </Button>
+      </Card.Footer>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">
-        <QRCodeCanvas value={qrValue} size={512} fgColor="#024056" bgColor="#FFFFFF" />
+        <QRCodeCanvas
+          value={qrValue}
+          size={512}
+          fgColor={QR_FOREGROUND}
+          bgColor={QR_BACKGROUND}
+        />
       </div>
-    </div>
+    </Card>
   );
 }

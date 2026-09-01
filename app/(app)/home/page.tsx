@@ -1,3 +1,6 @@
+import { Card } from "@heroui/react";
+import { CalendarClock } from "lucide-react";
+import { EmptyState } from "@/components/empty-states";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -36,9 +39,13 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="mt-10">
-            <p className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center text-sm text-text-muted">
-              Event details are being finalized — check back soon.
-            </p>
+            <Card>
+              <EmptyState
+                icon={<CalendarClock />}
+                title="Event details are being finalized"
+                description="Check back soon for the schedule."
+              />
+            </Card>
           </div>
         )}
       </div>

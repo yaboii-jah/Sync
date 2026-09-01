@@ -19,19 +19,16 @@ export function LiveMiniBar({ targetId, title }: LiveMiniBarProps) {
       type="button"
       onClick={scrollToCard}
       aria-label={`Jump to the live session: ${title}`}
-      className="sticky top-0 z-30 flex w-full items-center gap-3 rounded-b-xl border-b border-pastel-yellow/40 bg-bg-base px-4 py-2.5 text-left shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-colors hover:bg-accent-primary/20 lg:hidden"
+      className="border-border bg-surface hover:bg-default sticky top-0 z-30 flex w-full items-center gap-3 border-b px-4 py-2.5 text-left transition-colors lg:hidden"
     >
-      <span className="relative flex h-2.5 w-2.5 shrink-0">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-state-success opacity-60" />
-        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-state-success" />
+      {/* Real semantic state: a session is live right now. */}
+      <span aria-hidden className="relative flex size-2.5 shrink-0">
+        <span className="bg-foreground absolute inline-flex size-full animate-ping rounded-full opacity-50 motion-reduce:animate-none" />
+        <span className="bg-foreground relative inline-flex size-2.5 rounded-full" />
       </span>
-      <span className="text-[0.62rem] font-bold tracking-[0.18em] text-pastel-yellow uppercase">
-        Live
-      </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-bold text-text-primary">
-        {title}
-      </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />
+      <span className="text-xs font-semibold">Live</span>
+      <span className="min-w-0 flex-1 truncate text-sm">{title}</span>
+      <ChevronRight className="text-muted size-4 shrink-0" aria-hidden />
     </button>
   );
 }
