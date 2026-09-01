@@ -10,12 +10,14 @@
 | Installable PWA | Hand-authored static service worker (`public/sw.js`) + web manifest | Static icon/manifest caching, Web Push, and home-screen install. Authenticated routes and Next.js route data are never cached. (Note: `next-pwa`/`@serwist/next` are webpack plugins and incompatible with Next 16's default Turbopack builds — do not reintroduce them) |
 | Push Delivery | Web Push API — pg_cron → `notifications` INSERT → pg_net webhook → `send-push` Edge Function → FCM/Web Push | Notifications when the app isn't open |
 | Hosting (typical pairing, not yet finalized) | Vercel (frontend) + Supabase Cloud (backend) | Deployment |
+| Uptime | Vercel Cron → `/api/cron/keep-alive` → anonymous Postgres read | Daily request against the Supabase project so a free-plan pause never takes the app down between demos and the event day |
 
 ## System Boundaries
 
 - `app/` — Next.js routes for attendee screens plus a separate `/admin` route group with its own responsive operations shell. Admin routes cover the dashboard, immediate notification composer/history/delivery results, session override controls, read-only attendee search, and mutation audit history.
 - Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, and `/login` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
 - `lib/supabase/` — Supabase client setup, generated database types, and typed queries/mutations for program flow, directory, quick links, notifications, and profiles
+- `app/api/cron/keep-alive` — the only Next.js API route. Scheduled by `vercel.json`, gated by `CRON_SECRET`, and read-only: it runs one anonymous `select` so the Supabase project keeps registering traffic. pg_cron jobs do not count — they never leave the database
 - `components/` — Shared UI building blocks: session cards, live status badges, QR networking card, directory + bio modals, side rail / bottom tab navigation
 - `public/sw.js` + `public/manifest.webmanifest` + `public/icons/` — hand-authored service worker (static PWA asset caching + push/notification-click handlers), PWA manifest, and icons; authenticated pages and Next.js route data are deliberately excluded from caches, and the service worker is source code, never build-generated
 
