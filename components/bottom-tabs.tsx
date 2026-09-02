@@ -32,7 +32,7 @@ export function BottomTabs() {
   return (
     <nav
       aria-label="Primary"
-      className="border-border bg-surface fixed inset-x-0 bottom-0 z-40 border-t lg:hidden"
+      className="border-border bg-surface fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around py-2">
         {TABS.map((tab) => {
@@ -45,8 +45,8 @@ export function BottomTabs() {
               key={tab.label}
               href={tab.href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 py-1 transition-colors ${
-                active ? "text-foreground" : "text-muted hover:text-foreground"
+              className={`flex flex-1 flex-col items-center gap-1 py-1 transition active:scale-95 motion-reduce:transform-none ${
+                active ? "text-accent" : "text-muted hover:text-foreground"
               }`}
             >
               <Badge.Anchor>

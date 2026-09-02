@@ -45,15 +45,26 @@ export function SessionModal({
           if (!open) onClose();
         }}
       >
-        <Modal.Container size="md">
-          <Modal.Dialog aria-label={session.title}>
+        {/*
+          * Centred at every size rather than a bottom sheet. A flush bottom
+          * sheet gets clipped by the device frames this is previewed in, and a
+          * centred dialog is what was asked for. `scroll="inside"` plus the
+          * `dvh` cap keeps a long session inside the viewport with its actions
+          * reachable; `dvh` is browser-measured, unlike HeroUI's
+          * `--visual-viewport-height`, which some embedded contexts never set.
+          */}
+        <Modal.Container size="md" scroll="inside" placement="center">
+          <Modal.Dialog
+            aria-label={session.title}
+            className="squircle max-h-[85dvh] w-full"
+          >
             <Modal.CloseTrigger />
 
             <Modal.Header>
               <Modal.Heading>{session.title}</Modal.Heading>
             </Modal.Header>
 
-            <Modal.Body className="flex flex-col gap-4">
+            <Modal.Body className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain">
               <div className="flex flex-wrap items-center gap-3">
                 <StatusBadge status={status} />
                 <Typography type="body-sm" color="muted">
@@ -122,7 +133,7 @@ export function SessionModal({
               ) : null}
             </Modal.Body>
 
-            <Modal.Footer className="flex flex-col gap-3">
+            <Modal.Footer className="flex shrink-0 flex-col gap-3">
               {status !== "finished" ? (
                 <Button
                   fullWidth

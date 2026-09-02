@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
-import { extractLinkedInProfileUrl } from "@/lib/linkedin";
+import { extractLinkedInProfileUrl } from "@/lib/social";
+import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
 
 /**
  * Web Share Target endpoint — how an attendee sets their exact profile link
@@ -13,8 +14,8 @@ import { extractLinkedInProfileUrl } from "@/lib/linkedin";
  * keyboard, once ever; from then on their QR card offers a direct profile link
  * instead of a name search.
  *
- * This is an upgrade path, never a requirement. The QR already works from first
- * sign-in without it — see `/u/[id]`.
+ * This is an upgrade path, never a requirement. A card can equally be filled in
+ * by hand in Settings — see `/c/[token]` for what a scanner then sees.
  *
  * Chrome documents that Android frequently leaves `url` empty and puts the link
  * in `text`, so all three params are scanned. A share that carries no profile
@@ -46,10 +47,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/connect?shared=miss", origin));
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ linkedin_url: linkedinUrl })
-    .eq("id", user.id);
+  /*
+   * `save_social_profiles` replaces the whole set, so the other two links have
+   * to be read back and re-sent. Posting only LinkedIn here would silently drop
+   * an attendee's Instagram and Facebook links.
+   */
+  const card = await getOwnNetworkingCard();
+
+  const { error } = await supabase.rpc("save_social_profiles", {
+    linkedin_url: linkedinUrl,
+    instagram_url: card?.links.instagram ?? "",
+    facebook_url: card?.links.facebook ?? "",
+  });
 
   if (error) {
     console.error("[share] failed to save shared profile URL:", error.message);

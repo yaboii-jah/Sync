@@ -9,21 +9,23 @@ import {
   Input,
   Label,
   TextField,
+  Typography,
 } from "@heroui/react";
 import {
   updateProfile,
   type UpdateProfileState,
 } from "@/app/(app)/settings/actions";
 import { useToast } from "@/components/toast/toast-provider";
+import { SOCIAL_NETWORKS, SOCIAL_SPECS, type SocialLinks } from "@/lib/social";
 
 const initialState: UpdateProfileState = { error: null, success: false };
 
 export function SettingsForm({
   initialName,
-  initialUrl,
+  initialLinks,
 }: {
   initialName: string;
-  initialUrl: string;
+  initialLinks: SocialLinks;
 }) {
   const [state, formAction, pending] = useActionState(
     updateProfile,
@@ -58,21 +60,29 @@ export function SettingsForm({
             <Input variant="secondary" />
           </TextField>
 
-          <TextField
-            fullWidth
-            isRequired
-            name="linkedin_url"
-            type="url"
-            defaultValue={initialUrl}
-            isInvalid={Boolean(state.error)}
-          >
-            <Label>LinkedIn profile URL</Label>
-            <Input
-              variant="secondary"
-              placeholder="https://linkedin.com/in/your-name"
-            />
-            <FieldError>{state.error}</FieldError>
-          </TextField>
+          <Typography type="body-xs" color="muted">
+            Add the profiles you want on your networking card. All optional —
+            your card shows only what you fill in.
+          </Typography>
+
+          {SOCIAL_NETWORKS.map((network) => (
+            <TextField
+              key={network}
+              fullWidth
+              name={network}
+              type="url"
+              defaultValue={initialLinks[network] ?? ""}
+              isInvalid={Boolean(state.error)}
+            >
+              <Label>{SOCIAL_SPECS[network].label}</Label>
+              <Input
+                variant="secondary"
+                placeholder={SOCIAL_SPECS[network].placeholder}
+              />
+            </TextField>
+          ))}
+
+          <FieldError>{state.error}</FieldError>
 
           <Button type="submit" fullWidth isPending={pending}>
             Save changes

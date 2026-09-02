@@ -1,21 +1,30 @@
 import Link from "next/link";
-import { Typography } from "@heroui/react";
-import { ShieldCheck, User } from "lucide-react";
+import { Avatar, Typography } from "@heroui/react";
+import { ShieldCheck } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { currentUserIsAdmin } from "@/lib/supabase/admin-auth";
+import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 
 const iconLink =
   "text-muted hover:text-foreground hover:bg-default rounded-lg p-2 transition-colors";
 
 export async function AppHeader() {
-  const isAdmin = await currentUserIsAdmin();
+  const [isAdmin, auth] = await Promise.all([
+    currentUserIsAdmin(),
+    getAuthenticatedProfile(),
+  ]);
+  const profile = auth?.profile ?? null;
 
   return (
     <header className="flex items-center justify-between lg:hidden">
+      {/* iOS large-title treatment: the brand is the page title. */}
       <Link href="/home">
-        <Typography type="h6" weight="semibold">
+        <Typography.Heading
+          level={1}
+          className="text-[28px] font-bold tracking-tight"
+        >
           Sync
-        </Typography>
+        </Typography.Heading>
       </Link>
       <div className="flex items-center gap-1">
         {isAdmin ? (
@@ -27,12 +36,24 @@ export async function AppHeader() {
             <ShieldCheck className="size-5" aria-hidden />
           </Link>
         ) : null}
+        {/*
+          * The account entry is your face, the way iOS apps do it (App Store,
+          * FaceTime): the LinkedIn/Google photo when there is one, otherwise
+          * the initial.
+          */}
         <Link
           href="/settings"
           aria-label="Account settings"
-          className={iconLink}
+          className="rounded-full p-1 transition-opacity active:opacity-70"
         >
-          <User className="size-5" aria-hidden />
+          <Avatar size="sm">
+            {profile?.photo_url ? (
+              <Avatar.Image src={profile.photo_url} alt="" />
+            ) : null}
+            <Avatar.Fallback>
+              {(profile?.name?.trim()[0] ?? "?").toUpperCase()}
+            </Avatar.Fallback>
+          </Avatar>
         </Link>
         <SignOutButton variant="icon" />
       </div>

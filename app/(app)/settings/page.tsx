@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Card } from "@heroui/react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 
 export default async function SettingsPage() {
   const { profile } = await requireCompleteProfile();
+  const card = await getOwnNetworkingCard();
 
   return (
     <main className="w-full">
@@ -27,7 +29,7 @@ export default async function SettingsPage() {
 
         <SettingsForm
           initialName={profile.name}
-          initialUrl={profile.linkedin_url ?? ""}
+          initialLinks={card?.links ?? {}}
         />
 
         <Card className="mt-4">
