@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@heroui/react";
 import { Crosshair } from "lucide-react";
 
 interface ScrollToNowProps {
@@ -40,18 +41,19 @@ export function ScrollToNow({ targetId }: ScrollToNowProps) {
   if (!targetId || !visible) return null;
 
   return (
-    <button
-      type="button"
-      onClick={() =>
-        document
-          .getElementById(targetId)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" })
-      }
-      aria-label="Jump to the live session"
-      className="fixed right-4 bottom-24 z-30 flex items-center gap-2 rounded-full border border-border-default bg-bg-base px-4 py-2.5 text-xs font-bold tracking-wide text-pastel-yellow uppercase shadow-[0_0_20px_rgba(188,131,48,0.35)] transition-transform hover:scale-105 active:scale-95 lg:right-8 lg:bottom-8"
-    >
-      <Crosshair className="h-4 w-4" />
-      Now
-    </button>
+    <div className="fixed right-4 bottom-24 z-30 lg:right-8 lg:bottom-8">
+      <Button
+        size="sm"
+        aria-label="Jump to the live session"
+        onPress={() =>
+          document
+            .getElementById(targetId)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      >
+        <Crosshair className="size-4" aria-hidden />
+        Now
+      </Button>
+    </div>
   );
 }

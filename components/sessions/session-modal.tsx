@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { CalendarPlus, X } from "lucide-react";
+import { Avatar, Button, Modal, Separator, Typography } from "@heroui/react";
+import { CalendarPlus } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
-  displayStatus,
+  effectiveSessionStatus,
   formatManilaDate,
+  formatRelativeTime,
   formatTimeRange,
 } from "@/lib/format";
 import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
@@ -25,122 +26,136 @@ const ROLE_LABELS: Record<string, string> = {
   sponsor: "Sponsor",
 };
 
+const secondaryAction =
+  "border-border text-foreground hover:bg-default inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-colors";
+
 export function SessionModal({
   session,
   bookmarked,
   onToggleBookmark,
   onClose,
 }: SessionModalProps) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
-
-  const status = displayStatus(session.start_time, session.end_time);
+  const status = effectiveSessionStatus(session);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={session.title}
-      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="modal-card relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-bg-base px-6 py-6 shadow-[0_0_40px_rgba(188,131,48,0.3)]"
-        onClick={(event) => event.stopPropagation()}
+    <Modal>
+      <Modal.Backdrop
+        isOpen
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 rounded-lg p-1.5 text-text-muted hover:text-text-primary"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <Modal.Container size="md">
+          <Modal.Dialog aria-label={session.title}>
+            <Modal.CloseTrigger />
 
-        <p className="text-xs font-bold tracking-wide text-text-muted uppercase">
-          {formatManilaDate(session.start_time)}
-        </p>
-        <h2 className="mt-2 pr-8 font-display text-3xl text-text-primary uppercase">
-          {session.title}
-        </h2>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <StatusBadge status={status} />
-          <span className="text-sm text-text-muted">
-            {formatTimeRange(session.start_time, session.end_time)}
-          </span>
-        </div>
-        <p className="mt-1 text-sm text-text-muted">{session.room ?? "TBA"}</p>
+            <Modal.Header>
+              <Modal.Heading>{session.title}</Modal.Heading>
+            </Modal.Header>
 
-        {session.description ? (
-          <p className="mt-4 leading-relaxed text-text-primary/90">
-            {session.description}
-          </p>
-        ) : null}
+            <Modal.Body className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge status={status} />
+                <Typography type="body-sm" color="muted">
+                  {formatManilaDate(session.start_time)}
+                  {", "}
+                  {formatTimeRange(session.start_time, session.end_time)}
+                </Typography>
+              </div>
 
-        {session.speakers.length > 0 ? (
-          <div className="mt-5">
-            <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-              On Stage
-            </p>
-            <ul className="mt-3 flex flex-col gap-3">
-              {session.speakers.map((speaker) => (
-                <li key={speaker.id} className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border-default font-display text-lg text-text-primary">
-                    {speaker.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span>
-                    <span className="block text-sm font-bold text-text-primary">
-                      {speaker.name}
-                    </span>
-                    <span className="block text-xs text-text-muted">
-                      {ROLE_LABELS[speaker.role] ?? speaker.role}
-                      {speaker.organization ? ` · ${speaker.organization}` : ""}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+              <Typography type="body-sm" color="muted">
+                {session.room ?? "TBA"}
+              </Typography>
 
-        {status !== "finished" ? (
-          <button
-            type="button"
-            onClick={() => onToggleBookmark(session.id)}
-            aria-pressed={bookmarked}
-            className={`mt-6 w-full rounded-full px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all active:scale-95 ${
-              bookmarked ? "bg-state-success" : "bg-pastel-yellow hover:bg-light-green"
-            }`}
-          >
-            {bookmarked ? "Saved to My Flow" : "Add to My Flow"}
-          </button>
-        ) : null}
+              {session.status_override ? (
+                <Typography type="body-xs" color="muted">
+                  Live status updated by event operations
+                  {session.status_override === "ongoing" &&
+                  session.actual_started_at
+                    ? `, started ${formatRelativeTime(session.actual_started_at)}`
+                    : null}
+                  {session.status_override === "finished" &&
+                  session.actual_ended_at
+                    ? `, ended ${formatRelativeTime(session.actual_ended_at)}`
+                    : null}
+                </Typography>
+              ) : null}
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <a
-            href={googleCalendarUrl(session)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded-full border border-border-default px-4 py-2.5 text-[0.68rem] font-bold tracking-wide text-text-muted uppercase transition-colors hover:text-text-primary"
-          >
-            <CalendarPlus className="h-3.5 w-3.5" />
-            Google Cal
-          </a>
-          <button
-            type="button"
-            onClick={() => downloadIcs(session)}
-            className="flex items-center justify-center gap-1.5 rounded-full border border-border-default px-4 py-2.5 text-[0.68rem] font-bold tracking-wide text-text-muted uppercase transition-colors hover:text-text-primary"
-          >
-            <CalendarPlus className="h-3.5 w-3.5" />
-            .ics file
-          </button>
-        </div>
-      </div>
-    </div>
+              {session.description ? (
+                <>
+                  <Separator />
+                  <Typography type="body-sm">{session.description}</Typography>
+                </>
+              ) : null}
+
+              {session.speakers.length > 0 ? (
+                <>
+                  <Separator />
+                  <div>
+                    <Typography type="body-sm" weight="semibold">
+                      On stage
+                    </Typography>
+                    <ul className="mt-3 flex flex-col gap-3">
+                      {session.speakers.map((speaker) => (
+                        <li key={speaker.id} className="flex items-center gap-3">
+                          <Avatar size="sm">
+                            <Avatar.Fallback>
+                              {speaker.name.charAt(0).toUpperCase()}
+                            </Avatar.Fallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <Typography type="body-sm" weight="medium">
+                              {speaker.name}
+                            </Typography>
+                            <Typography type="body-xs" color="muted">
+                              {ROLE_LABELS[speaker.role] ?? speaker.role}
+                              {speaker.organization
+                                ? `, ${speaker.organization}`
+                                : ""}
+                            </Typography>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : null}
+            </Modal.Body>
+
+            <Modal.Footer className="flex flex-col gap-3">
+              {status !== "finished" ? (
+                <Button
+                  fullWidth
+                  variant={bookmarked ? "secondary" : "primary"}
+                  onPress={() => onToggleBookmark(session.id)}
+                >
+                  {bookmarked ? "Saved to My Flow" : "Add to My Flow"}
+                </Button>
+              ) : null}
+
+              <div className="grid w-full grid-cols-2 gap-3">
+                <a
+                  href={googleCalendarUrl(session)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={secondaryAction}
+                >
+                  <CalendarPlus className="size-4" aria-hidden />
+                  Google Cal
+                </a>
+                <button
+                  type="button"
+                  onClick={() => downloadIcs(session)}
+                  className={secondaryAction}
+                >
+                  <CalendarPlus className="size-4" aria-hidden />
+                  .ics file
+                </button>
+              </div>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 }

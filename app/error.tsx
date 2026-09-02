@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Button, Card, Typography } from "@heroui/react";
 import { RotateCcw } from "lucide-react";
 
 export default function GlobalError({
@@ -11,37 +12,33 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
-      <p className="text-xs font-bold tracking-[0.24em] text-state-error uppercase">
-        Something broke
-      </p>
-      <h1 className="mt-3 font-display text-5xl text-text-primary uppercase">
-        Turbulence
-      </h1>
-      <p className="mt-4 max-w-sm text-text-muted">
-        An unexpected error interrupted the app. Try again — if it keeps
-        happening, come back in a moment.
-      </p>
-      {error.digest ? (
-        <p className="mt-3 text-xs text-text-muted/70">ref: {error.digest}</p>
-      ) : null}
-
-      <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
-        <button
-          type="button"
-          onClick={reset}
-          className="flex items-center justify-center gap-2 rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-colors hover:bg-light-green"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Try again
-        </button>
-        <Link
-          href="/home"
-          className="rounded-full border border-border-default px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-muted uppercase transition-colors hover:text-text-primary"
-        >
-          Back to Home
-        </Link>
-      </div>
+    <main className="flex flex-1 items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-sm">
+        <Card.Header>
+          <Typography.Heading level={1}>Something broke</Typography.Heading>
+          {error.digest ? (
+            <Card.Description>Reference {error.digest}</Card.Description>
+          ) : null}
+        </Card.Header>
+        <Card.Content>
+          <Typography type="body-sm" color="muted">
+            An unexpected error interrupted the app. Try again. If it keeps
+            happening, come back in a moment.
+          </Typography>
+        </Card.Content>
+        <Card.Footer className="flex flex-col gap-2">
+          <Button fullWidth onPress={reset}>
+            <RotateCcw className="size-4" aria-hidden />
+            Try again
+          </Button>
+          <Link
+            href="/home"
+            className="border-border text-muted hover:text-foreground w-full rounded-lg border px-4 py-2.5 text-center text-sm font-medium transition-colors"
+          >
+            Back to Home
+          </Link>
+        </Card.Footer>
+      </Card>
     </main>
   );
 }

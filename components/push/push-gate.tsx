@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Alert, Button, Modal } from "@heroui/react";
+import { Bell } from "lucide-react";
 import {
   ensurePushSubscription,
   PUSH_DISABLED_KEY,
@@ -128,65 +129,56 @@ export function PushGate() {
 
   if (stage === "explain" || stage === "busy") {
     return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="push-gate-title"
-        aria-describedby="push-gate-description"
-        className="push-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-        onClick={stage === "explain" ? dismiss : undefined}
-      >
-        <div
-          className="push-modal-card relative w-full max-w-md rounded-3xl border border-border-default bg-bg-base px-6 py-6 shadow-[0_0_40px_rgba(188,131,48,0.3)]"
-          onClick={(event) => event.stopPropagation()}
+      <Modal>
+        <Modal.Backdrop
+          isOpen
+          isDismissable={stage === "explain"}
+          isKeyboardDismissDisabled={stage === "busy"}
+          onOpenChange={(open) => {
+            if (!open) dismiss();
+          }}
         >
-          <button
-            type="button"
-            onClick={dismiss}
-            disabled={stage === "busy"}
-            aria-label="Dismiss"
-            className="absolute top-4 right-4 rounded-lg p-1.5 text-text-muted hover:text-text-primary disabled:opacity-50"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <div className="flex items-start gap-3 pr-6">
-            <Bell className="mt-0.5 h-5 w-5 shrink-0 text-pastel-yellow" />
-            <div>
-              <p id="push-gate-title" className="text-sm font-bold text-text-primary">
-                Get session alerts
-              </p>
-              <p id="push-gate-description" className="mt-1 text-sm leading-snug text-text-muted">
-                We&apos;ll send reminders, session-start alerts, and wrapped updates
-                even when the app is closed.
-              </p>
-              {blockedNote ? (
-                <p className="mt-2 rounded-lg bg-state-error/20 px-3 py-1.5 text-xs leading-snug text-state-error">
-                  Notifications seem blocked in this browser. Try allowing push
-                  messaging in your browser settings, or use another browser.
-                </p>
-              ) : null}
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={enable}
-                  disabled={stage === "busy"}
-                  className="rounded-full bg-pastel-yellow px-4 py-2 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:opacity-60 active:scale-95"
-                >
-                  {stage === "busy" ? "Enabling…" : "Enable alerts"}
-                </button>
-                <button
-                  type="button"
-                  onClick={dismiss}
-                  disabled={stage === "busy"}
-                  className="rounded-full px-4 py-2 text-xs font-bold tracking-[0.14em] text-text-muted uppercase hover:text-text-primary"
+          <Modal.Container size="sm">
+            <Modal.Dialog aria-label="Get session alerts">
+              <Modal.CloseTrigger />
+              <Modal.Header>
+                <Modal.Icon>
+                  <Bell className="size-5" aria-hidden />
+                </Modal.Icon>
+                <Modal.Heading>Get session alerts</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                We will send reminders, session-start alerts, and wrapped
+                updates even when the app is closed.
+                {blockedNote ? (
+                  <Alert status="danger" className="mt-4">
+                    <Alert.Indicator />
+                    <Alert.Content>
+                      <Alert.Description>
+                        Notifications seem blocked in this browser. Try allowing
+                        push messaging in your browser settings, or use another
+                        browser.
+                      </Alert.Description>
+                    </Alert.Content>
+                  </Alert>
+                ) : null}
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  variant="secondary"
+                  isDisabled={stage === "busy"}
+                  onPress={dismiss}
                 >
                   Not now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                </Button>
+                <Button isPending={stage === "busy"} onPress={enable}>
+                  Enable alerts
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     );
   }
 

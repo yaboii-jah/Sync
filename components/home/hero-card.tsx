@@ -1,7 +1,15 @@
 "use client";
 
-import type { EventInfo, SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
-import { formatManilaDate, formatTimeRange } from "@/lib/format";
+import { Card, Chip, Typography } from "@heroui/react";
+import type {
+  EventInfo,
+  SessionWithSpeakers,
+} from "@/lib/supabase/queries/program-flow";
+import {
+  effectiveSessionStatus,
+  formatManilaDate,
+  formatTimeRange,
+} from "@/lib/format";
 
 interface HeroCardProps {
   event: EventInfo;
@@ -23,92 +31,138 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
   const startsAt = new Date(event.starts_at).getTime();
   const endsAt = new Date(event.ends_at).getTime();
 
-  if (now >= endsAt) {
+  const current = sessions.find(
+    (session) => effectiveSessionStatus(session, now) === "ongoing",
+  );
+
+  if (!current && now >= endsAt) {
     return (
-      <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-        <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-          {event.name}
-        </p>
-        <p className="mt-3 font-display text-3xl text-text-primary uppercase">
-          That&apos;s a wrap
-        </p>
-        <p className="mt-2 text-sm text-text-muted">
-          Thanks for coming — see you at the next one.
-        </p>
-      </div>
+      <Card>
+        <Card.Header>
+          <Card.Description>{event.name}</Card.Description>
+          <Card.Title>That is a wrap</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <Typography type="body-sm" color="muted">
+            Thanks for coming. See you at the next one.
+          </Typography>
+        </Card.Content>
+      </Card>
     );
   }
 
-  const current = sessions.find((session) => {
-    const start = new Date(session.start_time).getTime();
-    const end = new Date(session.end_time).getTime();
-    return now >= start && now < end;
-  });
-
   if (current) {
     return (
-      <div className="relative rounded-2xl border border-border-default bg-bg-base px-5 py-6 shadow-[0_0_28px_rgba(188,131,48,0.35)]">
-        <p className="text-xs font-bold tracking-[0.24em] text-pastel-yellow uppercase">
-          Happening Now
-        </p>
-        <h1 className="mt-2 font-display text-3xl text-text-primary uppercase">
-          {current.title}
-        </h1>
-        <p className="mt-2 text-sm text-text-muted">
-          {current.room ?? "TBA"} · {formatTimeRange(current.start_time, current.end_time)}
-        </p>
-      </div>
+      <Card variant="secondary">
+        <Card.Header>
+          <Chip size="sm" variant="primary">
+            Happening now
+          </Chip>
+          <Card.Title className="mt-2">{current.title}</Card.Title>
+        </Card.Header>
+        <Card.Content className="flex flex-col gap-1">
+          <Typography type="body-sm" color="muted">
+            {formatTimeRange(current.start_time, current.end_time)}
+          </Typography>
+          <Typography type="body-sm" color="muted">
+            {current.room ?? "TBA"}
+          </Typography>
+          {current.status_override && current.actual_started_at ? (
+            <Typography type="body-xs" color="muted" className="mt-1">
+              Started live at{" "}
+              {new Intl.DateTimeFormat("en-PH", {
+                hour: "numeric",
+                minute: "2-digit",
+                timeZone: "Asia/Manila",
+              }).format(new Date(current.actual_started_at))}
+            </Typography>
+          ) : null}
+        </Card.Content>
+      </Card>
     );
   }
 
   const next = sessions.find(
-    (session) => new Date(session.start_time).getTime() > now,
+    (session) => effectiveSessionStatus(session, now) === "not_started",
   );
 
   if (next && now >= startsAt) {
     return (
-      <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-        <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-          Up Next
-        </p>
-        <p className="mt-3 font-display text-2xl text-text-primary uppercase">
-          {next.title}
-        </p>
-        <p className="mt-2 text-sm text-text-muted">
-          {formatTimeRange(next.start_time, next.end_time)} · {next.room ?? "TBA"}
-        </p>
-      </div>
+      <Card>
+        <Card.Header>
+          <Card.Description>Up next</Card.Description>
+          <Card.Title>{next.title}</Card.Title>
+        </Card.Header>
+        <Card.Content className="flex flex-col gap-1">
+          <Typography type="body-sm" color="muted">
+            {formatTimeRange(next.start_time, next.end_time)}
+          </Typography>
+          <Typography type="body-sm" color="muted">
+            {next.room ?? "TBA"}
+          </Typography>
+        </Card.Content>
+      </Card>
     );
   }
 
-  const remaining = startsAt - now;
-  const parts = countdownParts(remaining);
+  if (now >= startsAt) {
+    return (
+      <Card>
+        <Card.Header>
+          <Card.Description>Program update</Card.Description>
+          <Card.Title>No session is live</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <Typography type="body-sm" color="muted">
+            Check the program flow for the latest event status.
+          </Typography>
+        </Card.Content>
+      </Card>
+    );
+  }
+
+  const parts = countdownParts(startsAt - now);
   const pad = (value: number) => String(value).padStart(2, "0");
+  const units: [string, number][] = [
+    ["Days", parts.days],
+    ["Hrs", parts.hours],
+    ["Min", parts.minutes],
+    ["Sec", parts.seconds],
+  ];
 
   return (
-    <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-      <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-        {formatManilaDate(event.starts_at)}
-      </p>
-      <p className="mt-2 font-display text-3xl text-text-primary uppercase">
-        Starts In
-      </p>
-      <div className="mt-4 flex items-start justify-center gap-3 font-display text-4xl text-pastel-yellow [text-shadow:0_0_18px_rgba(252,219,100,0.4)]">
-        {[
-          ["D", parts.days],
-          ["H", parts.hours],
-          ["M", parts.minutes],
-          ["S", parts.seconds],
-        ].map(([label, value]) => (
-          <span key={label} className="flex flex-col items-center">
-            {pad(Number(value))}
-            <span className="mt-1 text-[0.6rem] font-sans font-bold tracking-widest text-text-muted">
-              {label}
-            </span>
-          </span>
-        ))}
-      </div>
-      <p className="mt-3 text-sm text-text-muted">{event.venue}</p>
-    </div>
+    <Card>
+      <Card.Header>
+        <Card.Description>{formatManilaDate(event.starts_at)}</Card.Description>
+        <Card.Title>Starts in</Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <div
+          className="grid grid-cols-4 gap-2"
+          suppressHydrationWarning
+          role="timer"
+          aria-label="Time until the event starts"
+        >
+          {units.map(([label, value]) => (
+            <div
+              key={label}
+              className="bg-surface-secondary flex flex-col items-center rounded-lg px-2 py-3"
+            >
+              <span className="text-2xl font-semibold tabular-nums">
+                {pad(value)}
+              </span>
+              <Typography type="body-xs" color="muted" className="mt-1">
+                {label}
+              </Typography>
+            </div>
+          ))}
+        </div>
+      </Card.Content>
+      <Card.Footer>
+        <Typography type="body-sm" color="muted">
+          {event.venue}
+        </Typography>
+      </Card.Footer>
+    </Card>
   );
 }

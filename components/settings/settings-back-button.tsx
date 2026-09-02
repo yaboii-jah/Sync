@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@heroui/react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -20,13 +21,11 @@ export function SettingsBackButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={goBack}
-      className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-text-muted transition-colors hover:text-text-primary"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      Back
-    </button>
+    <div className="mt-6">
+      <Button variant="ghost" size="sm" onPress={goBack}>
+        <ArrowLeft className="size-4" aria-hidden />
+        Back
+      </Button>
+    </div>
   );
 }

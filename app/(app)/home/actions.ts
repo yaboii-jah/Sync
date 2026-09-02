@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { StoredPushSubscription } from "@/lib/push";
-import { displayStatus } from "@/lib/format";
 
 export interface ToggleBookmarkResult {
   error?: string;
@@ -22,7 +21,7 @@ export async function toggleBookmark(
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("start_time, end_time")
+    .select("status")
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -35,7 +34,7 @@ export async function toggleBookmark(
     .eq("session_id", sessionId)
     .maybeSingle();
 
-  if (!existing && displayStatus(session.start_time, session.end_time) === "finished") {
+  if (!existing && session.status === "finished") {
     return { error: "Finished sessions cannot be added to My Flow" };
   }
 

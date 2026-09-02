@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Card, Tabs, Typography } from "@heroui/react";
+import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type {
   EventInfo,
@@ -12,12 +14,15 @@ import {
   getSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { formatManilaDate } from "@/lib/format";
-import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/actions";
+import {
+  toggleBookmark,
+  type ToggleBookmarkResult,
+} from "@/app/(app)/home/actions";
 import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
 import { useNow } from "@/hooks/use-now";
 import { useToast } from "@/components/toast/toast-provider";
-import { displayStatus } from "@/lib/format";
-import { EmptyComet } from "@/components/empty-states";
+import { effectiveSessionStatus } from "@/lib/format";
+import { EmptyState } from "@/components/empty-states";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
 import { SessionModal } from "@/components/sessions/session-modal";
@@ -43,16 +48,16 @@ export function HomeClient({
     () => new Set(initialBookmarks),
   );
   const [view, setView] = useState<View>("all");
-  const [activeSession, setActiveSession] = useState<SessionWithSpeakers | null>(
-    null,
-  );
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const now = useNow(1000);
   const { toast } = useToast();
+  const activeSession =
+    sessions.find((session) => session.id === activeSessionId) ?? null;
 
   const liveSession =
     sessions.find(
-      (session) => displayStatus(session.start_time, session.end_time, now) === "ongoing",
+      (session) => effectiveSessionStatus(session, now) === "ongoing",
     ) ?? null;
 
   async function refetchProgramFlow() {
@@ -90,7 +95,7 @@ export function HomeClient({
     startTransition(async () => {
       const result: ToggleBookmarkResult = await toggleBookmark(sessionId);
       if (result.error) {
-        toast("Couldn't update your flow", "error");
+        toast("Could not update your flow", "error");
         setBookmarks((previous) => {
           const reverted = new Set(previous);
           if (reverted.has(sessionId)) {
@@ -106,19 +111,45 @@ export function HomeClient({
     });
   }
 
-  const visible =
-    view === "all"
-      ? sessions
-      : sessions.filter(
-          (session) =>
-            bookmarks.has(session.id) &&
-            displayStatus(session.start_time, session.end_time, now) !== "finished",
-        );
+  const allSessions = sessions;
+  const flowSessions = sessions.filter(
+    (session) =>
+      bookmarks.has(session.id) &&
+      effectiveSessionStatus(session, now) !== "finished",
+  );
 
-  const segmentedButtonClass = (active: boolean) =>
-    `flex-1 rounded-lg px-4 py-2 text-xs font-bold tracking-[0.14em] uppercase transition-colors ${
-      active ? "bg-pastel-yellow text-charcoal" : "text-text-muted hover:text-text-primary"
-    }`;
+  function renderList(items: SessionWithSpeakers[], emptyForFlow: boolean) {
+    if (items.length === 0) {
+      return (
+        <Card variant="transparent" className="border-border border border-dashed">
+          <EmptyState
+            icon={<CalendarClock />}
+            title={emptyForFlow ? "Nothing in your flow yet" : "No sessions yet"}
+            description={
+              emptyForFlow
+                ? "Switch to All and bookmark the sessions you do not want to miss."
+                : "The program will appear here once it is published."
+            }
+          />
+        </Card>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-3">
+        {items.map((session) => (
+          <SessionCard
+            key={session.id}
+            session={session}
+            bookmarked={bookmarks.has(session.id)}
+            now={now}
+            onToggleBookmark={handleToggleBookmark}
+            onOpen={(target) => setActiveSessionId(target.id)}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -130,62 +161,49 @@ export function HomeClient({
       ) : null}
 
       <div className="lg:flex lg:items-start lg:gap-12">
-          <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
-            <HeroCard event={event} sessions={sessions} now={now} />
-          <p className="mt-4 hidden text-sm text-text-muted lg:block">
-            {formatManilaDate(event.starts_at)} · {event.venue}
-          </p>
+        <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
+          <HeroCard event={event} sessions={sessions} now={now} />
+          <Typography type="body-sm" color="muted" className="mt-4 hidden lg:block">
+            {formatManilaDate(event.starts_at)}
+            {", "}
+            {event.venue}
+          </Typography>
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
-          <h2 className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-            Program Flow · {formatManilaDate(event.starts_at)}
-          </h2>
+          <Typography.Heading level={2} className="text-base">
+            Program flow
+          </Typography.Heading>
+          <Typography type="body-sm" color="muted" className="mt-1">
+            {formatManilaDate(event.starts_at)}
+          </Typography>
 
-          <div className="mt-3">
-            <div className="rounded-xl border border-border-default p-1">
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setView("all")}
-                  aria-pressed={view === "all"}
-                  className={segmentedButtonClass(view === "all")}
-                >
+          <Tabs
+            className="mt-4"
+            selectedKey={view}
+            onSelectionChange={(key) => setView(key as View)}
+          >
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Session filter">
+                <Tabs.Tab id="all">
                   All
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView("flow")}
-                  aria-pressed={view === "flow"}
-                  className={segmentedButtonClass(view === "flow")}
-                >
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+                <Tabs.Tab id="flow">
+                  <Tabs.Separator />
                   My Flow
-                </button>
-              </div>
-            </div>
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
 
-            <div className="mt-4 flex flex-col gap-3">
-              {visible.map((session) => (
-                <SessionCard
-                  key={session.id}
-                  session={session}
-                  bookmarked={bookmarks.has(session.id)}
-                  now={now}
-                  onToggleBookmark={handleToggleBookmark}
-                  onOpen={setActiveSession}
-                />
-              ))}
-              {visible.length === 0 ? (
-                <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center">
-                  <EmptyComet />
-                  <p className="mt-3 text-sm text-text-muted">
-                    Nothing in your flow yet — switch to All and bookmark the
-                    sessions you don&apos;t want to miss.
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
+            <Tabs.Panel id="all" className="mt-4">
+              {renderList(allSessions, false)}
+            </Tabs.Panel>
+            <Tabs.Panel id="flow" className="mt-4">
+              {renderList(flowSessions, true)}
+            </Tabs.Panel>
+          </Tabs>
         </section>
       </div>
 
@@ -194,7 +212,7 @@ export function HomeClient({
           session={activeSession}
           bookmarked={bookmarks.has(activeSession.id)}
           onToggleBookmark={handleToggleBookmark}
-          onClose={() => setActiveSession(null)}
+          onClose={() => setActiveSessionId(null)}
         />
       ) : null}
 
@@ -202,4 +220,3 @@ export function HomeClient({
     </>
   );
 }
-

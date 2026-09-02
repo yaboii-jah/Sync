@@ -27,6 +27,10 @@ export interface SessionWithSpeakers {
   start_time: string;
   end_time: string;
   status: string;
+  status_override: string | null;
+  status_override_at: string | null;
+  actual_started_at: string | null;
+  actual_ended_at: string | null;
   speakers: SpeakerLite[];
 }
 
@@ -38,6 +42,10 @@ interface SessionRow {
   start_time: string;
   end_time: string;
   status: string;
+  status_override: string | null;
+  status_override_at: string | null;
+  actual_started_at: string | null;
+  actual_ended_at: string | null;
   session_speakers: { speakers_sponsors: SpeakerLite }[];
 }
 
@@ -50,6 +58,10 @@ function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
     start_time: row.start_time,
     end_time: row.end_time,
     status: row.status,
+    status_override: row.status_override,
+    status_override_at: row.status_override_at,
+    actual_started_at: row.actual_started_at,
+    actual_ended_at: row.actual_ended_at,
     speakers: row.session_speakers.map((link) => link.speakers_sponsors),
   };
 }
@@ -57,26 +69,28 @@ function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
 export async function getEvent(
   client: QueryClient,
 ): Promise<EventInfo | null> {
-  const { data } = await client
+  const { data, error } = await client
     .from("events")
     .select("id, name, venue, starts_at, ends_at, status")
     .order("starts_at")
     .limit(1)
     .maybeSingle();
 
+  if (error) throw error;
   return data ?? null;
 }
 
 export async function getSessionsWithSpeakers(
   client: QueryClient,
 ): Promise<SessionWithSpeakers[]> {
-  const { data } = await client
+  const { data, error } = await client
     .from("sessions")
     .select(
-      "id, title, description, room, start_time, end_time, status, session_speakers(speakers_sponsors(id, name, role, organization))",
+      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, session_speakers(speakers_sponsors(id, name, role, organization))",
     )
     .order("start_time", { ascending: true });
 
+  if (error) throw error;
   if (!data) return [];
 
   return (data as unknown as SessionRow[]).map(toSessionWithSpeakers);
@@ -86,14 +100,15 @@ export async function getSessionById(
   client: QueryClient,
   sessionId: string,
 ): Promise<SessionWithSpeakers | null> {
-  const { data } = await client
+  const { data, error } = await client
     .from("sessions")
     .select(
-      "id, title, description, room, start_time, end_time, status, session_speakers(speakers_sponsors(id, name, role, organization))",
+      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, session_speakers(speakers_sponsors(id, name, role, organization))",
     )
     .eq("id", sessionId)
     .maybeSingle();
 
+  if (error) throw error;
   if (!data) return null;
   return toSessionWithSpeakers(data as unknown as SessionRow);
 }
@@ -101,7 +116,8 @@ export async function getSessionById(
 export async function getBookmarkedSessionIds(
   client: QueryClient,
 ): Promise<string[]> {
-  const { data } = await client.from("my_flow_bookmarks").select("session_id");
+  const { data, error } = await client.from("my_flow_bookmarks").select("session_id");
 
+  if (error) throw error;
   return (data ?? []).map((row) => row.session_id);
 }

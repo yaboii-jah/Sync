@@ -10,10 +10,86 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json
+          entity_id: string | null
+          entity_type: string
+          id: number
+          request_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: never
+          request_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: never
+          request_id?: string
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       alert_read_state: {
         Row: {
           last_read_at: string
@@ -82,28 +158,172 @@ export type Database = {
           },
         ]
       }
+      notification_deliveries: {
+        Row: {
+          attempted_at: string
+          device_id: string
+          error: string | null
+          id: number
+          notification_id: string
+          status: string
+          status_code: number | null
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          device_id: string
+          error?: string | null
+          id?: never
+          notification_id: string
+          status: string
+          status_code?: number | null
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          device_id?: string
+          error?: string | null
+          id?: never
+          notification_id?: string
+          status?: string
+          status_code?: number | null
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_dispatches: {
+        Row: {
+          accepted_count: number
+          attempt_count: number
+          completed_at: string | null
+          created_at: string
+          failed_count: number
+          last_error: string | null
+          no_subscription_count: number
+          notification_id: string
+          pruned_count: number
+          recipient_count: number
+          started_at: string | null
+          status: string
+          target_device_count: number
+        }
+        Insert: {
+          accepted_count?: number
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          failed_count?: number
+          last_error?: string | null
+          no_subscription_count?: number
+          notification_id: string
+          pruned_count?: number
+          recipient_count?: number
+          started_at?: string | null
+          status?: string
+          target_device_count?: number
+        }
+        Update: {
+          accepted_count?: number
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          failed_count?: number
+          last_error?: string | null
+          no_subscription_count?: number
+          notification_id?: string
+          pruned_count?: number
+          recipient_count?: number
+          started_at?: string | null
+          status?: string
+          target_device_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_dispatches_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_recipients: {
+        Row: {
+          created_at: string
+          notification_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          notification_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          notification_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_recipients_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
+          audience_kind: string
+          audience_summary: Json
           body: string | null
           created_at: string
+          created_by: string | null
+          dedupe_key: string | null
           id: string
           related_session_id: string | null
+          request_id: string | null
+          source: string
           title: string
           type: string
         }
         Insert: {
+          audience_kind?: string
+          audience_summary?: Json
           body?: string | null
           created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
           id?: string
           related_session_id?: string | null
+          request_id?: string | null
+          source?: string
           title: string
           type: string
         }
         Update: {
+          audience_kind?: string
+          audience_summary?: Json
           body?: string | null
           created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
           id?: string
           related_session_id?: string | null
+          request_id?: string | null
+          source?: string
           title?: string
           type?: string
         }
@@ -239,6 +459,8 @@ export type Database = {
       }
       sessions: {
         Row: {
+          actual_ended_at: string | null
+          actual_started_at: string | null
           description: string | null
           end_time: string
           event_id: string
@@ -247,9 +469,14 @@ export type Database = {
           room: string | null
           start_time: string
           status: string
+          status_override: string | null
+          status_override_at: string | null
+          status_override_by: string | null
           title: string
         }
         Insert: {
+          actual_ended_at?: string | null
+          actual_started_at?: string | null
           description?: string | null
           end_time: string
           event_id: string
@@ -258,9 +485,14 @@ export type Database = {
           room?: string | null
           start_time: string
           status?: string
+          status_override?: string | null
+          status_override_at?: string | null
+          status_override_by?: string | null
           title: string
         }
         Update: {
+          actual_ended_at?: string | null
+          actual_started_at?: string | null
           description?: string | null
           end_time?: string
           event_id?: string
@@ -269,6 +501,9 @@ export type Database = {
           room?: string | null
           start_time?: string
           status?: string
+          status_override?: string | null
+          status_override_at?: string | null
+          status_override_by?: string | null
           title?: string
         }
         Relationships: [
@@ -316,6 +551,100 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_notification: {
+        Args: {
+          audience: string
+          mutation_request_id: string
+          notification_body: string
+          notification_title: string
+          recipient_ids: string[]
+        }
+        Returns: {
+          device_count: number
+          notification_id: string
+          recipient_count: number
+        }[]
+      }
+      admin_get_dashboard: { Args: never; Returns: Json }
+      admin_get_notification: {
+        Args: { target_notification_id: string }
+        Returns: Json
+      }
+      admin_list_audit: {
+        Args: { result_limit?: number; result_offset?: number }
+        Returns: {
+          action: string
+          actor_id: string
+          actor_name: string
+          created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
+          id: number
+        }[]
+      }
+      admin_list_notifications: {
+        Args: { result_limit?: number; result_offset?: number }
+        Returns: {
+          accepted_count: number
+          audience_kind: string
+          body: string
+          created_at: string
+          dispatch_status: string
+          failed_count: number
+          id: string
+          no_subscription_count: number
+          pruned_count: number
+          recipient_count: number
+          source: string
+          target_device_count: number
+          title: string
+          type: string
+        }[]
+      }
+      admin_search_attendees: {
+        Args: {
+          result_limit?: number
+          result_offset?: number
+          search_query?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          linkedin_url: string
+          name: string
+          photo_url: string
+          push_device_count: number
+        }[]
+      }
+      admin_set_session_status: {
+        Args: {
+          action: string
+          mutation_request_id: string
+          send_notification: boolean
+          target_session_id: string
+        }
+        Returns: {
+          actual_ended_at: string
+          actual_started_at: string
+          session_id: string
+          status: string
+          status_override: string
+          status_override_at: string
+        }[]
+      }
+      current_user_is_admin: { Args: never; Returns: boolean }
+      get_scan_profile: {
+        Args: { profile_id: string }
+        Returns: {
+          id: string
+          linkedin_url: string
+          name: string
+          photo_url: string
+        }[]
+      }
+      mark_alerts_read: { Args: never; Returns: undefined }
+      retry_push_dispatches: { Args: never; Returns: undefined }
       sync_program_flow_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
@@ -445,6 +774,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

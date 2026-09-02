@@ -1,20 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Lato } from "next/font/google";
-import localFont from "next/font/local";
 import { ServiceWorkerRegistration } from "@/components/push/service-worker-registration";
+import { Providers } from "./providers";
 import "./globals.css";
-
-const lato = Lato({
-  variable: "--font-lato",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
-
-const perandory = localFont({
-  src: "./fonts/COMMERCIAL/PERANDORY/Perandory-Semi-Condensed.otf",
-  variable: "--font-perandory",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Sync — Student Edition",
@@ -28,17 +15,17 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#024056",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#252525" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${lato.variable} ${perandory.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col font-sans">
-        {children}
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <body className="bg-background text-foreground flex min-h-full flex-col">
+        <Providers>{children}</Providers>
         <ServiceWorkerRegistration />
       </body>
     </html>

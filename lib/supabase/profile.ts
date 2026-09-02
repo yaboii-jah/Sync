@@ -14,15 +14,41 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | 
   const supabase = await createClient();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
+  if (userError) throw userError;
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  const profileResult = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileResult.error) throw profileResult.error;
+
+  let profile = profileResult.data;
+
+  if (!profile) {
+    const { error: createError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      name: user.user_metadata?.name ?? "",
+      photo_url:
+        user.user_metadata?.picture ?? user.user_metadata?.avatar_url ?? null,
+    });
+
+    if (createError) throw createError;
+
+    const result = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (result.error) throw result.error;
+    profile = result.data;
+  }
 
   return { user, profile };
 }
@@ -33,8 +59,17 @@ export async function requireCompleteProfile(): Promise<{
 }> {
   const result = await getAuthenticatedProfile();
 
-  if (!result || !result.profile) redirect("/login");
-  if (!result.profile.linkedin_url) redirect("/onboarding");
+  if (!result) redirect("/");
+  if (!result.profile) throw new Error("Authenticated profile recovery failed");
+  /*
+   * No LinkedIn-URL gate. The QR now resolves through `linkedInScanTarget`,
+   * which falls back to a name search when the profile URL is absent, so the
+   * whole app — including Connect — works from first sign-in with nothing
+   * typed. Setting a URL is now an upgrade rather than a requirement: Settings
+   * carries its own LinkedIn field, and the moment an attendee fills it their
+   * QR switches from the name search to their exact profile. The `/onboarding`
+   * route still exists but nothing links to it any more.
+   */
 
   return { user: result.user, profile: result.profile };
 }

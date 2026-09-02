@@ -1,318 +1,116 @@
 @import "tailwindcss";
+/*
+ * The `/css` subpath, not the bare package name. `@heroui/styles`'s root
+ * export only reaches the stylesheet through a `style` condition, which
+ * Turbopack's CSS resolver does not apply, so a bare import resolves to
+ * dist/index.js and fails. `./css` maps to dist/index.css unconditionally.
+ */
+@import "@heroui/styles/css";
 
-:root {
-  --bg-base: #024056;
-  --bg-surface: #10734f;
-  --text-primary: #e6ffc9;
-  --text-muted: #a6d95f;
-  --accent-primary: #176844;
-  --border-default: #bc8330;
-  --state-error: #d9614f;
-  --state-success: #58de69;
-  --pastel-yellow: #fcdb64;
-  --charcoal: #1a1a1a;
-  --art-void: #041a19;
-  --art-petrol: #0c272c;
-  --art-deep-teal: #123a47;
-  --art-emerald-deep: #0e6057;
-  --art-emerald: #197b62;
-  --art-gold: #e6b84f;
+/*
+ * Monochrome theme override.
+ *
+ * Every token below is one of HeroUI's own theme variables, re-pointed at a
+ * zero-chroma value. Nothing here invents a new design system: components keep
+ * using HeroUI's variants, radii, shadows and motion, they just resolve to
+ * greys. Light and dark are the two built-in HeroUI themes, switched by
+ * next-themes via the `dark` class on <html>.
+ *
+ * These blocks sit outside @layer on purpose. Unlayered rules win over the
+ * layered defaults that @heroui/styles ships, which is the override path the
+ * HeroUI theming guide documents.
+ */
+
+:root,
+.light,
+[data-theme="light"] {
+  /* Primitives */
+  --white: oklch(1 0 0);
+  --black: oklch(0 0 0);
+  --snow: oklch(0.99 0 0);
+  --eclipse: oklch(0.21 0 0);
+
+  /* Base */
+  --background: oklch(0.97 0 0);
+  --foreground: var(--eclipse);
+
+  /* Surfaces */
+  --surface: oklch(1 0 0);
+  --surface-secondary: oklch(0.952 0 0);
+  --surface-tertiary: oklch(0.925 0 0);
+  --overlay: oklch(1 0 0);
+
+  --muted: oklch(0.552 0 0);
+  --default: oklch(0.94 0 0);
+  --default-foreground: var(--eclipse);
+  --segment: oklch(1 0 0);
+
+  /* The single accent. Near-black on light, so primary actions read as ink. */
+  --accent: var(--eclipse);
+  --accent-foreground: var(--snow);
+
+  /* Form fields */
+  --field-background: oklch(1 0 0);
+  --field-foreground: var(--eclipse);
+
+  /*
+   * Status colours collapse onto the accent. Status is carried by fill vs
+   * outline, weight and position instead of hue, so nothing reads as coloured.
+   */
+  --success: var(--eclipse);
+  --success-foreground: var(--snow);
+  --warning: var(--eclipse);
+  --warning-foreground: var(--snow);
+  --danger: var(--eclipse);
+  --danger-foreground: var(--snow);
+
+  /* Lines and focus */
+  --border: oklch(0.9 0 0);
+  --separator: oklch(0.925 0 0);
+  --focus: var(--eclipse);
+  --link: var(--foreground);
+
+  --backdrop: rgba(0, 0, 0, 0.45);
 }
 
-@theme inline {
-  --color-bg-base: var(--bg-base);
-  --color-bg-surface: var(--bg-surface);
-  --color-text-primary: var(--text-primary);
-  --color-text-muted: var(--text-muted);
-  --color-accent-primary: var(--accent-primary);
-  --color-border-default: var(--border-default);
-  --color-state-error: var(--state-error);
-  --color-state-success: var(--state-success);
-  --color-pastel-yellow: var(--pastel-yellow);
-  --color-charcoal: var(--charcoal);
-  --color-light-green: var(--state-success);
-  --font-sans: var(--font-lato);
-  --font-display: var(--font-perandory);
-}
+.dark,
+[data-theme="dark"] {
+  /* Base */
+  --background: oklch(0.145 0 0);
+  --foreground: var(--snow);
 
-body {
-  background-color: var(--bg-base);
-  color: var(--text-primary);
-}
+  /* Surfaces */
+  --surface: oklch(0.21 0 0);
+  --surface-secondary: oklch(0.255 0 0);
+  --surface-tertiary: oklch(0.29 0 0);
+  --overlay: oklch(0.21 0 0);
 
-.hero-field {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(70% 55% at 88% 4%, rgba(230, 184, 79, 0.34), transparent 62%),
-    radial-gradient(85% 62% at 50% 45%, rgba(25, 123, 98, 0.3), transparent 72%),
-    radial-gradient(120% 100% at 50% 100%, rgba(18, 58, 71, 0.62), transparent 68%),
-    linear-gradient(
-      165deg,
-      rgba(14, 96, 87, 0.46),
-      rgba(2, 64, 86, 0.62) 70%,
-      rgba(12, 39, 44, 0.82)
-    );
-}
+  --muted: oklch(0.705 0 0);
+  --default: oklch(0.274 0 0);
+  --default-foreground: var(--snow);
+  --segment: oklch(0.396 0 0);
 
-.hero-field::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 68% 12%, #fff 40%, transparent 41%),
-    radial-gradient(1.5px 1.5px at 32% 62%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 84% 46%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 47% 28%, #fff 40%, transparent 41%),
-    radial-gradient(1.5px 1.5px at 8% 78%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 92% 72%, #fff 40%, transparent 41%);
-}
+  /* Accent inverts: near-white on dark, so primary actions still read as ink. */
+  --accent: var(--snow);
+  --accent-foreground: var(--eclipse);
 
-.stars-layer-a,
-.stars-layer-b {
-  background-repeat: no-repeat;
-}
+  /* Form fields */
+  --field-background: oklch(0.21 0 0);
+  --field-foreground: var(--snow);
 
-.stars-layer-a {
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(230, 255, 201, 1), transparent),
-    radial-gradient(1.5px 1.5px at 68% 12%, rgba(230, 255, 201, 0.85), transparent),
-    radial-gradient(2px 2px at 84% 34%, rgba(230, 255, 201, 0.95), transparent),
-    radial-gradient(1.5px 1.5px at 32% 8%, rgba(230, 255, 201, 0.75), transparent),
-    radial-gradient(1.5px 1.5px at 52% 28%, rgba(230, 255, 201, 0.9), transparent),
-    radial-gradient(2px 2px at 8% 48%, rgba(230, 255, 201, 0.85), transparent),
-    radial-gradient(1.5px 1.5px at 92% 56%, rgba(230, 255, 201, 0.75), transparent);
-  animation: stars-twinkle 7s ease-in-out infinite;
-}
+  /* Status colours collapse onto the accent, same as light. */
+  --success: var(--snow);
+  --success-foreground: var(--eclipse);
+  --warning: var(--snow);
+  --warning-foreground: var(--eclipse);
+  --danger: var(--snow);
+  --danger-foreground: var(--eclipse);
 
-.stars-layer-b {
-  background-image:
-    radial-gradient(1.5px 1.5px at 24% 38%, rgba(166, 217, 95, 0.7), transparent),
-    radial-gradient(2px 2px at 44% 16%, rgba(230, 255, 201, 0.65), transparent),
-    radial-gradient(1.5px 1.5px at 76% 42%, rgba(166, 217, 95, 0.75), transparent),
-    radial-gradient(1.5px 1.5px at 58% 50%, rgba(230, 255, 201, 0.6), transparent),
-    radial-gradient(2px 2px at 18% 60%, rgba(230, 255, 201, 0.65), transparent),
-    radial-gradient(1.5px 1.5px at 88% 20%, rgba(166, 217, 95, 0.7), transparent);
-  animation: stars-twinkle 9s ease-in-out infinite reverse;
-}
+  /* Lines and focus */
+  --border: oklch(0.29 0 0);
+  --separator: oklch(0.26 0 0);
+  --focus: var(--snow);
+  --link: var(--foreground);
 
-.lockup-sheen {
-  letter-spacing: 0.045em;
-  line-height: 0.94;
-  background-image: linear-gradient(
-    140deg,
-    var(--text-primary) 0%,
-    var(--text-primary) 36%,
-    var(--pastel-yellow) 48%,
-    var(--text-muted) 54%,
-    var(--text-primary) 66%,
-    var(--text-primary) 100%
-  );
-  background-size: 250%;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  text-shadow:
-    0 0 12px rgba(230, 255, 201, 0.38),
-    0 0 44px rgba(252, 219, 100, 0.26);
-  animation: lockup-sheen 7s ease-in-out infinite;
-}
-
-.flourish {
-  height: 1px;
-  width: clamp(6rem, 18vw, 11rem);
-  opacity: 0.75;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--art-gold) 35%,
-    var(--pastel-yellow) 50%,
-    var(--art-gold) 65%,
-    transparent
-  );
-}
-
-.grain-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-.comet {
-  position: absolute;
-  left: 0;
-  top: var(--top, -4vh);
-  width: var(--w, 16rem);
-  height: 1px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(230, 184, 79, 0.35) 55%,
-    rgba(252, 219, 100, 1)
-  );
-  box-shadow: 0 0 8px rgba(230, 184, 79, 0.75);
-  transform: rotate(24deg);
-  opacity: 0.22;
-  --len: min(120vw, 1500px);
-  animation: comet-fall var(--dur, 22s) linear infinite;
-  animation-delay: var(--delay, 0s);
-}
-
-@keyframes stars-twinkle {
-  0%,
-  100% {
-    opacity: 0.65;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes lockup-sheen {
-  0% {
-    background-position: -60%;
-  }
-  55% {
-    background-position: 160%;
-  }
-  100% {
-    background-position: 160%;
-  }
-}
-
-@keyframes comet-fall {
-  0% {
-    translate: var(--sx, -18vw) 0;
-    opacity: 0;
-  }
-  4% {
-    opacity: 0.95;
-  }
-  32% {
-    translate: calc(var(--sx, -18vw) + var(--len, 120vw))
-      calc(var(--len, 120vw) * 0.45);
-    opacity: var(--end-o, 0);
-  }
-  45% {
-    opacity: var(--end-o, 0);
-  }
-  55% {
-    opacity: 0;
-  }
-  100% {
-    translate: calc(var(--sx, -18vw) + var(--len, 120vw))
-      calc(var(--len, 120vw) * 0.45);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stars-layer-a,
-  .stars-layer-b,
-  .lockup-sheen,
-  .comet,
-  .modal-backdrop,
-  .modal-card,
-  .push-modal-backdrop,
-  .push-modal-card,
-  .toast-in {
-    animation: none;
-  }
-
-  .animate-pulse {
-    animation: none;
-    opacity: 0.5;
-  }
-
-  .comet:nth-child(1) {
-    translate: 12vw 10vh;
-  }
-  .comet:nth-child(2) {
-    translate: 42vw 4vh;
-  }
-  .comet:nth-child(3) {
-    translate: 68vw 14vh;
-  }
-  .comet:nth-child(4) {
-    translate: 24vw 26vh;
-  }
-  .comet:nth-child(5) {
-    translate: 78vw 8vh;
-  }
-  .comet:nth-child(6) {
-    translate: 52vw 20vh;
-  }
-}
-
-:where(a, button, input, textarea, select):focus-visible {
-  outline: 2px solid var(--pastel-yellow);
-  outline-offset: 2px;
-}
-
-@keyframes modal-backdrop-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes modal-card-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-backdrop {
-  animation: modal-backdrop-in 0.2s ease-out;
-}
-
-.modal-card {
-  animation: modal-card-in 0.25s ease-out;
-}
-
-.push-modal-backdrop {
-  animation: modal-backdrop-in 0.3s ease-out;
-}
-
-.push-modal-card {
-  animation: modal-card-in 0.3s ease-out;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.toast-in {
-  animation: toast-in 0.2s ease-out;
-}
-
-@keyframes bookmark-pop {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
-  }
+  --backdrop: rgba(0, 0, 0, 0.6);
 }
