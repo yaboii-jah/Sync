@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Alert } from "@heroui/react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { ConnectCard } from "@/components/connect/connect-card";
-import { linkedInScanTarget } from "@/lib/linkedin";
 
 export const metadata: Metadata = {
   title: "Connect — Sync",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const SHARED_MESSAGES: Record<string, { status: "success" | "danger"; text: string }> = {
   ok: {
     status: "success",
-    text: "Saved. Your code now opens your LinkedIn profile directly.",
+    text: "Saved. Your LinkedIn profile is on your card.",
   },
   miss: {
     status: "danger",
@@ -31,6 +31,7 @@ export default async function ConnectPage({
   // Without it the save is silent, which reads as the share having failed.
   const { shared } = await searchParams;
   const { profile } = await requireCompleteProfile();
+  const card = await getOwnNetworkingCard();
   const name = profile.name || "Attendee";
 
   /*
@@ -71,12 +72,25 @@ export default async function ConnectPage({
         ) : null}
 
         <div className="mt-6">
-          <ConnectCard
-            name={name}
-            photoUrl={profile.photo_url}
-            qrValue={`${origin}/u/${profile.id}`}
-            linkedinUrl={linkedInScanTarget(profile.linkedin_url, name)}
-          />
+          {card ? (
+            <ConnectCard
+              name={name}
+              photoUrl={profile.photo_url}
+              qrValue={`${origin}/c/${card.publicToken}`}
+              links={card.links}
+              isPublic={card.isPublic}
+            />
+          ) : (
+            <Alert status="danger">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>
+                  Your networking card could not be loaded. Reload the page, and
+                  tell an organiser if it stays missing.
+                </Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )}
         </div>
       </div>
     </main>
