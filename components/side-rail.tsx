@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { useAlertsCount } from "@/components/alerts-count-provider";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 interface RailItem {
   label: string;
@@ -83,6 +84,7 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
             Admin view
           </Link>
         ) : null}
+        <ThemeSwitch />
         <Link
           href="/settings"
           aria-current={pathname.startsWith("/settings") ? "page" : undefined}

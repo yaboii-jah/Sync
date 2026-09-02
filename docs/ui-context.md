@@ -20,7 +20,7 @@ Anything else that needs a new visual should be assembled from HeroUI parts firs
 
 **Neutral surfaces plus a single tint, light and dark, following the system by default.**
 
-`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="system"`, `enableSystem`). HeroUI reads it directly; there is no HeroUI provider. Settings offers a Light / Dark / System control (`components/theme-switch.tsx`) that persists the choice.
+`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="system"`, `enableSystem`). HeroUI reads it directly; there is no HeroUI provider. Settings offers a Light / Dark / System control (`components/theme-switch.tsx`) that persists the choice. Desktop navigation exposes the same control beside Account; mobile keeps theme choices in Settings.
 
 `app/globals.css` imports Tailwind, then `@heroui/styles`, then re-points HeroUI's own theme variables. Surfaces stay zero-chroma; `--accent` and the status tokens carry HeroUI's stock values. Nothing new is invented; every override is a HeroUI token:
 
