@@ -19,7 +19,13 @@ const LABELS: Record<DisplayStatus, string> = {
 
 export function StatusBadge({ status }: { status: DisplayStatus }) {
   return (
-    <Chip size="sm" variant={VARIANTS[status]}>
+    <Chip
+      size="sm"
+      variant={VARIANTS[status]}
+      className={
+        status === "ongoing" ? "bg-accent text-accent-foreground" : undefined
+      }
+    >
       {LABELS[status]}
     </Chip>
   );

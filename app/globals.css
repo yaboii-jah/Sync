@@ -30,8 +30,9 @@
   --snow: oklch(0.99 0 0);
   --eclipse: oklch(0.21 0 0);
 
-  /* Base */
-  --background: oklch(0.97 0 0);
+  /* Base. iOS's grouped light ground (#F2F2F7) — the faint blue undertone
+     that separates white cells from the page the way native apps do. */
+  --background: #f2f2f7;
   --foreground: var(--eclipse);
 
   /* Surfaces */
@@ -45,29 +46,29 @@
   --default-foreground: var(--eclipse);
   --segment: oklch(1 0 0);
 
-  /* The single accent. Near-black on light, so primary actions read as ink. */
-  --accent: var(--eclipse);
+  /*
+   * The tint is HeroUI's own default primary blue — the colour that makes the
+   * stock HeroUI look read as an iOS app. One tint, everything else neutral.
+   */
+  --accent: #006fee;
   --accent-foreground: var(--snow);
 
   /* Form fields */
   --field-background: oklch(1 0 0);
   --field-foreground: var(--eclipse);
 
-  /*
-   * Status colours collapse onto the accent. Status is carried by fill vs
-   * outline, weight and position instead of hue, so nothing reads as coloured.
-   */
-  --success: var(--eclipse);
-  --success-foreground: var(--snow);
-  --warning: var(--eclipse);
-  --warning-foreground: var(--snow);
-  --danger: var(--eclipse);
+  /* HeroUI's stock status palette — real hues, as the design system ships. */
+  --success: #17c964;
+  --success-foreground: var(--eclipse);
+  --warning: #f5a524;
+  --warning-foreground: var(--eclipse);
+  --danger: #f31260;
   --danger-foreground: var(--snow);
 
   /* Lines and focus */
   --border: oklch(0.9 0 0);
   --separator: oklch(0.925 0 0);
-  --focus: var(--eclipse);
+  --focus: var(--accent);
   --link: var(--foreground);
 
   --backdrop: rgba(0, 0, 0, 0.45);
@@ -75,41 +76,50 @@
 
 .dark,
 [data-theme="dark"] {
-  /* Base */
-  --background: oklch(0.145 0 0);
+  /*
+   * Base. Dark follows iOS's grouped dark palette: a true-black ground with
+   * cells at systemGray6 (#1C1C1E) and systemGray5 (#2C2C2E) equivalents. The
+   * wider ground-to-surface gap is what makes cards read as cells rather than
+   * smudges — still zero chroma throughout.
+   */
+  --background: oklch(0 0 0);
   --foreground: var(--snow);
 
   /* Surfaces */
-  --surface: oklch(0.21 0 0);
-  --surface-secondary: oklch(0.255 0 0);
-  --surface-tertiary: oklch(0.29 0 0);
-  --overlay: oklch(0.21 0 0);
+  --surface: oklch(0.235 0 0);
+  --surface-secondary: oklch(0.295 0 0);
+  --surface-tertiary: oklch(0.345 0 0);
+  --overlay: oklch(0.235 0 0);
 
   --muted: oklch(0.705 0 0);
-  --default: oklch(0.274 0 0);
+  --default: oklch(0.295 0 0);
   --default-foreground: var(--snow);
-  --segment: oklch(0.396 0 0);
+  --segment: oklch(0.44 0 0);
 
-  /* Accent inverts: near-white on dark, so primary actions still read as ink. */
-  --accent: var(--snow);
-  --accent-foreground: var(--eclipse);
+  /*
+   * The tint is HeroUI's default primary blue, unchanged in dark — the stock
+   * HeroUI dark look. It marks live state, primary chips, the active tab and
+   * the bookmark; everything else stays zero-chroma.
+   */
+  --accent: #006fee;
+  --accent-foreground: var(--snow);
 
   /* Form fields */
   --field-background: oklch(0.21 0 0);
   --field-foreground: var(--snow);
 
-  /* Status colours collapse onto the accent, same as light. */
-  --success: var(--snow);
+  /* HeroUI's stock status palette, same as light. */
+  --success: #17c964;
   --success-foreground: var(--eclipse);
-  --warning: var(--snow);
+  --warning: #f5a524;
   --warning-foreground: var(--eclipse);
-  --danger: var(--snow);
-  --danger-foreground: var(--eclipse);
+  --danger: #f31260;
+  --danger-foreground: var(--snow);
 
   /* Lines and focus */
-  --border: oklch(0.29 0 0);
-  --separator: oklch(0.26 0 0);
-  --focus: var(--snow);
+  --border: oklch(0.3 0 0);
+  --separator: oklch(0.28 0 0);
+  --focus: var(--accent);
   --link: var(--foreground);
 
   --backdrop: rgba(0, 0, 0, 0.6);
@@ -333,4 +343,14 @@
   .comet:nth-child(3) {
     translate: 68vw 14vh;
   }
+}
+
+/*
+ * iOS squircle corners. `corner-shape` ships in modern Chromium/Safari;
+ * browsers without it simply keep the ordinary border-radius. Applied to the
+ * major rounded surfaces (hero, cells, capsule, sheet) for the continuous
+ * superellipse curve native iOS uses.
+ */
+.squircle {
+  corner-shape: squircle;
 }
