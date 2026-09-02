@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="bg-background min-h-full">
       <AlertsCountProvider>
         <SideRail isAdmin={isAdmin} />
-        <div className="relative flex min-h-full flex-col pb-24 lg:ml-[232px] lg:pb-0">
+        <div className="relative flex min-h-full flex-col pb-24 lg:pb-0">
           {children}
         </div>
         <BottomTabs />
