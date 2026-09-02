@@ -132,6 +132,75 @@ export type Database = {
         }
         Relationships: []
       }
+      merch_attendees: {
+        Row: {
+          claim_method: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          extra: Json
+          first_name: string
+          id: string
+          last_name: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          claim_method?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          extra?: Json
+          first_name?: string
+          id: string
+          last_name: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          claim_method?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          extra?: Json
+          first_name?: string
+          id?: string
+          last_name?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      merch_scan_log: {
+        Row: {
+          at: string
+          attendee_id: string | null
+          attendee_name: string | null
+          device: string
+          outcome: string
+          raw: string | null
+          received_at: string
+          uid: string
+        }
+        Insert: {
+          at: string
+          attendee_id?: string | null
+          attendee_name?: string | null
+          device: string
+          outcome: string
+          raw?: string | null
+          received_at?: string
+          uid: string
+        }
+        Update: {
+          at?: string
+          attendee_id?: string | null
+          attendee_name?: string | null
+          device?: string
+          outcome?: string
+          raw?: string | null
+          received_at?: string
+          uid?: string
+        }
+        Relationships: []
+      }
       my_flow_bookmarks: {
         Row: {
           created_at: string
@@ -154,6 +223,38 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      networking_cards: {
+        Row: {
+          created_at: string
+          is_public: boolean
+          public_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_public?: boolean
+          public_token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          is_public?: boolean
+          public_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "networking_cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -341,9 +442,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          linkedin_url: string | null
-          linkedin_url_lookup_at: string | null
-          linkedin_url_suggestion: string | null
           name: string
           pass_type: string
           photo_url: string | null
@@ -352,9 +450,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id: string
-          linkedin_url?: string | null
-          linkedin_url_lookup_at?: string | null
-          linkedin_url_suggestion?: string | null
           name?: string
           pass_type?: string
           photo_url?: string | null
@@ -363,9 +458,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          linkedin_url?: string | null
-          linkedin_url_lookup_at?: string | null
-          linkedin_url_suggestion?: string | null
           name?: string
           pass_type?: string
           photo_url?: string | null
@@ -516,6 +608,38 @@ export type Database = {
           },
         ]
       }
+      social_profiles: {
+        Row: {
+          created_at: string
+          network: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          network: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          network?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       speakers_sponsors: {
         Row: {
           bio: string | null
@@ -611,7 +735,6 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
-          linkedin_url: string
           name: string
           photo_url: string
           push_device_count: number
@@ -634,17 +757,84 @@ export type Database = {
         }[]
       }
       current_user_is_admin: { Args: never; Returns: boolean }
-      get_scan_profile: {
-        Args: { profile_id: string }
+      get_own_networking_card: {
+        Args: never
         Returns: {
-          id: string
-          linkedin_url: string
+          is_public: boolean
+          network: string
+          public_token: string
+          url: string
+        }[]
+      }
+      get_public_networking_card: {
+        Args: { card_token: string }
+        Returns: {
           name: string
+          network: string
           photo_url: string
+          url: string
         }[]
       }
       mark_alerts_read: { Args: never; Returns: undefined }
+      merch_claim_attendee: {
+        Args: {
+          p_at: string
+          p_by: string
+          p_id: string
+          p_method: string
+          p_note: string
+        }
+        Returns: {
+          claim_method: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          extra: Json
+          first_name: string
+          id: string
+          last_name: string
+          note: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merch_attendees"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      merch_revert_claim: {
+        Args: { p_by: string; p_id: string }
+        Returns: {
+          claim_method: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          extra: Json
+          first_name: string
+          id: string
+          last_name: string
+          note: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merch_attendees"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       retry_push_dispatches: { Args: never; Returns: undefined }
+      save_social_profiles: {
+        Args: {
+          facebook_url: string
+          instagram_url: string
+          linkedin_url: string
+        }
+        Returns: undefined
+      }
+      set_networking_card_public: {
+        Args: { published: boolean }
+        Returns: boolean
+      }
       sync_program_flow_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
