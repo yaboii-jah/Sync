@@ -6,9 +6,9 @@ import { ExternalLink, UserX } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-states";
-import { getScanProfile } from "@/lib/supabase/queries/scan";
-import { linkedInScanTarget } from "@/lib/linkedin";
+import { getPublicNetworkingCard } from "@/lib/supabase/queries/networking";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import { SOCIAL_NETWORKS, SOCIAL_SPECS } from "@/lib/social";
 import {
   primaryLinkClass,
   secondaryLinkClass,
@@ -21,36 +21,35 @@ export const metadata: Metadata = {
 /**
  * Where a scanned networking QR lands.
  *
- * The QR encodes this route rather than a LinkedIn URL, which is what removes
- * the setup step entirely: `name` and `photo_url` both come from the LinkedIn
- * sign-in, so an attendee's card is complete the moment they first sign in and
- * there is nothing to type, paste or confirm.
+ * The QR encodes a card token rather than an attendee id, so the card its owner
+ * publishes is the only thing this route can show: the RPC returns rows only
+ * while the card is public, and it returns the links the owner chose — never
+ * their id, their token, or a profile they did not publish. Withdrawing the
+ * card takes effect on the next scan of the same code.
  *
- * The card always identifies the person exactly — Sync knows whose id is in the
- * URL. Only the final hop to LinkedIn can be imprecise, and only for someone who
- * has never set a profile URL: `linkedInScanTarget` falls back to a name search
- * there. Anyone who has set one gets a direct profile link.
- *
- * Sign-in is required, so the reader is a fellow attendee rather than anyone who
- * happens to point a camera at a photo of the code.
+ * Sign-in is still required, so the reader is a fellow attendee rather than
+ * anyone who happens to point a camera at a photo of the code.
  */
-export default async function ScanPage({
+export default async function CardPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ token: string }>;
 }) {
   // Gates on sign-in and gives the scanner their own nav shell.
   await requireCompleteProfile();
 
-  const { id } = await params;
-  const profile = await getScanProfile(id);
+  const { token } = await params;
+  const card = await getPublicNetworkingCard(token);
+  const links = card
+    ? SOCIAL_NETWORKS.filter((network) => card.links[network])
+    : [];
 
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-md px-4 pt-8 pb-8 lg:pt-10">
         <AppHeader />
 
-        {profile ? (
+        {card ? (
           <>
             <Typography type="body-sm" color="muted" className="mt-6">
               You met
@@ -59,10 +58,10 @@ export default async function ScanPage({
             <Card className="mt-2">
               <Card.Content className="flex flex-col items-center gap-4 py-8 text-center">
                 <Avatar size="lg" className="size-24">
-                  {profile.photo_url ? (
-                    <Avatar.Image asChild src={profile.photo_url}>
+                  {card.photoUrl ? (
+                    <Avatar.Image asChild src={card.photoUrl}>
                       <Image
-                        src={profile.photo_url}
+                        src={card.photoUrl}
                         alt=""
                         width={96}
                         height={96}
@@ -71,28 +70,28 @@ export default async function ScanPage({
                     </Avatar.Image>
                   ) : null}
                   <Avatar.Fallback>
-                    {(profile.name || "?").charAt(0).toUpperCase()}
+                    {(card.name || "?").charAt(0).toUpperCase()}
                   </Avatar.Fallback>
                 </Avatar>
 
                 <Typography.Heading level={1} className="text-xl">
-                  {profile.name || "Attendee"}
+                  {card.name || "Attendee"}
                 </Typography.Heading>
               </Card.Content>
 
-              <Card.Footer>
-                <a
-                  href={linkedInScanTarget(
-                    profile.linkedin_url,
-                    profile.name || "",
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${primaryLinkClass} w-full`}
-                >
-                  <ExternalLink className="size-4" aria-hidden />
-                  Connect on LinkedIn
-                </a>
+              <Card.Footer className="flex flex-col gap-3">
+                {links.map((network, index) => (
+                  <a
+                    key={network}
+                    href={card.links[network]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${index === 0 ? primaryLinkClass : secondaryLinkClass} w-full`}
+                  >
+                    <ExternalLink className="size-4" aria-hidden />
+                    Connect on {SOCIAL_SPECS[network].label}
+                  </a>
+                ))}
               </Card.Footer>
             </Card>
           </>
@@ -101,7 +100,7 @@ export default async function ScanPage({
             <EmptyState
               icon={<UserX />}
               title="Card not found"
-              description="That code does not match an attendee. Ask them to open Connect and show it again."
+              description="That code is not sharing a card right now. Ask them to open Connect and show it again."
             />
           </Card>
         )}
