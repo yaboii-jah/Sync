@@ -74,6 +74,9 @@ change.
 
 ## Open Questions
 
+- **`social_profiles` lost its write gate.** `20260902120000_social_profiles.sql` ran outside the migration runner and recreated the table, dropping the canonical-URL check constraint and restoring direct INSERT/UPDATE/DELETE for `authenticated`. `20260902130000_restore_social_profile_write_gate.sql` puts both back but is not applied, and the 20260902120000 row is still missing from `supabase_migrations.schema_migrations`
+- **Two Connect implementations now ship together.** `ConnectClient` + `lib/platforms.ts` (per-platform picker, QR encodes the social URL) is what `/connect` renders; `/c/[token]`, `lib/social.ts` and the `networking_cards` publish gate are still in the tree and unreferenced by that page. Nothing calls `set_networking_card_public`, so no card is ever published and `/c/[token]` always renders "card not found". One of the two has to win
+
 - The card path has never been exercised against the database — publish, scan and withdraw all need a real signed-in browser test
 - Should a scan be recorded, so an attendee leaves the event with a list of who they met? The QR now resolves inside Sync, which makes this possible for the first time — it was never possible while the code pointed at LinkedIn. It needs a new table and would touch Invariant 3, so it is a deliberate scope decision rather than a follow-on
 

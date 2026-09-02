@@ -465,38 +465,6 @@ export type Database = {
         }
         Relationships: []
       }
-      social_profiles: {
-        Row: {
-          created_at: string
-          network: string
-          updated_at: string
-          url: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          network: string
-          updated_at?: string
-          url: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          network?: string
-          updated_at?: string
-          url?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "social_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       push_subscriptions: {
         Row: {
           auth: string

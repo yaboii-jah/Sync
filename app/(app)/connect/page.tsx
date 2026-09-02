@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Alert } from "@heroui/react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
-import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { ConnectClient } from "@/components/connect/connect-client";
+import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
 import type { SocialPlatform } from "@/lib/platforms";
 
 export const metadata: Metadata = {
@@ -29,21 +29,15 @@ export default async function ConnectPage({
 }) {
   const { shared } = await searchParams;
   const { profile } = await requireCompleteProfile();
-  const card = await getOwnNetworkingCard();
   const name = profile.name || "Attendee";
 
-  const supabase = await createClient();
-  const { data: socialProfiles } = await supabase
-    .from("social_profiles")
-    .select("network, url")
-    .eq("user_id", profile.id);
-
-  const savedUrls: Partial<Record<SocialPlatform, string>> = {};
-  if (socialProfiles) {
-    for (const sp of socialProfiles) {
-      savedUrls[sp.network as SocialPlatform] = sp.url;
-    }
-  }
+  /*
+   * Read through the card RPC rather than selecting `social_profiles`
+   * directly, so one query answers both what is saved and whether the card is
+   * published.
+   */
+  const card = await getOwnNetworkingCard();
+  const savedUrls: Partial<Record<SocialPlatform, string>> = card?.links ?? {};
 
   const sharedMessage = shared
     ? (SHARED_MESSAGES[shared] ?? {

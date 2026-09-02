@@ -3,13 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isValidPlatformUrl, type SocialPlatform } from "@/lib/platforms";
+import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
+import { normalizeSocialUrl, type SocialNetwork } from "@/lib/social";
 
 export interface SaveSocialProfileState {
   error: string | null;
   success: boolean;
 }
 
+/**
+ * Saves one platform's profile URL.
+ *
+ * The write goes through `save_social_profiles` rather than a direct upsert:
+ * `social_profiles` has no INSERT, UPDATE or DELETE grant for `authenticated`
+ * (migration `20260901162556`), so a direct write is refused by the database.
+ * The RPC additionally requires a Google identity.
+ *
+ * That RPC replaces the whole set, so the other two links are read back and
+ * re-sent. Sending only the edited one would silently drop the others.
+ */
 export async function saveSocialProfile(
   _prevState: SaveSocialProfileState,
   formData: FormData,
@@ -27,7 +39,16 @@ export async function saveSocialProfile(
     return { error: "URL cannot be empty.", success: false };
   }
 
-  if (!isValidPlatformUrl(network as SocialPlatform, url)) {
+  /*
+   * `lib/platforms.ts` validates loosely for the field's own message; the
+   * column's check constraint accepts exactly one URL shape per network, so
+   * the value is reduced to that shape here before it is sent. A link that
+   * cannot be reduced is rejected with a message rather than as a constraint
+   * violation.
+   */
+  const normalized = normalizeSocialUrl(network as SocialNetwork, url);
+
+  if (!normalized) {
     return {
       error: `Enter a valid ${network} profile URL.`,
       success: false,
@@ -41,18 +62,21 @@ export async function saveSocialProfile(
 
   if (!user) redirect("/login");
 
-  const { error } = await supabase
-    .from("social_profiles")
-    .upsert(
-      { user_id: user.id, network, url },
-      { onConflict: "user_id,network" },
-    );
+  const card = await getOwnNetworkingCard();
+  const links = { ...card?.links, [network]: normalized };
+
+  const { error } = await supabase.rpc("save_social_profiles", {
+    linkedin_url: links.linkedin ?? "",
+    instagram_url: links.instagram ?? "",
+    facebook_url: links.facebook ?? "",
+  });
 
   if (error) {
     return { error: "Could not save your social profile. Please try again.", success: false };
   }
 
   revalidatePath("/connect");
+  revalidatePath("/settings");
 
   return { error: null, success: true };
 }
