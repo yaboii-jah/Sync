@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, ProgressBar, ToggleButton, Typography } from "@heroui/react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Clock3, MapPin } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
   effectiveSessionStatus,
@@ -76,22 +76,28 @@ export function SessionCard({
           {ongoing ? null : <StatusBadge status={status} />}
         </div>
 
-        <Typography
-          type="body-sm"
-          color="muted"
-          className="mt-1.5 tabular-nums"
-          suppressHydrationWarning
-        >
-          {durationMinutes} min
-          {relative ? ` · ${relative}` : ""}
-        </Typography>
+        <div className="mt-1.5 flex items-center gap-1.5 text-muted">
+          <Clock3 className="size-3.5 shrink-0" aria-hidden />
+          <Typography
+            type="body-sm"
+            color="muted"
+            className="tabular-nums"
+            suppressHydrationWarning
+          >
+            {durationMinutes} min
+            {relative ? ` · ${relative}` : ""}
+          </Typography>
+        </div>
 
-        <Typography type="body-sm" color="muted" className="mt-0.5 truncate">
-          {session.room ?? "TBA"}
-          {session.speakers.length > 0
-            ? ` · ${session.speakers.map((speaker) => speaker.name).join(", ")}`
-            : ""}
-        </Typography>
+        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-muted">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          <Typography type="body-sm" color="muted" className="truncate">
+            {session.room ?? "TBA"}
+            {session.speakers.length > 0
+              ? ` · ${session.speakers.map((speaker) => speaker.name).join(", ")}`
+              : ""}
+          </Typography>
+        </div>
 
         {/* A running session shows how far through it is, matching the hero. */}
         {ongoing ? (
