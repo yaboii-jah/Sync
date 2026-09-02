@@ -210,8 +210,8 @@ export function SocialConnectCard({
         >
           <Download className="h-4 w-4" />
           Save QR
-        </button>
-      </div>
+        </Button>
+      </Card.Footer>
 
       {/* Hidden canvas for PNG download */}
       <div ref={canvasWrapRef} aria-hidden className="hidden">
@@ -224,6 +224,6 @@ export function SocialConnectCard({
           />
         )}
       </div>
-    </div>
+    </Card>
   );
 }

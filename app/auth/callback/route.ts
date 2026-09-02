@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
    * through (see the note in `requireCompleteProfile`) — unless the proxy
    * captured a destination first, which is how a scanned QR survives a
    * sign-in. Re-validated here rather than trusted: this value has been out to
-   * LinkedIn and back, so it is treated as untrusted input on return.
+   * the identity provider and back, so it is treated as untrusted input on
+   * return.
    */
   const next = searchParams.get("next");
   const destination =

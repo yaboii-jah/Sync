@@ -2,9 +2,14 @@
 
 import { useActionState } from "react";
 import {
-  saveLinkedInUrl,
-  type SaveLinkedInUrlState,
-} from "./actions";
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  TextField,
+} from "@heroui/react";
+import { saveLinkedInUrl, type SaveLinkedInUrlState } from "./actions";
 
 const initialState: SaveLinkedInUrlState = { error: null };
 
@@ -15,33 +20,22 @@ export function LinkedInUrlForm() {
   );
 
   return (
-    <form action={formAction} className="mt-8 flex flex-col gap-4">
-      <label
-        htmlFor="linkedin_url"
-        className="text-left text-sm font-bold text-text-muted"
-      >
-        Your LinkedIn profile URL
-      </label>
-      <input
-        id="linkedin_url"
+    <Form action={formAction} className="mt-6 flex flex-col gap-4">
+      <TextField
+        fullWidth
+        isRequired
         name="linkedin_url"
         type="url"
-        required
-        placeholder="https://linkedin.com/in/your-name"
-        className="rounded-lg border border-border-default bg-bg-base px-4 py-3 text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-border-default"
-      />
-      {state.error ? (
-        <p className="rounded-lg bg-state-error/20 px-3 py-2 text-sm text-state-error">
-          {state.error}
-        </p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-accent-primary px-5 py-3 font-bold text-text-primary transition-all hover:brightness-125 disabled:opacity-60 active:scale-95"
+        isInvalid={Boolean(state.error)}
       >
-        {pending ? "Saving…" : "Save and continue"}
-      </button>
-    </form>
+        <Label>Your LinkedIn profile URL</Label>
+        <Input placeholder="https://linkedin.com/in/your-name" />
+        <FieldError>{state.error}</FieldError>
+      </TextField>
+
+      <Button type="submit" fullWidth isPending={pending}>
+        Save and continue
+      </Button>
+    </Form>
   );
 }

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
 import { getBookmarkedSessionIds } from "@/lib/supabase/queries/program-flow";
 import { AppHeader } from "@/components/app-header";
+import { PageHeader } from "@/components/page-header";
 import { AlertsClient } from "@/components/alerts/alerts-client";
 
 export default async function AlertsPage() {
@@ -18,12 +19,10 @@ export default async function AlertsPage() {
     <main className="w-full">
       <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-2xl lg:px-10 lg:pt-10">
         <AppHeader />
-        <h1 className="mt-6 font-display text-3xl text-text-primary uppercase">
-          Alerts
-        </h1>
-        <p className="mt-2 text-sm text-text-muted">
-          Automatic session updates — live the moment they happen.
-        </p>
+        <PageHeader
+          title="Alerts"
+          description="Automatic session updates, live the moment they happen."
+        />
         <AlertsClient
           initialNotifications={notifications}
           initialBookmarkedIds={bookmarks}
