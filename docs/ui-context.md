@@ -95,7 +95,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
 - **Lists**: stacked `Card`s. Long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).
-- **Bottom tabs** (`<1024px`) and **232px side rail** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
+- **Bottom tabs** (`<1024px`) and a **transparent horizontal top navigation** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
 - **Loading**: HeroUI `Skeleton` shaped like the content it replaces, per route `loading.tsx`.
 
