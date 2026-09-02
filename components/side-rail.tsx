@@ -42,7 +42,7 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
   const { unreadCount } = useAlertsCount();
 
   return (
-    <header className="relative z-40 isolate hidden min-h-24 shrink-0 w-full items-center gap-8 bg-linear-to-b from-background via-background/95 to-transparent px-8 lg:flex">
+    <header className="relative z-40 isolate hidden min-h-24 shrink-0 w-full items-center gap-8 bg-linear-to-b from-white via-white/95 to-transparent px-8 dark:from-background dark:via-background/95 lg:flex">
       <Link
         href="/home"
         className="shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
