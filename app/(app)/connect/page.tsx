@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Alert } from "@heroui/react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
-import { ConnectCard } from "@/components/connect/connect-card";
-import { linkedInScanTarget } from "@/lib/linkedin";
+import { ConnectClient } from "@/components/connect/connect-client";
+import type { SocialPlatform } from "@/lib/platforms";
 
 export const metadata: Metadata = {
   title: "Connect — Sync",
@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 const SHARED_MESSAGES: Record<string, { status: "success" | "danger"; text: string }> = {
   ok: {
     status: "success",
-    text: "Saved. Your code now opens your LinkedIn profile directly.",
+    text: "Saved. Your code now opens your profile directly.",
   },
   miss: {
     status: "danger",
-    text: "That did not look like a LinkedIn profile link. Open your profile in LinkedIn, then Share it to Sync.",
+    text: "That did not look like a profile link. Open your profile, then Share it to Sync.",
   },
 };
 
@@ -27,23 +27,22 @@ export default async function ConnectPage({
 }: {
   searchParams: Promise<{ shared?: string }>;
 }) {
-  // Set by /share when an attendee shares their profile in from LinkedIn.
-  // Without it the save is silent, which reads as the share having failed.
   const { shared } = await searchParams;
   const { profile } = await requireCompleteProfile();
   const name = profile.name || "Attendee";
 
-  /*
-   * The QR must carry an absolute URL — a scanner's camera has no origin to
-   * resolve a relative path against. `origin` is preferred over the env var so
-   * a preview deployment produces a code that points at itself rather than at
-   * production.
-   */
-  const headerList = await headers();
-  const origin =
-    headerList.get("origin") ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    `https://${headerList.get("host") ?? ""}`;
+  const supabase = await createClient();
+  const { data: socialProfiles } = await supabase
+    .from("social_profiles")
+    .select("network, url")
+    .eq("user_id", profile.id);
+
+  const savedUrls: Partial<Record<SocialPlatform, string>> = {};
+  if (socialProfiles) {
+    for (const sp of socialProfiles) {
+      savedUrls[sp.network as SocialPlatform] = sp.url;
+    }
+  }
 
   const sharedMessage = shared
     ? (SHARED_MESSAGES[shared] ?? {
@@ -71,11 +70,10 @@ export default async function ConnectPage({
         ) : null}
 
         <div className="mt-6">
-          <ConnectCard
+          <ConnectClient
             name={name}
             photoUrl={profile.photo_url}
-            qrValue={`${origin}/u/${profile.id}`}
-            linkedinUrl={linkedInScanTarget(profile.linkedin_url, name)}
+            savedUrls={savedUrls}
           />
         </div>
       </div>
