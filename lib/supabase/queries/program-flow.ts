@@ -31,6 +31,7 @@ export interface SessionWithSpeakers {
   status_override_at: string | null;
   actual_started_at: string | null;
   actual_ended_at: string | null;
+  published: boolean;
   speakers: SpeakerLite[];
 }
 
@@ -46,6 +47,7 @@ interface SessionRow {
   status_override_at: string | null;
   actual_started_at: string | null;
   actual_ended_at: string | null;
+  published: boolean;
   session_speakers: { speakers_sponsors: SpeakerLite }[];
 }
 
@@ -62,6 +64,7 @@ function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
     status_override_at: row.status_override_at,
     actual_started_at: row.actual_started_at,
     actual_ended_at: row.actual_ended_at,
+    published: row.published,
     speakers: row.session_speakers.map((link) => link.speakers_sponsors),
   };
 }
@@ -86,7 +89,7 @@ export async function getSessionsWithSpeakers(
   const { data, error } = await client
     .from("sessions")
     .select(
-      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, session_speakers(speakers_sponsors(id, name, role, organization))",
+      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))",
     )
     .order("start_time", { ascending: true });
 
@@ -103,7 +106,7 @@ export async function getSessionById(
   const { data, error } = await client
     .from("sessions")
     .select(
-      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, session_speakers(speakers_sponsors(id, name, role, organization))",
+      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))",
     )
     .eq("id", sessionId)
     .maybeSingle();
