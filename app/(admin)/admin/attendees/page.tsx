@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   Button,
   Card,
@@ -66,20 +65,6 @@ export default async function AdminAttendeesPage({
                 <Typography type="body-xs" color="muted" className="mt-1">
                   Joined {formatRelativeTime(attendee.created_at)}
                 </Typography>
-                {attendee.linkedin_url ? (
-                  <Link
-                    href={attendee.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted hover:text-foreground mt-1 block truncate text-xs underline-offset-4 hover:underline"
-                  >
-                    {attendee.linkedin_url}
-                  </Link>
-                ) : (
-                  <Typography type="body-xs" color="muted" className="mt-1">
-                    No exact LinkedIn URL saved
-                  </Typography>
-                )}
               </div>
 
               <Chip size="sm" variant="tertiary">
