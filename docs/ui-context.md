@@ -14,6 +14,8 @@ There are exactly three admitted exceptions, and each is a real anchor or a nav 
 
 Anything else that needs a new visual should be assembled from HeroUI parts first.
 
+**The one exempt screen is the signed-out portal, `app/page.tsx`.** It keeps its ceremonial teal/gold night-sky treatment — starfield, comets, sheened Perandory lockup, city skyline — and uses no HeroUI component. It is a poster, not an interface, and it is the only surface an attendee sees before the app proper. Its styles live in a clearly fenced block at the bottom of `app/globals.css` and are opt-in: brand colours are exposed as their own `--color-*` utilities (`bg-bg-base`, `text-text-primary`, `text-text-muted`, `bg-pastel-yellow`, `text-charcoal`) that no other screen references, and no HeroUI token is redefined. Everything behind sign-in stays monochrome HeroUI.
+
 ## Theme
 
 **Monochrome, light and dark, following the system by default.**
@@ -50,7 +52,9 @@ The one place a coloured-looking signal survives is the live-session dot in `liv
 
 ## Typography
 
-HeroUI's built-in type scale, through the `Typography` component. No custom fonts: Lato and Perandory are no longer loaded, and `--font-display` no longer exists.
+HeroUI's built-in type scale, through the `Typography` component, on every authenticated screen — no custom fonts there.
+
+Lato and Perandory are loaded in `app/layout.tsx` solely for the portal: it sets Lato inline on its `<main>` and reaches Perandory through the `font-display` utility. Neither is the app-wide `--font-sans`, so HeroUI's own type stack is untouched.
 
 - Page titles: `<Typography.Heading level={1}>` via `components/page-header.tsx`
 - Section titles: `<Typography.Heading level={2} className="text-base">`
