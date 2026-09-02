@@ -10,8 +10,8 @@
 ## TypeScript
 
 - Strict mode is required throughout the project
-- Avoid `any` — use explicit interfaces or narrowly scoped types, especially for Supabase table rows and LinkedIn OAuth payloads
-- Validate unknown external input at system boundaries before trusting it (LinkedIn OAuth response fields, Realtime payloads) rather than assuming shape
+- Avoid `any` — use explicit interfaces or narrowly scoped types, especially for Supabase table rows and OAuth payloads
+- Validate unknown external input at system boundaries before trusting it (OAuth response fields, social profile links, Realtime payloads) rather than assuming shape
 
 ## Next.js
 
@@ -39,6 +39,7 @@
 - Profile and speaker photos are referenced by external URL (e.g. from LinkedIn) — no blob storage needed unless that changes later
 - Don't store large or generated content directly in the database
 - Administrators do not receive broad table-write grants; privileged operations use narrowly granted functions with explicit allowlist checks
+- Social profile inputs are normalized on the server and constrained in Postgres; public networking reads use an exact bearer token and a narrow function response, never anonymous table SELECT policies
 
 ## File Organization
 

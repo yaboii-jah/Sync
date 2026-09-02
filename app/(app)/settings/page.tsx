@@ -23,10 +23,7 @@ export default async function SettingsPage() {
         <p className="mt-2 text-sm text-text-muted">
           Update how you appear across the app.
         </p>
-        <SettingsForm
-          initialName={profile.name}
-          initialUrl={profile.linkedin_url ?? ""}
-        />
+        <SettingsForm initialName={profile.name} />
         <NotificationSettings />
       </div>
     </main>

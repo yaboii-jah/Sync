@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
-import { signInWithLinkedIn } from "./actions";
+import { signInWithGoogle } from "./actions";
 
 interface LandingPageProps {
   searchParams: Promise<{
@@ -108,7 +108,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         <div className="flourish mt-6" />
         <p className="mt-6 leading-relaxed text-text-muted">
           Your companion for event day — the live schedule, instant session
-          alerts, and one-tap LinkedIn networking, all from your home screen.
+          alerts, and one-code social networking, all from your home screen.
         </p>
 
         {error ? (
@@ -117,13 +117,13 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
           </p>
         ) : null}
 
-        <form action={signInWithLinkedIn} className="mt-10">
+        <form action={signInWithGoogle} className="mt-10">
           {next ? <input type="hidden" name="next" value={next} /> : null}
           <button
             type="submit"
             className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
           >
-            Sign in with LinkedIn
+            Sign in with Google
           </button>
         </form>
       </div>

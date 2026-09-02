@@ -11,10 +11,8 @@ const initialState: UpdateProfileState = { error: null, success: false };
 
 export function SettingsForm({
   initialName,
-  initialUrl,
 }: {
   initialName: string;
-  initialUrl: string;
 }) {
   const [state, formAction, pending] = useActionState(
     updateProfile,
@@ -47,24 +45,6 @@ export function SettingsForm({
           className="mt-1 w-full rounded-lg border border-border-default bg-bg-base px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-border-default"
         />
       </div>
-      <div>
-        <label
-          htmlFor="linkedin_url"
-          className="text-sm font-bold text-text-muted"
-        >
-          LinkedIn profile URL
-        </label>
-        <input
-          id="linkedin_url"
-          name="linkedin_url"
-          type="url"
-          defaultValue={initialUrl}
-          required
-          placeholder="https://linkedin.com/in/your-name"
-          className="mt-1 w-full rounded-lg border border-border-default bg-bg-base px-4 py-3 text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-border-default"
-        />
-      </div>
-
       {state.error ? (
         <p className="rounded-lg bg-state-error/20 px-3 py-2 text-sm text-state-error">
           {state.error}

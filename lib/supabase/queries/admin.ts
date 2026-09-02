@@ -39,7 +39,6 @@ export interface AdminAttendee {
   id: string;
   name: string;
   photo_url: string | null;
-  linkedin_url: string | null;
   created_at: string;
   push_device_count: number;
 }

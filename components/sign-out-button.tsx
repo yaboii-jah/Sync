@@ -72,7 +72,7 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
               Sign out?
             </h2>
             <p className="mt-2 text-sm leading-snug text-text-muted">
-              You&apos;ll need to sign back in with LinkedIn to return.
+              You&apos;ll need to sign back in with Google to return.
             </p>
 
             <div className="mt-6 flex flex-col gap-3">

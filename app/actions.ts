@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function signInWithLinkedIn(formData?: FormData): Promise<void> {
+export async function signInWithGoogle(formData?: FormData): Promise<void> {
   const headerList = await headers();
   const origin =
     headerList.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
@@ -31,7 +31,7 @@ export async function signInWithLinkedIn(formData?: FormData): Promise<void> {
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "linkedin_oidc",
+    provider: "google",
     options: {
       redirectTo: callback,
     },

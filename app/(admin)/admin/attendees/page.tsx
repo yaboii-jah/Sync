@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Search, Smartphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { searchAdminAttendees } from "@/lib/supabase/queries/admin";
@@ -40,13 +39,6 @@ export default async function AdminAttendeesPage({
               <div className="min-w-0">
                 <p className="font-bold text-text-primary">{attendee.name || "Unnamed attendee"}</p>
                 <p className="mt-1 text-xs text-text-muted">Joined {formatRelativeTime(attendee.created_at)}</p>
-                {attendee.linkedin_url ? (
-                  <Link href={attendee.linkedin_url} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs text-pastel-yellow hover:underline">
-                    {attendee.linkedin_url}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-xs text-text-muted/70">No exact LinkedIn URL saved</p>
-                )}
               </div>
               <div className="flex items-center gap-2 rounded-full border border-border-default px-3 py-2 text-xs font-bold text-text-muted">
                 <Smartphone className="h-4 w-4 text-pastel-yellow" />

@@ -9,6 +9,7 @@
   --border-default: #bc8330;
   --state-error: #d9614f;
   --state-success: #58de69;
+  --sky-blue: #7cd0f7;
   --pastel-yellow: #fcdb64;
   --charcoal: #1a1a1a;
   --art-void: #041a19;
@@ -28,6 +29,7 @@
   --color-border-default: var(--border-default);
   --color-state-error: var(--state-error);
   --color-state-success: var(--state-success);
+  --color-sky-blue: var(--sky-blue);
   --color-pastel-yellow: var(--pastel-yellow);
   --color-charcoal: var(--charcoal);
   --color-light-green: var(--state-success);
