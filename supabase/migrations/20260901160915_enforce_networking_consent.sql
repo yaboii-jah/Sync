@@ -9,6 +9,7 @@ update public.profiles
     or linkedin_url_suggestion is not null;
 
 revoke insert on public.profiles from authenticated;
+
 grant insert (id, name, photo_url) on public.profiles to authenticated;
 
 create or replace function public.protect_managed_profile_fields()
@@ -33,8 +34,11 @@ end;
 $$;
 
 drop policy "Users can create own social profiles" on public.social_profiles;
+
 drop policy "Users can update own social profiles" on public.social_profiles;
+
 drop policy "Users can delete own social profiles" on public.social_profiles;
+
 revoke insert, update, delete on public.social_profiles from authenticated;
 
 alter table public.social_profiles

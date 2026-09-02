@@ -6,44 +6,41 @@
 | --------- | --------------------------- | ------ |
 | Framework | Next.js | Pages, routing, server-side rendering, API routes |
 | Backend / DB | Supabase (Postgres) | Database, Auth, Realtime, Row Level Security |
-| Auth | Supabase Auth — `google` | Sign in with Google (OpenID Connect) |
+| Auth | Supabase Auth — `google` | Sign in with Google (OpenID Connect). Supplies `name` and `picture`, which `handle_new_user` already reads |
 | Installable PWA | Hand-authored static service worker (`public/sw.js`) + web manifest | Static icon/manifest caching, Web Push, and home-screen install. Authenticated routes and Next.js route data are never cached. (Note: `next-pwa`/`@serwist/next` are webpack plugins and incompatible with Next 16's default Turbopack builds — do not reintroduce them) |
 | Push Delivery | Web Push API — pg_cron → `notifications` INSERT → pg_net webhook → `send-push` Edge Function → FCM/Web Push | Notifications when the app isn't open |
 | Hosting (typical pairing, not yet finalized) | Vercel (frontend) + Supabase Cloud (backend) | Deployment |
-| Uptime | Vercel Cron → `/api/cron/keep-alive` → anonymous Postgres read | Daily request against the Supabase project so a free-plan pause never takes the app down between demos and the event day |
 
 ## System Boundaries
 
 - `app/` — Next.js routes for attendee screens plus a separate `/admin` route group with its own responsive operations shell. Admin routes cover the dashboard, immediate notification composer/history/delivery results, session override controls, read-only attendee search, and mutation audit history.
-- Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, `/login`, and public bearer cards under `/u/*` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
+- Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, and `/login` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
 - `lib/supabase/` — Supabase client setup, generated database types, and typed queries/mutations for program flow, directory, quick links, notifications, and profiles
-- `app/api/cron/keep-alive` — the only Next.js API route. Scheduled by `vercel.json`, gated by `CRON_SECRET`, and read-only: it runs one anonymous `select` so the Supabase project keeps registering traffic. pg_cron jobs do not count — they never leave the database
-- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card, directory + bio modals, side rail / bottom tab navigation
+- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card (supports LinkedIn, Instagram, Facebook), directory + bio modals, side rail / bottom tab navigation
 - `public/sw.js` + `public/manifest.webmanifest` + `public/icons/` — hand-authored service worker (static PWA asset caching + push/notification-click handlers), PWA manifest, and icons; authenticated pages and Next.js route data are deliberately excluded from caches, and the service worker is source code, never build-generated
 
 ## Storage Model
 
-- **Database (Supabase Postgres)**: attendee content plus owner-scoped social profiles, attendee-controlled networking cards, an admin allowlist, recipient snapshots, durable push dispatch/delivery results, session override metadata, and append-only admin audit events. Each networking card has a stable random bearer token and is private until its owner explicitly publishes it. Anonymous readers have no direct table access; a narrowly granted function returns only the published card's display name, photo, network, and canonical URL for an exact token. Session/event statuses normally derive from schedule times every minute; a Start or End override is authoritative until an admin resumes automatic mode. Notifications snapshot recipients transactionally so feed visibility, history, and push delivery use the same audience. Admin mutations run through narrowly granted, idempotent database functions that verify `auth.uid()` against the allowlist and append audit data in the same transaction. `profiles.pass_type` remains dormant with its existing default and is not an application capability.
+- **Database (Supabase Postgres)**: attendee content plus an admin allowlist, recipient snapshots, durable push dispatch/delivery results, session override metadata, and append-only admin audit events. Session/event statuses normally derive from schedule times every minute; a Start or End override is authoritative until an admin resumes automatic mode. Notifications snapshot recipients transactionally so feed visibility, history, and push delivery use the same audience. Admin mutations run through narrowly granted, idempotent database functions that verify `auth.uid()` against the allowlist and append audit data in the same transaction. `profiles.pass_type` remains dormant with its existing default and is not an application capability.
 - **Alerts and push delivery**: attendees can select only notifications for which they have a `notification_recipients` row. Automatic session alerts snapshot bookmarkers, admin broadcasts snapshot every profile, and selected sends snapshot explicit profile IDs. A durable dispatch is claimed idempotently by the Edge Function, which loads canonical recipients, records per-device push-service acceptance/failure, records recipients with no subscription in aggregate results, and prunes 404/410 endpoints. “Delivered” in admin UI means accepted by the push service, not confirmed display on a device.
-- **Blob/File Storage**: not yet needed — attendee profile photos come directly from Google's OAuth response as external URLs; speaker/sponsor photos can stay as external URLs or move to Supabase Storage later if that becomes necessary.
+- **Networking cards**: one `networking_cards` row per profile, created by trigger, holding a stable `public_token` and an `is_public` flag that starts false. Links live in `social_profiles`, one row per network per attendee, each constrained to a single canonical URL shape. Publication requires at least one link, and clearing the last link unpublishes the card in the same statement
+- **Blob/File Storage**: not yet needed — profile photos come directly from LinkedIn's OAuth response as external URLs; speaker/sponsor photos can stay as external URLs or move to Supabase Storage later if that becomes necessary.
 - **Bookmark lifecycle**: attendees can bookmark only sessions that have not finished. The scheduled status job removes finished-session bookmark rows after creating the ended notification; the UI filters them immediately from My Flow based on the device clock.
 
 ## Auth and Access Model
 
-- Every user signs in via Supabase Auth using Google (OIDC) with the standard identity scopes; there is no separate registration form
+- Every user signs in via Supabase Auth using Google (OIDC) — no separate registration form. Social profile URLs (LinkedIn, Instagram, Facebook) are optional networking data an attendee may add in Settings; the QR uses the entered URL directly
 - Administrators use the same sign-in but gain operational access only through an out-of-band `admin_users` allowlist; attendee metadata and pass type never grant admin access
 - Each user's profile is a single row tied 1:1 to their auth identity — no shared or delegated ownership
 - Attendees have read-only access to sessions, speakers/sponsors, and notifications, enforced via Row Level Security — not just app-level checks
-- A user can only write to their own profile row, social-profile rows, networking-card visibility, My Flow bookmarks, push subscriptions, and alert read state — nothing else
-- Public networking-card reads are bearer access: an exact stable token returns only a card whose owner explicitly published it, and never exposes email, pass type, admin state, or other attendee data
+- A user can only write to their own profile row, their own My Flow bookmarks, their own push subscriptions, and their own alert read state — nothing else
 - Allowlisted admins can perform only the approved event-day mutations through audited database functions; general content management remains outside the app
 
 ## Invariants
 
 1. Session, speaker/sponsor, and notification tables have no client-side write path — RLS enforces read-only access for attendees, with no app-level admin bypass
 2. Session status derives from schedule data unless an allowlisted administrator has set a persistent Start or End override; Resume Auto clears that override and recomputes from schedule
-3. A user can only ever modify their own profile row, social-profile rows, networking-card visibility, My Flow bookmarks, push subscriptions, and alert read state — never another user's rows or any content table; the scheduled status job may remove finished-session bookmark rows as system cleanup
+3. A user can only ever modify their own profile row, their own My Flow bookmarks, their own push subscriptions, and their own alert read state — never another user's rows or any content table; the scheduled status job may remove finished-session bookmark rows as system cleanup
 4. Admin access is enforced in the database for every read and mutation; hiding `/admin` UI is never treated as authorization
 5. Pushes are triggered only by schedule automation or audited admin mutations, and every push audience must match an immutable recipient snapshot
 6. Admin audit rows are append-only, and retries of the same mutation request cannot create duplicate notifications or status side effects
-7. Anonymous access to networking data is limited to an exact published bearer token and a fixed safe-column response; networking tables are never directly readable by `anon`, social links are not exposed in admin attendee search, and scans/clicks are not recorded

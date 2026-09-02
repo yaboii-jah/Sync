@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "./server";
 import type { Tables } from "./database.types";
-import { isVerifiedGoogleUser } from "./auth-user";
 
 export type Profile = Tables<"profiles">;
 
@@ -20,7 +19,6 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | 
 
   if (userError) throw userError;
   if (!user) return null;
-  if (!isVerifiedGoogleUser(user)) return null;
 
   const profileResult = await supabase
     .from("profiles")
@@ -63,6 +61,15 @@ export async function requireCompleteProfile(): Promise<{
 
   if (!result) redirect("/");
   if (!result.profile) throw new Error("Authenticated profile recovery failed");
+  /*
+   * No LinkedIn-URL gate. The QR now resolves through `linkedInScanTarget`,
+   * which falls back to a name search when the profile URL is absent, so the
+   * whole app — including Connect — works from first sign-in with nothing
+   * typed. Setting a URL is now an upgrade rather than a requirement: Settings
+   * carries its own LinkedIn field, and the moment an attendee fills it their
+   * QR switches from the name search to their exact profile. The `/onboarding`
+   * route still exists but nothing links to it any more.
+   */
 
   return { user: result.user, profile: result.profile };
 }

@@ -1,80 +1,104 @@
 # UI Context
 
+## Component Library
+
+**HeroUI v3** (`@heroui/react` + `@heroui/styles`), built on React Aria Components and Tailwind CSS v4. This is the design system: it is not a starting point that gets overridden.
+
+The standing rule is **no custom UI**. If HeroUI ships a component for the job, use it. Do not hand-roll a button, chip, modal, tab bar, switch, skeleton, avatar or toast. Do not write bespoke CSS for spacing, elevation, focus rings or motion; HeroUI's tokens and BEM classes already carry them.
+
+There are exactly three admitted exceptions, and each is a real anchor or a nav landmark that HeroUI does not cover:
+
+1. `components/ui/link-button.ts` — class strings for anchors (`target="_blank"`, `next/link` navigation) that must read as a Button. Built from HeroUI tokens only.
+2. Navigation shells — `bottom-tabs.tsx`, `side-rail.tsx`, `admin-nav.tsx`. These are `<nav>` landmarks of `next/link` elements; HeroUI's Tabs is a tab-panel widget, not routing. Styled with HeroUI tokens only.
+3. The QR tile in `connect-card.tsx` — fixed light ground and near-black modules in both themes, because scanners require that contrast. Functional, not decorative.
+
+Anything else that needs a new visual should be assembled from HeroUI parts first.
+
+**The one exempt screen is the signed-out portal, `app/page.tsx`.** It keeps its ceremonial teal/gold night-sky treatment — starfield, comets, sheened Perandory lockup, city skyline — and uses no HeroUI component. It is a poster, not an interface, and it is the only surface an attendee sees before the app proper. Its styles live in a clearly fenced block at the bottom of `app/globals.css` and are opt-in: brand colours are exposed as their own `--color-*` utilities (`bg-bg-base`, `text-text-primary`, `text-text-muted`, `bg-pastel-yellow`, `text-charcoal`) that no other screen references, and no HeroUI token is redefined. Everything behind sign-in stays monochrome HeroUI.
+
 ## Theme
 
-Dark only — no light mode. The app carries the event's emerald-city brand into a functional interface, but as a *toned-down, usable translation* of it, not a poster. Page grounds run dark-teal (not near-black — the brand doc is explicit that a near-black ground reads as a different, rejected brand). Primary text is pale-lime on dark. Gold and chartreuse are reserved for emphasis and highlights, never base surfaces.
+**Neutral surfaces plus a single tint, light and dark, following the system by default.**
 
-The full ceremonial treatment (starfield, constellations, comet streaks, glowing crystal city) is reserved for the **Landing/Login screen only** — the one moment the app gets to introduce itself. Everything past sign-in (schedule, notifications, session lists) drops the atmosphere layer entirely and relies on the plain UI palette, generous spacing, and a thin gold hairline border in place of drop shadows for elevation. Data-dense screens are not the place for glow and bloom — legibility wins there.
+`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="system"`, `enableSystem`). HeroUI reads it directly; there is no HeroUI provider. Settings offers a Light / Dark / System control (`components/theme-switch.tsx`) that persists the choice.
 
-## Colors
+`app/globals.css` imports Tailwind, then `@heroui/styles`, then re-points HeroUI's own theme variables. Surfaces stay zero-chroma; `--accent` and the status tokens carry HeroUI's stock values. Nothing new is invented; every override is a HeroUI token:
 
-Pulled directly from the brand doc's official UI palette (`--color-*`), which the doc itself marks as authoritative for anything a user reads or clicks — the Atmosphere palette (`--art-*`) is not used here except as noted.
+The dark ground follows iOS's grouped palette — true black with cells stepping through systemGray6/5/4 equivalents — so cards read as cells rather than smudges. Light uses iOS's `#F2F2F7` grouped ground for the same reason: white cells need something to sit on.
 
-| Role            | CSS Variable       | Value                          |
-| --------------- | ------------------ | ------------------------------- |
-| Page background | `--bg-base`        | `#024056` (dark-teal)           |
-| Surface         | `--bg-surface`     | `#10734F` (jade-green)          |
-| Primary text    | `--text-primary`   | `#E6FFC9` (pale-lime)           |
-| Muted text      | `--text-muted`     | `#A6D95F` (yellow-green)        |
-| Primary accent  | `--accent-primary` | `#176844` (dark-green)          |
-| Border          | `--border-default` | `#BC8330` (golden-brown)        |
-| Error           | `--state-error`    | `#D9614F` (ember — see note)   |
-| Success         | `--state-success`  | `#58DE69` (light-green)         |
+| Token | Light | Dark |
+| --- | --- | --- |
+| `--background` | `#f2f2f7` | `oklch(0 0 0)` |
+| `--foreground` | `oklch(0.21 0 0)` | `oklch(0.99 0 0)` |
+| `--surface` | `oklch(1 0 0)` | `oklch(0.235 0 0)` |
+| `--surface-secondary` | `oklch(0.952 0 0)` | `oklch(0.295 0 0)` |
+| `--muted` | `oklch(0.552 0 0)` | `oklch(0.705 0 0)` |
+| `--default` | `oklch(0.94 0 0)` | `oklch(0.274 0 0)` |
+| `--accent` | `#006fee` | `#006fee` |
+| `--border` | `oklch(0.9 0 0)` | `oklch(0.29 0 0)` |
 
-**Notes on choices that need a human sign-off, not just an assumption:**
+The override blocks sit outside `@layer` deliberately: unlayered rules beat the layered defaults `@heroui/styles` ships, which is the override path HeroUI documents.
 
-- **`--bg-surface` is only safe for large text.** The brand doc's own contrast testing flags jade-green as a weak ground for anything smaller than large text (pastel-yellow measures 4.31:1, light-green 3.36:1 on it). For actual card content — session titles, notification text, body copy — don't fill the card itself with jade-green. Keep card fills on dark-teal (or a slightly lifted neutral) and use jade-green only for section headers/dividers set in larger type.
-- **Cards use a gold hairline border, not a filled gold background.** The doc assigns golden-brown to "card backgrounds, panels, borders" but also states golden-brown is not a text color and untested with light text on top. Rather than guess at that pairing, cards here use a dark-teal fill with pale-lime text and a 1px golden-brown hairline border — which also matches the brand's own stated signature motif ("even the frame on the event-details poster is a 1px glowing hairline").
-- **`--state-error` (`#D9614F`, "ember") is not one of the 12 official brand tokens** — none of them read as "something went wrong" without colliding with an existing role (pastel-yellow is already highlights/badges, and there's no red anywhere in either palette). Ember is a warm coral-red pulled toward the same warm register as gold and the comet-streak motifs, rather than a generic SaaS red, so it reads as danger without looking imported from a different brand. Treat this as a pragmatic addition on top of the official palette, not an official brand color — worth a quick sanity check with whoever owns the brand system when there's time, but not a blocker.
-- **Icon highlights / secondary hover** can use sky-blue (`#7CD0F7`) per its stated role, even though it's not one of the 8 template slots above.
+**One tint, HeroUI's own.** `--accent` is `#006fee` in both themes — the stock HeroUI primary — and `--success` / `--warning` / `--danger` carry HeroUI's stock status palette (`#17c964`, `#f5a524`, `#f31260`). The tint is spent only where iOS spends it: live state, primary chips, the active tab, the bookmark, focus rings. Everything else stays neutral, which is what keeps one accent from becoming a colour scheme.
+
+Status still leans on fill weight as well as hue:
+
+| Meaning | Treatment |
+| --- | --- |
+| Highest emphasis / live | `Chip variant="primary"` — solid ink |
+| Normal | `Chip variant="secondary"` |
+| Low | `Chip variant="tertiary"` |
+| Faded / archival | `Chip variant="soft"` |
+
+`components/status-badge.tsx` is the single mapping for session status; `alerts-client.tsx` uses the same ladder for alert kinds.
+
+Live state is the one signal allowed a dot: `live-mini-bar.tsx`, the hero eyebrow and the `/home` time headers each pair an accent dot with a ping that collapses under `motion-reduce`. It marks real state — a session is running now.
+
+## iOS conventions on /home
+
+`/home` is the one screen tuned deliberately toward a native-app read, using HeroUI parts throughout:
+
+- **One dramatic surface.** The hero is a saturated accent gradient (`#00369c → #0072f5`, solid — no translucency) carrying white text, a live dot, a `ProgressBar` and a ticking countdown. Every other card stays a quiet grouped cell. Apple's deference principle: exactly one element may be loud.
+- **Squircles.** `corner-shape: squircle` via the `.squircle` utility on hero, cells, capsule and dialog. Progressive enhancement — browsers without it keep the plain radius.
+- **A progress rail.** The program list runs a 12px rail whose line fills through what is finished, part-fills across the running session, and stays hollow ahead, with a NOW divider at the cut. Start times sit as headers above each cell (Luma's pattern) rather than in a fixed left column, which cost ~90px of a 390px screen.
+- **Press feedback.** `active:scale-[0.98]` on cards and the capsule, `active:scale-95` on tabs, all collapsing under `motion-reduce`.
+- **Safe areas.** The tab bar pads by `env(safe-area-inset-bottom)`.
+- **Dialogs are centred**, capped at `85dvh` with `scroll="inside"` so a long session scrolls internally instead of overflowing.
 
 ## Typography
 
-| Role      | Font                     | Variable       |
-| --------- | ------------------------ | -------------- |
-| UI text   | Lato                     | `--font-sans`  |
-| Display   | Perandory SemiCondensed  | `--font-display` |
-| Code/mono | Not applicable           | —              |
+HeroUI's built-in type scale, through the `Typography` component, on every authenticated screen — no custom fonts there. `/home` sets two iOS-scale exceptions in the header and section title (28px and 22px, bold, tight tracking) so the screen opens with a large title the way a native app does.
 
-Lato is the brand doc's own choice for "body, eyebrow, UI" — so it's already the designated interface font, not a substitution. Use it for everything: session titles, body copy, buttons, badges, nav labels.
+Lato and Perandory are loaded in `app/layout.tsx` solely for the portal: it sets Lato inline on its `<main>` and reaches Perandory through the `font-display` utility. Neither is the app-wide `--font-sans`, so HeroUI's own type stack is untouched.
 
-**Perandory SemiCondensed** (the display serif) is reserved for a handful of large, ceremonial moments only — the app name/lockup on the Landing screen, maybe a section header on "More." It does not belong in list items, cards, or anything read at a glance.
+- Page titles: `<Typography.Heading level={1}>` via `components/page-header.tsx`
+- Section titles: `<Typography.Heading level={2} className="text-base">`
+- Body: `<Typography type="body-sm">`, muted variants with `color="muted"`
+- Numbers in metrics and countdowns: `tabular-nums`
 
-**Amoresa** (the decorative swash) is deliberately left out of the app entirely. The brand doc itself flags its vertical metrics as hazardous at display sizes, requiring careful `line-height: 0` handling — a risk worth taking on a poster, not worth it in a compact mobile UI where it would collide with adjacent lines constantly.
+## Shape, spacing, elevation
 
-No code or monospace surfaces exist in this app, so `--font-mono` is unused. If that changes, nothing in the brand doc dictates a choice — pick a neutral geometric mono and pair it against Lato rather than trying to force a brand-specific one.
-
-## Border Radius
-
-Nothing in this brand is a hard edge or a flat rectangle, so radii should read as generous and soft rather than sharp:
-
-| Context           | Class            |
-| ------------------ | ---------------- |
-| Inline / small UI  | `rounded-lg` (~8px) |
-| Cards / panels     | `rounded-2xl` (~16px) |
-| Modals / overlays  | `rounded-3xl` (~24px), paired with a soft glow ring instead of a hard shadow |
-
-(Framework-agnostic — these assume Tailwind's scale as shorthand since no CSS framework has been finalized yet; the pixel values are what actually matters.)
-
-## Component Library
-
-Not yet decided. If a library is adopted later (e.g. shadcn/ui), its default theme presets won't match this brand at all and every token above will need to be reapplied on top — treat that as a full re-skin, not a config tweak.
-
-## Layout Patterns
-
-- **Landing/Login**: the one screen carrying the full brand treatment — centered, symmetric, starfield/constellation wash, the crystal-city key art, Perandory SemiCondensed lockup. This is the "poster" moment.
-- **Home dashboard**: single column, dark-teal ground. The "Happening Now" card is the focal point — treated with a soft gold glow ring behind it (echoing the poster's "glowing arc behind the subject" motif) rather than a bright fill color.
-- **Bottom tab navigation**: dark-teal bar with a thin golden-brown hairline top border. Active tab reads via a light-green icon glow, not a filled pill or background block.
-- **Lists (schedule, notifications, speakers)**: stacked cards, dark-teal fill, pale-lime text, thin golden-brown hairline border — no drop shadows anywhere in this app, per the brand doc's explicit rejection of "drop-shadow stacks."
-- **Modals/overlays** (session detail, speaker bio): centered, generously rounded, backdrop blur, a glowing hairline border in place of a hard modal edge.
-- **Connect page**: the networking QR lives on a dedicated `/connect` page (not an overlay). The owner view combines a brand-tinted QR (dark-teal modules on a pale-lime tile with gold hairline border), compact LinkedIn/Instagram/Facebook profile inputs, a clear public/private status treatment, and an explicit publish/disable control. The public `/u/<token>` bearer card uses a minimal navigation-free shell and shows only the attendee's published name, photo, and configured network buttons.
-- **Desktop (`≥1024px`)**: the bottom tab bar yields to a 232px labeled left rail — dark-teal ground, gold hairline right border, Perandory wordmark on top, sign-out pinned at the bottom. The home screen splits into a sticky hero pane (~38%, stays pinned while the schedule scrolls) beside the schedule list; content is capped at 1280px and centered on ultrawides. The mobile layout below the breakpoint is untouched.
-- **Admin operations**: `/admin` uses a distinct control-room shell rather than attendee tabs: compact horizontal navigation on mobile and a 256px operations rail on desktop. Dense metrics and status controls remain dark-teal with gold hairlines; success/error colors carry operational meaning, and every destructive or broadcast action requires a confirmation surface.
+All from HeroUI: `--radius` (0.5rem) for controls and cards, `--field-radius` for inputs, `--surface-shadow` for cards, `--overlay-shadow` for overlays. Do not introduce a second radius scale or hand-written shadows.
 
 ## Icons
 
-Lucide React, stroke-based only — thin, ungapped strokes are the closest icon language to the brand's own "nothing has a hard edge... fine hairline" instruction. Filled/solid icon sets should be avoided entirely; they'd read as flat fills, which the brand doc calls out directly as foreign to this identity.
+`lucide-react`, stroke only, sized with Tailwind's `size-*`:
 
-- Inline: `h-4 w-4`
-- Buttons/nav: `h-5 w-5`
-- Active/highlighted state: tint with sky-blue (`#7CD0F7`), per its stated role as icon-highlight color
+- Inline: `size-4`
+- Buttons and nav: `size-5`
+
+Icons never carry colour of their own; they inherit `currentColor`.
+
+## Layout patterns
+
+- **Landing / login**: a single centred `Card` with the wordmark, one line of description and one primary action. The previous starfield, comet shower, gradient lockup, grain overlay and skyline SVG are all removed.
+- **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
+- **Lists**: stacked `Card`s. Long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
+- **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).
+- **Bottom tabs** (`<1024px`) and **232px side rail** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
+- **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
+- **Loading**: HeroUI `Skeleton` shaped like the content it replaces, per route `loading.tsx`.
+
+## States
+
+Every interactive surface ships loading, empty and error states. Errors are HeroUI `Alert status="danger"` or `FieldError` inside the owning field; transient confirmations are toasts via `useToast()` (`components/toast/toast-provider.tsx`), which wraps HeroUI's imperative `toast()`. The toast region is mounted once in `app/providers.tsx`.

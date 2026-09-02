@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -129,6 +129,75 @@ export type Database = {
           starts_at?: string
           status?: string
           venue?: string | null
+        }
+        Relationships: []
+      }
+      merch_attendees: {
+        Row: {
+          claim_method: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          extra: Json
+          first_name: string
+          id: string
+          last_name: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          claim_method?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          extra?: Json
+          first_name?: string
+          id: string
+          last_name: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          claim_method?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          extra?: Json
+          first_name?: string
+          id?: string
+          last_name?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      merch_scan_log: {
+        Row: {
+          at: string
+          attendee_id: string | null
+          attendee_name: string | null
+          device: string
+          outcome: string
+          raw: string | null
+          received_at: string
+          uid: string
+        }
+        Insert: {
+          at: string
+          attendee_id?: string | null
+          attendee_name?: string | null
+          device: string
+          outcome: string
+          raw?: string | null
+          received_at?: string
+          uid: string
+        }
+        Update: {
+          at?: string
+          attendee_id?: string | null
+          attendee_name?: string | null
+          device?: string
+          outcome?: string
+          raw?: string | null
+          received_at?: string
+          uid?: string
         }
         Relationships: []
       }
@@ -488,6 +557,7 @@ export type Database = {
           end_time: string
           event_id: string
           id: string
+          published: boolean
           reminder_sent_at: string | null
           room: string | null
           start_time: string
@@ -504,6 +574,7 @@ export type Database = {
           end_time: string
           event_id: string
           id?: string
+          published?: boolean
           reminder_sent_at?: string | null
           room?: string | null
           start_time: string
@@ -520,6 +591,7 @@ export type Database = {
           end_time?: string
           event_id?: string
           id?: string
+          published?: boolean
           reminder_sent_at?: string | null
           room?: string | null
           start_time?: string
@@ -620,6 +692,23 @@ export type Database = {
           recipient_count: number
         }[]
       }
+      admin_create_session: {
+        Args: {
+          mutation_request_id: string
+          session_description: string
+          session_end_time: string
+          session_published: boolean
+          session_room: string
+          session_start_time: string
+          session_title: string
+          target_event_id: string
+        }
+        Returns: string
+      }
+      admin_delete_session: {
+        Args: { mutation_request_id: string; target_session_id: string }
+        Returns: string
+      }
       admin_get_dashboard: { Args: never; Returns: Json }
       admin_get_notification: {
         Args: { target_notification_id: string }
@@ -671,6 +760,14 @@ export type Database = {
           push_device_count: number
         }[]
       }
+      admin_set_session_published: {
+        Args: {
+          mutation_request_id: string
+          next_published: boolean
+          target_session_id: string
+        }
+        Returns: string
+      }
       admin_set_session_status: {
         Args: {
           action: string
@@ -686,6 +783,18 @@ export type Database = {
           status_override: string
           status_override_at: string
         }[]
+      }
+      admin_update_session: {
+        Args: {
+          mutation_request_id: string
+          session_description: string
+          session_end_time: string
+          session_room: string
+          session_start_time: string
+          session_title: string
+          target_session_id: string
+        }
+        Returns: string
       }
       current_user_is_admin: { Args: never; Returns: boolean }
       get_own_networking_card: {
@@ -707,6 +816,52 @@ export type Database = {
         }[]
       }
       mark_alerts_read: { Args: never; Returns: undefined }
+      merch_claim_attendee: {
+        Args: {
+          p_at: string
+          p_by: string
+          p_id: string
+          p_method: string
+          p_note: string
+        }
+        Returns: {
+          claim_method: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          extra: Json
+          first_name: string
+          id: string
+          last_name: string
+          note: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merch_attendees"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      merch_revert_claim: {
+        Args: { p_by: string; p_id: string }
+        Returns: {
+          claim_method: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          extra: Json
+          first_name: string
+          id: string
+          last_name: string
+          note: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merch_attendees"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       retry_push_dispatches: { Args: never; Returns: undefined }
       save_social_profiles: {
         Args: {

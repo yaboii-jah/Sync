@@ -1,27 +1,68 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { Download, Eye, EyeOff } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import {
+  Avatar,
+  Button,
+  Card,
+  FieldError,
+  Input,
+  Label,
+  TextField,
+  Typography,
+} from "@heroui/react";
+import { Download, ExternalLink } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
+import { primaryLinkClass } from "@/components/ui/link-button";
+import type { PlatformConfig } from "@/lib/platforms";
+import { isValidPlatformUrl } from "@/lib/platforms";
+
+/*
+ * The QR tile keeps a fixed light ground in both themes. Scanners need a light
+ * background and dark modules, so this is a functional constant, not a colour
+ * choice: near-black modules on white.
+ */
+const QR_FOREGROUND = "#171717";
+const QR_BACKGROUND = "#FFFFFF";
 
 interface ConnectCardProps {
   name: string;
   photoUrl: string | null;
-  publicCardUrl: string;
-  isPublic: boolean;
-  hasLinks: boolean;
+  platform: PlatformConfig;
+  url: string;
+  onUrlChange: (url: string) => void;
+  qrValue: string | null;
+  onGenerateQr: () => void;
+  isSaving?: boolean;
 }
 
 export function ConnectCard({
   name,
   photoUrl,
-  publicCardUrl,
-  isPublic,
-  hasLinks,
+  platform,
+  url,
+  onUrlChange,
+  qrValue,
+  onGenerateQr,
+  isSaving = false,
 }: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  function handleGenerateQr() {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setUrlError("URL cannot be empty.");
+      return;
+    }
+    if (!isValidPlatformUrl(platform.id, trimmed)) {
+      setUrlError(`Enter a valid ${platform.name} profile URL.`);
+      return;
+    }
+    setUrlError(null);
+    onGenerateQr();
+  }
 
   function saveQr() {
     const canvas = canvasWrapRef.current?.querySelector("canvas");
@@ -29,91 +70,110 @@ export function ConnectCard({
 
     const link = document.createElement("a");
     link.href = canvas.toDataURL("image/png");
-    link.download = "sync-connect-qr.png";
+    link.download = `sync-${platform.id}-qr.png`;
     link.click();
   }
 
   return (
-    <section className="rounded-2xl border border-border-default bg-bg-base px-6 py-8 text-center">
-      <div className="flex items-center justify-center gap-2 text-xs font-bold tracking-[0.14em] uppercase">
-        {isPublic ? (
-          <span className="flex items-center gap-2 text-state-success">
-            <Eye className="h-4 w-4" /> Public
-          </span>
-        ) : (
-          <span className="flex items-center gap-2 text-text-muted">
-            <EyeOff className="h-4 w-4" /> Private
-          </span>
-        )}
-      </div>
+    <Card>
+      <Card.Content className="flex flex-col items-center gap-1 py-8 text-center">
+        <Avatar size="lg" className="size-20">
+          {photoUrl ? (
+            <Avatar.Image asChild src={photoUrl}>
+              <Image src={photoUrl} alt="" width={80} height={80} unoptimized />
+            </Avatar.Image>
+          ) : null}
+          <Avatar.Fallback>{name.charAt(0).toUpperCase()}</Avatar.Fallback>
+        </Avatar>
 
-      <div className="mx-auto mt-4 h-20 w-20 overflow-hidden rounded-full border-2 border-border-default">
-        {photoUrl ? (
-          <Image
-            src={photoUrl}
-            alt=""
-            width={80}
-            height={80}
-            unoptimized
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="flex h-full w-full items-center justify-center bg-surface font-display text-3xl text-text-primary">
-            {name.charAt(0).toUpperCase()}
-          </span>
-        )}
-      </div>
+        <Typography type="h5" className="mt-4">
+          {name}
+        </Typography>
+        <Typography type="body-sm" color="muted">
+          Show your {platform.name} code.
+        </Typography>
 
-      <h2 className="mt-4 text-xl font-bold text-text-primary">{name}</h2>
-      <p className="mt-1 text-sm text-text-muted">
-        One code for every social profile you choose.
-      </p>
+        <div className="mt-6 w-full px-4">
+          <TextField fullWidth>
+            <Label>{platform.name} profile URL</Label>
+            <Input
+              variant="secondary"
+              placeholder={platform.urlPlaceholder}
+              value={url}
+              onChange={(e) => {
+                onUrlChange(e.target.value);
+                if (urlError) setUrlError(null);
+              }}
+            />
+            {urlError ? <FieldError>{urlError}</FieldError> : null}
+          </TextField>
+        </div>
 
-      <div className="mx-auto mt-6 w-fit rounded-2xl border border-border-default bg-pastel-yellow p-4 shadow-[0_0_24px_rgba(188,131,48,0.25)]">
-        <QRCodeSVG
-          value={publicCardUrl}
-          size={220}
-          fgColor="#024056"
-          bgColor="#E6FFC9"
-        />
-      </div>
-
-      <p className="mt-3 text-xs text-text-muted">
-        {isPublic
-          ? "Scan to choose a social network"
-          : hasLinks
-            ? "Publish below before sharing this code"
-            : "Add a social profile to activate this code"}
-      </p>
-
-      <div className="mt-6 flex flex-col gap-3">
-        {isPublic ? (
-          <Link
-            href={publicCardUrl}
-            target="_blank"
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95"
+        {qrValue ? (
+          <div
+            className="border-border mt-6 w-fit rounded-2xl border p-4"
+            style={{ backgroundColor: QR_BACKGROUND }}
           >
-            <Eye className="h-4 w-4" /> Preview public card
-          </Link>
-        ) : null}
-        <button
-          type="button"
-          onClick={saveQr}
-          disabled={!hasLinks}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-border-default px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-primary uppercase transition-all hover:bg-accent-primary/30 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+            <QRCodeSVG
+              value={qrValue}
+              size={220}
+              fgColor={QR_FOREGROUND}
+              bgColor={QR_BACKGROUND}
+            />
+          </div>
+        ) : (
+          <div className="border-border mt-6 flex size-[220px] items-center justify-center rounded-2xl border border-dashed">
+            <Typography type="body-sm" color="muted">
+              Enter a URL and generate a QR code
+            </Typography>
+          </div>
+        )}
+
+        <Typography type="body-xs" color="muted" className="mt-3">
+          {qrValue ? "Scan to open my profile" : "QR code will appear here"}
+        </Typography>
+      </Card.Content>
+
+      <Card.Footer className="flex flex-col gap-3">
+        <Button
+          variant="secondary"
+          fullWidth
+          isDisabled={!url.trim() || isSaving}
+          isPending={isSaving}
+          onPress={handleGenerateQr}
         >
-          <Download className="h-4 w-4" /> Save QR
-        </button>
-      </div>
+          Generate QR
+        </Button>
+        <a
+          href={url.trim() || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${primaryLinkClass} w-full ${!url.trim() ? "pointer-events-none opacity-50" : ""}`}
+        >
+          <ExternalLink className="size-4" aria-hidden />
+          {platform.openButtonLabel}
+        </a>
+        <Button
+          variant="secondary"
+          fullWidth
+          isDisabled={!qrValue}
+          onPress={saveQr}
+        >
+          <Download className="size-4" aria-hidden />
+          Save QR
+        </Button>
+      </Card.Footer>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">
-        <QRCodeCanvas
-          value={publicCardUrl}
-          size={512}
-          fgColor="#024056"
-          bgColor="#E6FFC9"
-        />
+        {qrValue ? (
+          <QRCodeCanvas
+            value={qrValue}
+            size={512}
+            fgColor={QR_FOREGROUND}
+            bgColor={QR_BACKGROUND}
+          />
+        ) : null}
       </div>
-    </section>
+    </Card>
   );
 }

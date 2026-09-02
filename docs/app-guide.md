@@ -56,7 +56,7 @@ Here is what a real attendee experiences, from start to finish:
 
 ```
 1. Opens the link          → Landing page (dark-teal poster, comets, "SYNC" in gold)
-2. Taps "Sign in with LinkedIn" → LinkedIn asks permission → back in the app
+2. Taps "Sign in with Google" → Google asks permission → back in the app
 3. First time only         → "Paste your LinkedIn profile URL" screen
 4. Lands on Home           → Countdown or "Happening Now" card + full schedule
 5. Taps a session          → Modal with description, room, speaker, bookmark button
@@ -81,7 +81,7 @@ Here is what a real attendee experiences, from start to finish:
 | **React 19** | A library for building UI from components | All buttons, cards, modals, forms |
 | **Tailwind CSS v4** | Write styles as short class names (`bg-bg-base`) instead of CSS files | The entire look — colors come from brand tokens |
 | **Supabase Postgres** | A real PostgreSQL database with a friendly API | Stores everything: profiles, sessions, bookmarks… |
-| **Supabase Auth** | Login-as-a-service | The LinkedIn sign-in and session cookies |
+| **Supabase Auth** | Login-as-a-service | The Google sign-in and session cookies |
 | **Supabase Realtime** | A websocket service that yells "the database changed!" | Live schedule updates and the live Alerts feed |
 | **Supabase Edge Functions** | Small server programs that run on-demand | Sends push notifications |
 | **pg_cron** | A database alarm clock (SQL job scheduler) | Flips session statuses every minute, automatically |
@@ -152,7 +152,7 @@ Each section follows the same pattern: **what you see → what happens under the
 
 ### 5.1 Landing Page — "The Poster"
 
-**What you see:** a dark-teal sky with twinkling stars, a comet streaking by every ~20 seconds, a glowing city skyline at the bottom, the word **SYNC** with a light-band sweeping across it, and a yellow "Sign in with LinkedIn" button.
+**What you see:** a dark-teal sky with twinkling stars, a comet streaking by every ~20 seconds, a glowing city skyline at the bottom, the word **SYNC** with a light-band sweeping across it, and a yellow "Sign in with Google" button.
 
 **Under the hood:** there's no video and no image files. Everything is **pure CSS and one inline SVG**:
 
@@ -188,7 +188,7 @@ You (browser)                Our server/Supabase            LinkedIn
      │ ◀── session cookies set ──────│  + profile row created   │
 ```
 
-1. **Tap.** A server action calls `supabase.auth.signInWithOAuth({ provider: "linkedin_oidc" })`. Supabase generates a LinkedIn URL that embeds *where you want to end up* (`/auth/callback`).
+1. **Tap.** A server action calls `supabase.auth.signInWithOAuth({ provider: "google" })`. Supabase generates a Google URL that embeds *where you want to end up* (`/auth/callback`).
 2. **Consent.** LinkedIn authenticates you and asks permission for `openid`, `email`, `profile` — that's all we request.
 3. **Callback to Supabase.** LinkedIn hands a secret code to `https://…supabase.co/auth/v1/callback` (this exact URL must be registered in the LinkedIn Developer app).
 4. **Supabase creates your account** — an `auth.users` row with your name/photo — and a **database trigger** (`handle_new_user`, see §6) instantly creates your matching `profiles` row.

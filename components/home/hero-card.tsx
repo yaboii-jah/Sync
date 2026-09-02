@@ -1,9 +1,14 @@
 "use client";
 
-import type { EventInfo, SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
+import { Card, ProgressBar, Typography } from "@heroui/react";
+import type {
+  EventInfo,
+  SessionWithSpeakers,
+} from "@/lib/supabase/queries/program-flow";
 import {
   effectiveSessionStatus,
   formatManilaDate,
+  formatManilaTime,
   formatTimeRange,
 } from "@/lib/format";
 
@@ -11,6 +16,35 @@ interface HeroCardProps {
   event: EventInfo;
   sessions: SessionWithSpeakers[];
   now: number;
+  /** Opens the session detail sheet. Absent for the states with no session. */
+  onOpenSession?: (session: SessionWithSpeakers) => void;
+}
+
+/*
+ * The hero is the one dramatic surface on the screen — a saturated accent
+ * gradient the way iOS feature cards work (Music's now-playing, Fitness,
+ * App Store "Today"), while every other card stays a quiet grouped cell.
+ * Solid gradient, no translucency; text is white with opacity steps rather
+ * than the theme's muted token, which would vanish on the blue.
+ */
+const heroSurface =
+  "squircle rounded-[24px] border-none bg-linear-to-br from-[#00369c] via-[#0053d6] to-[#0072f5] shadow-xl shadow-[#0053d6]/25";
+const heroTitle = "text-white";
+const heroMuted = "text-white/75";
+
+/**
+ * Time left in a running session, live-activity style: a ticking `mm:ss` in the
+ * final hour, coarser above that where seconds are noise rather than news.
+ */
+function remainingLabel(msRemaining: number): string {
+  const total = Math.max(0, Math.floor(msRemaining / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  if (total === 0) return "Wrapping up";
+  if (hours > 0) return `${hours} hr ${minutes} min left`;
+  return `${minutes}:${String(seconds).padStart(2, "0")} left`;
 }
 
 function countdownParts(msRemaining: number) {
@@ -23,7 +57,40 @@ function countdownParts(msRemaining: number) {
   };
 }
 
-export function HeroCard({ event, sessions, now }: HeroCardProps) {
+/**
+ * Wraps the hero in a button when it represents a real session, so the card
+ * opens the same detail sheet its list cell does. The states that describe the
+ * event rather than a session (countdown, wrap, no-session) stay static.
+ */
+function Pressable({
+  session,
+  onOpenSession,
+  children,
+}: {
+  session: SessionWithSpeakers;
+  onOpenSession?: (session: SessionWithSpeakers) => void;
+  children: React.ReactNode;
+}) {
+  if (!onOpenSession) return <>{children}</>;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenSession(session)}
+      aria-haspopup="dialog"
+      className="squircle w-full rounded-[24px] text-left transition-transform active:scale-[0.98] motion-reduce:transform-none"
+    >
+      {children}
+    </button>
+  );
+}
+
+export function HeroCard({
+  event,
+  sessions,
+  now,
+  onOpenSession,
+}: HeroCardProps) {
   const startsAt = new Date(event.starts_at).getTime();
   const endsAt = new Date(event.ends_at).getTime();
 
@@ -33,42 +100,108 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
 
   if (!current && now >= endsAt) {
     return (
-      <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-        <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-          {event.name}
-        </p>
-        <p className="mt-3 font-display text-3xl text-text-primary uppercase">
-          That&apos;s a wrap
-        </p>
-        <p className="mt-2 text-sm text-text-muted">
-          Thanks for coming — see you at the next one.
-        </p>
-      </div>
+      <Card className={heroSurface}>
+        <Card.Header>
+          <Card.Description className={heroMuted}>
+            {event.name}
+          </Card.Description>
+          <Card.Title className={heroTitle}>That is a wrap</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <Typography type="body-sm" className={heroMuted}>
+            Thanks for coming. See you at the next one.
+          </Typography>
+        </Card.Content>
+      </Card>
     );
   }
 
   if (current) {
+    const sessionStart = new Date(current.start_time).getTime();
+    const sessionEnd = new Date(current.end_time).getTime();
+    /*
+     * Quantised to the minute so the server render and client hydration agree
+     * (`now` is Date.now() on each side); a talk's progress doesn't need
+     * per-second resolution anyway.
+     */
+    const nowMinute = Math.floor(now / 60_000) * 60_000;
+    const remaining = remainingLabel(sessionEnd - now);
+    const elapsedPct = Math.min(
+      100,
+      Math.max(
+        0,
+        ((nowMinute - sessionStart) / (sessionEnd - sessionStart)) * 100,
+      ),
+    );
+
     return (
-      <div className="relative rounded-2xl border border-border-default bg-bg-base px-5 py-6 shadow-[0_0_28px_rgba(188,131,48,0.35)]">
-        <p className="text-xs font-bold tracking-[0.24em] text-pastel-yellow uppercase">
-          Happening Now
-        </p>
-        <h1 className="mt-2 font-display text-3xl text-text-primary uppercase">
-          {current.title}
-        </h1>
-        <p className="mt-2 text-sm text-text-muted">
-          {current.room ?? "TBA"} · {formatTimeRange(current.start_time, current.end_time)}
-        </p>
-        {current.status_override && current.actual_started_at ? (
-          <p className="mt-2 text-xs font-bold tracking-wide text-pastel-yellow uppercase">
-            Started live at {new Intl.DateTimeFormat("en-PH", {
-              hour: "numeric",
-              minute: "2-digit",
-              timeZone: "Asia/Manila",
-            }).format(new Date(current.actual_started_at))}
-          </p>
-        ) : null}
-      </div>
+      <Pressable session={current} onOpenSession={onOpenSession}>
+        <Card className={heroSurface}>
+          <Card.Header>
+            {/*
+             * Eyebrow + live dot instead of a solid chip: the dot is real state
+             * (a session is running), and the quiet label lets the title carry
+             * the card.
+             */}
+            <div className="flex items-center gap-2">
+              <span aria-hidden className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-60 motion-reduce:animate-none" />
+                <span className="relative inline-flex size-2 rounded-full bg-white" />
+              </span>
+              <span className="text-[11px] font-semibold tracking-[0.08em] text-white/85 uppercase">
+                Happening now
+              </span>
+            </div>
+            <Card.Title className={`mt-2 text-xl leading-snug ${heroTitle}`}>
+              {current.title}
+            </Card.Title>
+          </Card.Header>
+          <Card.Content className="flex flex-col gap-1">
+            <Typography type="body-sm" className={`tabular-nums ${heroMuted}`}>
+              {formatTimeRange(current.start_time, current.end_time)}
+              {" · "}
+              {current.room ?? "TBA"}
+            </Typography>
+            {/* Session progress, live-activity style: how far along the talk is. */}
+            <ProgressBar
+              value={elapsedPct}
+              aria-label="Session progress"
+              className="mt-2"
+            >
+              <ProgressBar.Track className="h-1 rounded-full bg-white/25">
+                {/* `now` ticks client-side, so the fill width differs from the
+                  server render by design — same suppression as the time text. */}
+                <ProgressBar.Fill
+                  className="rounded-full bg-white"
+                  suppressHydrationWarning
+                />
+              </ProgressBar.Track>
+            </ProgressBar>
+            {/* The bar shows how far along; the countdown says how long left. */}
+            <div className="mt-1.5 flex items-baseline justify-between gap-3">
+              <span
+                className="text-sm font-semibold text-white tabular-nums"
+                suppressHydrationWarning
+              >
+                {remaining}
+              </span>
+              <span className={`text-xs ${heroMuted}`}>
+                ends {formatManilaTime(current.end_time)}
+              </span>
+            </div>
+            {current.status_override && current.actual_started_at ? (
+              <Typography type="body-xs" className={`mt-1 ${heroMuted}`}>
+                Started live at{" "}
+                {new Intl.DateTimeFormat("en-PH", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZone: "Asia/Manila",
+                }).format(new Date(current.actual_started_at))}
+              </Typography>
+            ) : null}
+          </Card.Content>
+        </Card>
+      </Pressable>
     );
   }
 
@@ -78,64 +211,94 @@ export function HeroCard({ event, sessions, now }: HeroCardProps) {
 
   if (next && now >= startsAt) {
     return (
-      <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-        <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-          Up Next
-        </p>
-        <p className="mt-3 font-display text-2xl text-text-primary uppercase">
-          {next.title}
-        </p>
-        <p className="mt-2 text-sm text-text-muted">
-          {formatTimeRange(next.start_time, next.end_time)} · {next.room ?? "TBA"}
-        </p>
-      </div>
+      <Pressable session={next} onOpenSession={onOpenSession}>
+        <Card className={heroSurface}>
+          <Card.Header>
+            <Card.Description
+              className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${heroMuted}`}
+            >
+              Up next
+            </Card.Description>
+            <Card.Title className={`mt-1 text-xl leading-snug ${heroTitle}`}>
+              {next.title}
+            </Card.Title>
+          </Card.Header>
+          <Card.Content className="flex flex-col gap-1">
+            <Typography type="body-sm" className={`tabular-nums ${heroMuted}`}>
+              {formatTimeRange(next.start_time, next.end_time)}
+              {" · "}
+              {next.room ?? "TBA"}
+            </Typography>
+          </Card.Content>
+        </Card>
+      </Pressable>
     );
   }
 
   if (now >= startsAt) {
     return (
-      <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-        <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-          Program update
-        </p>
-        <p className="mt-3 font-display text-2xl text-text-primary uppercase">
-          No session is live
-        </p>
-        <p className="mt-2 text-sm text-text-muted">
-          Check the program flow for the latest event status.
-        </p>
-      </div>
+      <Card className={heroSurface}>
+        <Card.Header>
+          <Card.Description className={heroMuted}>
+            Program update
+          </Card.Description>
+          <Card.Title className={heroTitle}>No session is live</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <Typography type="body-sm" className={heroMuted}>
+            Check the program flow for the latest event status.
+          </Typography>
+        </Card.Content>
+      </Card>
     );
   }
 
-  const remaining = startsAt - now;
-  const parts = countdownParts(remaining);
+  const parts = countdownParts(startsAt - now);
   const pad = (value: number) => String(value).padStart(2, "0");
+  const units: [string, number][] = [
+    ["Days", parts.days],
+    ["Hrs", parts.hours],
+    ["Min", parts.minutes],
+    ["Sec", parts.seconds],
+  ];
 
   return (
-    <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-6 text-center">
-      <p className="text-xs font-bold tracking-[0.24em] text-text-muted uppercase">
-        {formatManilaDate(event.starts_at)}
-      </p>
-      <p className="mt-2 font-display text-3xl text-text-primary uppercase">
-        Starts In
-      </p>
-      <div className="mt-4 flex items-start justify-center gap-3 font-display text-4xl text-pastel-yellow [text-shadow:0_0_18px_rgba(252,219,100,0.4)]">
-        {[
-          ["D", parts.days],
-          ["H", parts.hours],
-          ["M", parts.minutes],
-          ["S", parts.seconds],
-        ].map(([label, value]) => (
-          <span key={label} className="flex flex-col items-center">
-            {pad(Number(value))}
-            <span className="mt-1 text-[0.6rem] font-sans font-bold tracking-widest text-text-muted">
-              {label}
-            </span>
-          </span>
-        ))}
-      </div>
-      <p className="mt-3 text-sm text-text-muted">{event.venue}</p>
-    </div>
+    <Card className={heroSurface}>
+      <Card.Header>
+        <Card.Description
+          className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${heroMuted}`}
+        >
+          {formatManilaDate(event.starts_at)}
+        </Card.Description>
+        <Card.Title className={`mt-1 ${heroTitle}`}>Starts in</Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <div
+          className="grid grid-cols-4 gap-2"
+          suppressHydrationWarning
+          role="timer"
+          aria-label="Time until the event starts"
+        >
+          {units.map(([label, value]) => (
+            <div
+              key={label}
+              className="flex flex-col items-center rounded-xl bg-white/15 px-2 py-3"
+            >
+              <span className="text-2xl font-semibold text-white tabular-nums">
+                {pad(value)}
+              </span>
+              <Typography type="body-xs" className={`mt-1 ${heroMuted}`}>
+                {label}
+              </Typography>
+            </div>
+          ))}
+        </div>
+      </Card.Content>
+      <Card.Footer>
+        <Typography type="body-sm" className={heroMuted}>
+          {event.venue}
+        </Typography>
+      </Card.Footer>
+    </Card>
   );
 }

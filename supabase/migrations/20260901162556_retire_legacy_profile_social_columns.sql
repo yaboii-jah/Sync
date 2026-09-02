@@ -2,7 +2,9 @@
 -- them so full profile reads cannot expose or repopulate retired destinations.
 
 revoke insert (linkedin_url) on public.profiles from authenticated;
+
 revoke insert (user_id, network, url) on public.social_profiles from authenticated;
+
 revoke update (url) on public.social_profiles from authenticated;
 
 create or replace function public.protect_managed_profile_fields()
@@ -32,6 +34,7 @@ alter table public.profiles
 grant execute on function private.is_google_user() to authenticated;
 
 drop policy "Users can update own profile" on public.profiles;
+
 create policy "Google users can update own profile"
   on public.profiles for update to authenticated
   using (
@@ -44,6 +47,7 @@ create policy "Google users can update own profile"
   );
 
 drop policy "Users can insert own profile" on public.profiles;
+
 create policy "Google users can insert own profile"
   on public.profiles for insert to authenticated
   with check (

@@ -222,3 +222,64 @@ export async function markAlertsReadAtDatabaseTime(
 ): Promise<void> {
   await callRpc(client, "mark_alerts_read");
 }
+
+export interface AdminSessionInput {
+  title: string;
+  description: string;
+  room: string;
+  startTime: string;
+  endTime: string;
+  requestId: string;
+}
+
+export async function createAdminSession(
+  client: QueryClient,
+  input: AdminSessionInput & { eventId: string; published: boolean },
+): Promise<string> {
+  return callRpc(client, "admin_create_session", {
+    target_event_id: input.eventId,
+    session_title: input.title,
+    session_description: input.description,
+    session_room: input.room,
+    session_start_time: input.startTime,
+    session_end_time: input.endTime,
+    session_published: input.published,
+    mutation_request_id: input.requestId,
+  }) as Promise<string>;
+}
+
+export async function updateAdminSession(
+  client: QueryClient,
+  input: AdminSessionInput & { sessionId: string },
+): Promise<void> {
+  await callRpc(client, "admin_update_session", {
+    target_session_id: input.sessionId,
+    session_title: input.title,
+    session_description: input.description,
+    session_room: input.room,
+    session_start_time: input.startTime,
+    session_end_time: input.endTime,
+    mutation_request_id: input.requestId,
+  });
+}
+
+export async function setAdminSessionPublished(
+  client: QueryClient,
+  input: { sessionId: string; published: boolean; requestId: string },
+): Promise<void> {
+  await callRpc(client, "admin_set_session_published", {
+    target_session_id: input.sessionId,
+    next_published: input.published,
+    mutation_request_id: input.requestId,
+  });
+}
+
+export async function deleteAdminSession(
+  client: QueryClient,
+  input: { sessionId: string; requestId: string },
+): Promise<void> {
+  await callRpc(client, "admin_delete_session", {
+    target_session_id: input.sessionId,
+    mutation_request_id: input.requestId,
+  });
+}

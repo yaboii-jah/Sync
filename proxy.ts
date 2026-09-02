@@ -1,22 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "./lib/supabase/env";
-import { isVerifiedGoogleUser } from "./lib/supabase/auth-user";
 
-const PUBLIC_PATHS = ["/", "/login", "/u"];
+const PUBLIC_PATHS = ["/", "/login"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
-}
-
-function redirectWithCookies(url: URL, response: NextResponse): NextResponse {
-  const redirectResponse = NextResponse.redirect(url);
-  response.cookies.getAll().forEach((cookie) =>
-    redirectResponse.cookies.set(cookie),
-  );
-  return redirectResponse;
 }
 
 export async function proxy(request: NextRequest) {
@@ -47,30 +38,27 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (user && !isVerifiedGoogleUser(user)) {
-    await supabase.auth.signOut({ scope: "local" });
-
-    if (isPublicPath(pathname)) return response;
-
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
-    redirectUrl.search = "";
-    return redirectWithCookies(redirectUrl, response);
-  }
-
   if (!user && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
-    // Keep only the internal path through the login bounce, never its query.
+    /*
+     * Carry the destination through the login bounce.
+     *
+     * Scanned QR codes land on `/u/<id>`, and a scanner who is not signed in
+     * yet would otherwise be dropped on `/home` after authenticating, having
+     * lost the card they were trying to open — the scan would simply appear to
+     * do nothing. Only the path is kept, never the original query, so an OAuth
+     * code can still never leak onto a public page.
+     */
     redirectUrl.search = `?next=${encodeURIComponent(pathname)}`;
-    return redirectWithCookies(redirectUrl, response);
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (user && (pathname === "/" || pathname === "/login")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/home";
     redirectUrl.search = "";
-    return redirectWithCookies(redirectUrl, response);
+    return NextResponse.redirect(redirectUrl);
   }
 
   return response;

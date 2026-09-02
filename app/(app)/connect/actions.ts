@@ -3,92 +3,80 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isVerifiedGoogleUser } from "@/lib/supabase/auth-user";
-import {
-  SOCIAL_NETWORK_LABELS,
-  SOCIAL_NETWORKS,
-  normalizeSocialProfileUrl,
-  type SocialNetwork,
-} from "@/lib/social-profiles";
+import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
+import { normalizeSocialUrl, type SocialNetwork } from "@/lib/social";
 
-export interface NetworkingActionState {
+export interface SaveSocialProfileState {
   error: string | null;
-  field: SocialNetwork | null;
-  success: string | null;
+  success: boolean;
 }
 
-async function authenticatedRpcClient() {
+/**
+ * Saves one platform's profile URL.
+ *
+ * The write goes through `save_social_profiles` rather than a direct upsert:
+ * `social_profiles` has no INSERT, UPDATE or DELETE grant for `authenticated`
+ * (migration `20260901162556`), so a direct write is refused by the database.
+ * The RPC additionally requires a Google identity.
+ *
+ * That RPC replaces the whole set, so the other two links are read back and
+ * re-sent. Sending only the edited one would silently drop the others.
+ */
+export async function saveSocialProfile(
+  _prevState: SaveSocialProfileState,
+  formData: FormData,
+): Promise<SaveSocialProfileState> {
+  const rawNetwork = formData.get("network");
+  const rawUrl = formData.get("url");
+  const network = typeof rawNetwork === "string" ? rawNetwork.trim() : "";
+  const url = typeof rawUrl === "string" ? rawUrl.trim() : "";
+
+  if (!network || !["linkedin", "instagram", "facebook"].includes(network)) {
+    return { error: "Invalid network.", success: false };
+  }
+
+  if (!url) {
+    return { error: "URL cannot be empty.", success: false };
+  }
+
+  /*
+   * `lib/platforms.ts` validates loosely for the field's own message; the
+   * column's check constraint accepts exactly one URL shape per network, so
+   * the value is reduced to that shape here before it is sent. A link that
+   * cannot be reduced is rejected with a message rather than as a constraint
+   * violation.
+   */
+  const normalized = normalizeSocialUrl(network as SocialNetwork, url);
+
+  if (!normalized) {
+    return {
+      error: `Enter a valid ${network} profile URL.`,
+      success: false,
+    };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !isVerifiedGoogleUser(user)) redirect("/");
-  return supabase;
-}
+  if (!user) redirect("/login");
 
-export async function saveSocialProfiles(
-  _previousState: NetworkingActionState,
-  formData: FormData,
-): Promise<NetworkingActionState> {
-  const links: Partial<Record<SocialNetwork, string | null>> = {};
+  const card = await getOwnNetworkingCard();
+  const links = { ...card?.links, [network]: normalized };
 
-  for (const network of SOCIAL_NETWORKS) {
-    const value = formData.get(network);
-    const input = typeof value === "string" ? value.trim() : "";
-    const normalized = input ? normalizeSocialProfileUrl(network, input) : null;
-
-    if (input && !normalized) {
-      return {
-        error: `Enter a valid personal ${SOCIAL_NETWORK_LABELS[network]} profile URL or handle.`,
-        field: network,
-        success: null,
-      };
-    }
-    links[network] = normalized;
-  }
-
-  const client = await authenticatedRpcClient();
-  const { error } = await client.rpc("save_social_profiles", {
+  const { error } = await supabase.rpc("save_social_profiles", {
     linkedin_url: links.linkedin ?? "",
     instagram_url: links.instagram ?? "",
     facebook_url: links.facebook ?? "",
   });
 
   if (error) {
-    return {
-      error: "Could not save your social profiles. Try again.",
-      field: null,
-      success: null,
-    };
+    return { error: "Could not save your social profile. Please try again.", success: false };
   }
 
   revalidatePath("/connect");
-  return { error: null, field: null, success: "Social profiles saved." };
-}
+  revalidatePath("/settings");
 
-export async function setNetworkingCardVisibility(
-  _previousState: NetworkingActionState,
-  formData: FormData,
-): Promise<NetworkingActionState> {
-  const published = formData.get("published") === "true";
-  const client = await authenticatedRpcClient();
-  const { error } = await client.rpc("set_networking_card_public", { published });
-
-  if (error) {
-    return {
-      error: published
-        ? "Add at least one social profile before publishing your card."
-        : "Could not disable your public card. Try again.",
-      field: null,
-      success: null,
-    };
-  }
-
-  revalidatePath("/connect");
-  return {
-    error: null,
-    field: null,
-    success: published ? "Your card is now public." : "Your public card is disabled.",
-  };
+  return { error: null, success: true };
 }

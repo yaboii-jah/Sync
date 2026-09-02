@@ -1,45 +1,158 @@
 @import "tailwindcss";
+/*
+ * The `/css` subpath, not the bare package name. `@heroui/styles`'s root
+ * export only reaches the stylesheet through a `style` condition, which
+ * Turbopack's CSS resolver does not apply, so a bare import resolves to
+ * dist/index.js and fails. `./css` maps to dist/index.css unconditionally.
+ */
+@import "@heroui/styles/css";
 
+/*
+ * Monochrome theme override.
+ *
+ * Every token below is one of HeroUI's own theme variables, re-pointed at a
+ * zero-chroma value. Nothing here invents a new design system: components keep
+ * using HeroUI's variants, radii, shadows and motion, they just resolve to
+ * greys. Light and dark are the two built-in HeroUI themes, switched by
+ * next-themes via the `dark` class on <html>.
+ *
+ * These blocks sit outside @layer on purpose. Unlayered rules win over the
+ * layered defaults that @heroui/styles ships, which is the override path the
+ * HeroUI theming guide documents.
+ */
+
+:root,
+.light,
+[data-theme="light"] {
+  /* Primitives */
+  --white: oklch(1 0 0);
+  --black: oklch(0 0 0);
+  --snow: oklch(0.99 0 0);
+  --eclipse: oklch(0.21 0 0);
+
+  /* Base. iOS's grouped light ground (#F2F2F7) — the faint blue undertone
+     that separates white cells from the page the way native apps do. */
+  --background: #f2f2f7;
+  --foreground: var(--eclipse);
+
+  /* Surfaces */
+  --surface: oklch(1 0 0);
+  --surface-secondary: oklch(0.952 0 0);
+  --surface-tertiary: oklch(0.925 0 0);
+  --overlay: oklch(1 0 0);
+
+  --muted: oklch(0.552 0 0);
+  --default: oklch(0.94 0 0);
+  --default-foreground: var(--eclipse);
+  --segment: oklch(1 0 0);
+
+  /*
+   * The tint is HeroUI's own default primary blue — the colour that makes the
+   * stock HeroUI look read as an iOS app. One tint, everything else neutral.
+   */
+  --accent: #006fee;
+  --accent-foreground: var(--snow);
+
+  /* Form fields */
+  --field-background: oklch(1 0 0);
+  --field-foreground: var(--eclipse);
+
+  /* HeroUI's stock status palette — real hues, as the design system ships. */
+  --success: #17c964;
+  --success-foreground: var(--eclipse);
+  --warning: #f5a524;
+  --warning-foreground: var(--eclipse);
+  --danger: #f31260;
+  --danger-foreground: var(--snow);
+
+  /* Lines and focus */
+  --border: oklch(0.9 0 0);
+  --separator: oklch(0.925 0 0);
+  --focus: var(--accent);
+  --link: var(--foreground);
+
+  --backdrop: rgba(0, 0, 0, 0.45);
+}
+
+.dark,
+[data-theme="dark"] {
+  /*
+   * Base. Dark follows iOS's grouped dark palette: a true-black ground with
+   * cells at systemGray6 (#1C1C1E) and systemGray5 (#2C2C2E) equivalents. The
+   * wider ground-to-surface gap is what makes cards read as cells rather than
+   * smudges — still zero chroma throughout.
+   */
+  --background: oklch(0 0 0);
+  --foreground: var(--snow);
+
+  /* Surfaces */
+  --surface: oklch(0.235 0 0);
+  --surface-secondary: oklch(0.295 0 0);
+  --surface-tertiary: oklch(0.345 0 0);
+  --overlay: oklch(0.235 0 0);
+
+  --muted: oklch(0.705 0 0);
+  --default: oklch(0.295 0 0);
+  --default-foreground: var(--snow);
+  --segment: oklch(0.44 0 0);
+
+  /*
+   * The tint is HeroUI's default primary blue, unchanged in dark — the stock
+   * HeroUI dark look. It marks live state, primary chips, the active tab and
+   * the bookmark; everything else stays zero-chroma.
+   */
+  --accent: #006fee;
+  --accent-foreground: var(--snow);
+
+  /* Form fields */
+  --field-background: oklch(0.21 0 0);
+  --field-foreground: var(--snow);
+
+  /* HeroUI's stock status palette, same as light. */
+  --success: #17c964;
+  --success-foreground: var(--eclipse);
+  --warning: #f5a524;
+  --warning-foreground: var(--eclipse);
+  --danger: #f31260;
+  --danger-foreground: var(--snow);
+
+  /* Lines and focus */
+  --border: oklch(0.3 0 0);
+  --separator: oklch(0.28 0 0);
+  --focus: var(--accent);
+  --link: var(--foreground);
+
+  --backdrop: rgba(0, 0, 0, 0.6);
+}
+
+/*
+ * Ceremonial portal (app/page.tsx) only.
+ *
+ * The signed-out landing keeps its original teal/gold night-sky treatment; the
+ * HeroUI monochrome system above owns every authenticated screen. Nothing here
+ * touches `body` or a HeroUI token — the brand colours are exposed as their own
+ * `--color-*` utilities and are referenced only from the portal markup, so the
+ * two systems never collide.
+ */
 :root {
   --bg-base: #024056;
-  --bg-surface: #10734f;
   --text-primary: #e6ffc9;
   --text-muted: #a6d95f;
-  --accent-primary: #176844;
-  --border-default: #bc8330;
   --state-error: #d9614f;
-  --state-success: #58de69;
-  --sky-blue: #7cd0f7;
   --pastel-yellow: #fcdb64;
   --charcoal: #1a1a1a;
-  --art-void: #041a19;
-  --art-petrol: #0c272c;
-  --art-deep-teal: #123a47;
-  --art-emerald-deep: #0e6057;
-  --art-emerald: #197b62;
   --art-gold: #e6b84f;
 }
 
 @theme inline {
   --color-bg-base: var(--bg-base);
-  --color-bg-surface: var(--bg-surface);
   --color-text-primary: var(--text-primary);
   --color-text-muted: var(--text-muted);
-  --color-accent-primary: var(--accent-primary);
-  --color-border-default: var(--border-default);
   --color-state-error: var(--state-error);
-  --color-state-success: var(--state-success);
-  --color-sky-blue: var(--sky-blue);
   --color-pastel-yellow: var(--pastel-yellow);
   --color-charcoal: var(--charcoal);
-  --color-light-green: var(--state-success);
-  --font-sans: var(--font-lato);
+  --color-light-green: #58de69;
   --font-display: var(--font-perandory);
-}
-
-body {
-  background-color: var(--bg-base);
-  color: var(--text-primary);
 }
 
 .hero-field {
@@ -217,18 +330,8 @@ body {
   .stars-layer-a,
   .stars-layer-b,
   .lockup-sheen,
-  .comet,
-  .modal-backdrop,
-  .modal-card,
-  .push-modal-backdrop,
-  .push-modal-card,
-  .toast-in {
+  .comet {
     animation: none;
-  }
-
-  .animate-pulse {
-    animation: none;
-    opacity: 0.5;
   }
 
   .comet:nth-child(1) {
@@ -240,81 +343,14 @@ body {
   .comet:nth-child(3) {
     translate: 68vw 14vh;
   }
-  .comet:nth-child(4) {
-    translate: 24vw 26vh;
-  }
-  .comet:nth-child(5) {
-    translate: 78vw 8vh;
-  }
-  .comet:nth-child(6) {
-    translate: 52vw 20vh;
-  }
 }
 
-:where(a, button, input, textarea, select):focus-visible {
-  outline: 2px solid var(--pastel-yellow);
-  outline-offset: 2px;
-}
-
-@keyframes modal-backdrop-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes modal-card-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-backdrop {
-  animation: modal-backdrop-in 0.2s ease-out;
-}
-
-.modal-card {
-  animation: modal-card-in 0.25s ease-out;
-}
-
-.push-modal-backdrop {
-  animation: modal-backdrop-in 0.3s ease-out;
-}
-
-.push-modal-card {
-  animation: modal-card-in 0.3s ease-out;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.toast-in {
-  animation: toast-in 0.2s ease-out;
-}
-
-@keyframes bookmark-pop {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
-  }
+/*
+ * iOS squircle corners. `corner-shape` ships in modern Chromium/Safari;
+ * browsers without it simply keep the ordinary border-radius. Applied to the
+ * major rounded surfaces (hero, cells, capsule, sheet) for the continuous
+ * superellipse curve native iOS uses.
+ */
+.squircle {
+  corner-shape: squircle;
 }

@@ -1,10 +1,14 @@
+import { Chip } from "@heroui/react";
 import type { DisplayStatus } from "@/lib/format";
 
-const BADGE_STYLES: Record<DisplayStatus, string> = {
-  not_started: "border border-text-muted/50 text-text-muted",
-  ongoing:
-    "bg-state-success text-charcoal font-bold shadow-[0_0_12px_rgba(88,222,105,0.5)] animate-pulse",
-  finished: "text-text-primary/45",
+/**
+ * Status is monochrome. It reads through fill weight, not hue:
+ * ongoing is a solid ink chip, not started is a neutral chip, finished fades.
+ */
+const VARIANTS: Record<DisplayStatus, "primary" | "secondary" | "soft"> = {
+  not_started: "secondary",
+  ongoing: "primary",
+  finished: "soft",
 };
 
 const LABELS: Record<DisplayStatus, string> = {
@@ -15,10 +19,14 @@ const LABELS: Record<DisplayStatus, string> = {
 
 export function StatusBadge({ status }: { status: DisplayStatus }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${BADGE_STYLES[status]}`}
+    <Chip
+      size="sm"
+      variant={VARIANTS[status]}
+      className={
+        status === "ongoing" ? "bg-accent text-accent-foreground" : undefined
+      }
     >
       {LABELS[status]}
-    </span>
+    </Chip>
   );
 }

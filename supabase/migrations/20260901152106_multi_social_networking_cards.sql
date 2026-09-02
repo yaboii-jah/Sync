@@ -30,6 +30,7 @@ create table public.social_profiles (
 );
 
 alter table public.networking_cards enable row level security;
+
 alter table public.social_profiles enable row level security;
 
 create policy "Users can view own networking card"
@@ -76,6 +77,7 @@ end;
 $$;
 
 revoke all on function private.create_networking_card() from public;
+
 revoke all on function private.create_networking_card() from anon, authenticated;
 
 create trigger profiles_create_networking_card
@@ -143,6 +145,7 @@ $$;
 revoke all on function public.admin_search_attendees(
   text, integer, integer
 ) from public, anon;
+
 grant execute on function public.admin_search_attendees(
   text, integer, integer
 ) to authenticated;
@@ -277,20 +280,29 @@ as $$
 $$;
 
 revoke all on table public.networking_cards from anon, authenticated;
+
 revoke all on table public.social_profiles from anon, authenticated;
+
 grant select on table public.networking_cards to authenticated;
+
 grant select, delete on table public.social_profiles to authenticated;
+
 grant insert (user_id, network, url) on table public.social_profiles to authenticated;
+
 grant update (url) on table public.social_profiles to authenticated;
 
 revoke all on function public.set_networking_card_public(boolean) from public, anon;
+
 grant execute on function public.set_networking_card_public(boolean) to authenticated;
 
 revoke all on function public.get_own_networking_card() from public, anon;
+
 grant execute on function public.get_own_networking_card() to authenticated;
 
 revoke all on function public.save_social_profiles(text, text, text) from public, anon;
+
 grant execute on function public.save_social_profiles(text, text, text) to authenticated;
 
 revoke all on function public.get_public_networking_card(uuid) from public;
+
 grant execute on function public.get_public_networking_card(uuid) to anon, authenticated;
