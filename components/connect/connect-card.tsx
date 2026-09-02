@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useTransition } from "react";
 import { ChevronDown, Download, ExternalLink, QrCode } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import {
@@ -9,10 +9,12 @@ import {
   isValidSocialUrl,
   type SocialPlatform,
 } from "@/lib/social-platforms";
+import { upsertSocialProfile } from "@/app/(app)/connect/actions";
 
 interface SocialConnectCardProps {
   name: string;
   photoUrl: string | null;
+  savedUrls: Record<string, string>;
 }
 
 interface PlatformState {
@@ -20,16 +22,27 @@ interface PlatformState {
   qrValue: string | null;
 }
 
-export function SocialConnectCard({ name, photoUrl }: SocialConnectCardProps) {
+export function SocialConnectCard({
+  name,
+  photoUrl,
+  savedUrls,
+}: SocialConnectCardProps) {
   const [selectedId, setSelectedId] = useState<string>(SOCIAL_PLATFORMS[0].id);
   const [platformStates, setPlatformStates] = useState<
     Record<string, PlatformState>
   >(() =>
     Object.fromEntries(
-      SOCIAL_PLATFORMS.map((p) => [p.id, { url: "", qrValue: null }]),
+      SOCIAL_PLATFORMS.map((p) => [
+        p.id,
+        {
+          url: savedUrls[p.id] ?? "",
+          qrValue: savedUrls[p.id] ?? null,
+        },
+      ]),
     ),
   );
 
+  const [saving, startTransition] = useTransition();
   const canvasWrapRef = useRef<HTMLDivElement>(null);
 
   const platform =
@@ -48,13 +61,27 @@ export function SocialConnectCard({ name, photoUrl }: SocialConnectCardProps) {
   );
 
   const generateQr = useCallback(() => {
-    if (!canOpen) return;
+    if (!canOpen || saving) return;
     const trimmed = state.url.trim();
-    setPlatformStates((prev) => ({
-      ...prev,
-      [selectedId]: { ...prev[selectedId], qrValue: trimmed },
-    }));
-  }, [canOpen, selectedId, state.url]);
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("network", selectedId);
+      formData.set("url", trimmed);
+
+      const result = await upsertSocialProfile(
+        { error: null, success: false },
+        formData,
+      );
+
+      if (result.success) {
+        setPlatformStates((prev) => ({
+          ...prev,
+          [selectedId]: { ...prev[selectedId], qrValue: trimmed },
+        }));
+      }
+    });
+  }, [canOpen, saving, selectedId, state.url]);
 
   const saveQr = useCallback(() => {
     const canvas = canvasWrapRef.current?.querySelector("canvas");
@@ -154,10 +181,10 @@ export function SocialConnectCard({ name, photoUrl }: SocialConnectCardProps) {
       <button
         type="button"
         onClick={generateQr}
-        disabled={!canOpen}
+        disabled={!canOpen || saving}
         className="mt-3 w-full rounded-full bg-accent-primary px-5 py-3 text-xs font-bold tracking-[0.14em] text-text-primary uppercase transition-all hover:bg-light-green hover:text-charcoal active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-primary disabled:hover:text-text-primary"
       >
-        Generate QR
+        {saving ? "Saving..." : "Generate QR"}
       </button>
 
       {/* Actions */}

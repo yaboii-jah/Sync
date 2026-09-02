@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
+import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { SocialConnectCard } from "@/components/connect/connect-card";
 
@@ -13,8 +14,21 @@ export default async function ConnectPage({
   searchParams: Promise<{ shared?: string }>;
 }) {
   const { shared } = await searchParams;
-  const { profile } = await requireCompleteProfile();
+  const { user, profile } = await requireCompleteProfile();
   const name = profile.name || "Attendee";
+
+  const supabase = await createClient();
+  const { data: socialProfiles } = await supabase
+    .from("social_profiles")
+    .select("network, url")
+    .eq("user_id", user.id);
+
+  const savedUrls: Record<string, string> = {};
+  if (socialProfiles) {
+    for (const row of socialProfiles) {
+      savedUrls[row.network] = row.url;
+    }
+  }
 
   return (
     <main className="w-full">
@@ -43,7 +57,11 @@ export default async function ConnectPage({
         ) : null}
 
         <div className="mt-6">
-          <SocialConnectCard name={name} photoUrl={profile.photo_url} />
+          <SocialConnectCard
+            name={name}
+            photoUrl={profile.photo_url}
+            savedUrls={savedUrls}
+          />
         </div>
       </div>
     </main>
