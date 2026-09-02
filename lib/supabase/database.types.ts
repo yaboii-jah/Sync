@@ -557,6 +557,7 @@ export type Database = {
           end_time: string
           event_id: string
           id: string
+          published: boolean
           reminder_sent_at: string | null
           room: string | null
           start_time: string
@@ -573,6 +574,7 @@ export type Database = {
           end_time: string
           event_id: string
           id?: string
+          published?: boolean
           reminder_sent_at?: string | null
           room?: string | null
           start_time: string
@@ -589,6 +591,7 @@ export type Database = {
           end_time?: string
           event_id?: string
           id?: string
+          published?: boolean
           reminder_sent_at?: string | null
           room?: string | null
           start_time?: string
@@ -689,6 +692,23 @@ export type Database = {
           recipient_count: number
         }[]
       }
+      admin_create_session: {
+        Args: {
+          mutation_request_id: string
+          session_description: string
+          session_end_time: string
+          session_published: boolean
+          session_room: string
+          session_start_time: string
+          session_title: string
+          target_event_id: string
+        }
+        Returns: string
+      }
+      admin_delete_session: {
+        Args: { mutation_request_id: string; target_session_id: string }
+        Returns: string
+      }
       admin_get_dashboard: { Args: never; Returns: Json }
       admin_get_notification: {
         Args: { target_notification_id: string }
@@ -740,6 +760,14 @@ export type Database = {
           push_device_count: number
         }[]
       }
+      admin_set_session_published: {
+        Args: {
+          mutation_request_id: string
+          next_published: boolean
+          target_session_id: string
+        }
+        Returns: string
+      }
       admin_set_session_status: {
         Args: {
           action: string
@@ -755,6 +783,18 @@ export type Database = {
           status_override: string
           status_override_at: string
         }[]
+      }
+      admin_update_session: {
+        Args: {
+          mutation_request_id: string
+          session_description: string
+          session_end_time: string
+          session_room: string
+          session_start_time: string
+          session_title: string
+          target_session_id: string
+        }
+        Returns: string
       }
       current_user_is_admin: { Args: never; Returns: boolean }
       get_own_networking_card: {
