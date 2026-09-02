@@ -6,7 +6,7 @@
 | --------- | --------------------------- | ------ |
 | Framework | Next.js | Pages, routing, server-side rendering, API routes |
 | Backend / DB | Supabase (Postgres) | Database, Auth, Realtime, Row Level Security |
-| Auth | Supabase Auth — `linkedin_oidc` | Sign in with LinkedIn (OpenID Connect) |
+| Auth | Supabase Auth — `google` | Sign in with Google (OpenID Connect). Supplies `name` and `picture`, which `handle_new_user` already reads |
 | Installable PWA | Hand-authored static service worker (`public/sw.js`) + web manifest | Static icon/manifest caching, Web Push, and home-screen install. Authenticated routes and Next.js route data are never cached. (Note: `next-pwa`/`@serwist/next` are webpack plugins and incompatible with Next 16's default Turbopack builds — do not reintroduce them) |
 | Push Delivery | Web Push API — pg_cron → `notifications` INSERT → pg_net webhook → `send-push` Edge Function → FCM/Web Push | Notifications when the app isn't open |
 | Hosting (typical pairing, not yet finalized) | Vercel (frontend) + Supabase Cloud (backend) | Deployment |
@@ -28,7 +28,7 @@
 
 ## Auth and Access Model
 
-- Every user signs in via Supabase Auth using LinkedIn (OIDC) — no separate registration form beyond a one-time LinkedIn profile URL entry
+- Every user signs in via Supabase Auth using Google (OIDC) — no separate registration form. The LinkedIn profile URL is now purely optional and unrelated to sign-in: it is networking data an attendee may add in Settings, and the QR falls back to a name search without it
 - Administrators use the same sign-in but gain operational access only through an out-of-band `admin_users` allowlist; attendee metadata and pass type never grant admin access
 - Each user's profile is a single row tied 1:1 to their auth identity — no shared or delegated ownership
 - Attendees have read-only access to sessions, speakers/sponsors, and notifications, enforced via Row Level Security — not just app-level checks
