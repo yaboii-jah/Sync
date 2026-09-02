@@ -48,7 +48,10 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
   }
 
   return (
-    <main className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-6 py-24 text-center">
+    <main
+      className="portal relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-bg-base px-6 py-24 text-center text-text-primary"
+      style={{ fontFamily: "var(--font-lato)" }}
+    >
       <div aria-hidden className="hero-field" />
       <div
         aria-hidden

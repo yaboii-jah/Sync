@@ -1,7 +1,8 @@
 "use client";
 
-import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Alert, Button, CloseButton } from "@heroui/react";
+import { Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -39,28 +40,22 @@ export function InstallChip() {
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-24 z-30 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-border-default bg-bg-base px-5 py-2.5 shadow-[0_0_20px_rgba(188,131,48,0.25)] lg:inset-x-auto lg:right-6 lg:bottom-6 lg:mx-0">
-      <p className="flex items-center gap-2 text-sm font-bold text-text-primary">
-        <Download className="h-4 w-4 text-pastel-yellow" />
-        Install Sync
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={install}
-          className="rounded-full bg-pastel-yellow px-4 py-1.5 text-xs font-bold tracking-wide text-charcoal uppercase transition-colors hover:bg-light-green"
-        >
+    <div className="fixed inset-x-4 bottom-24 z-30 mx-auto max-w-md lg:inset-x-auto lg:right-6 lg:bottom-6 lg:mx-0 lg:w-96">
+      <Alert>
+        <Alert.Indicator>
+          <Download className="size-5" aria-hidden />
+        </Alert.Indicator>
+        <Alert.Content>
+          <Alert.Title>Install Sync</Alert.Title>
+          <Alert.Description>
+            Add it to your home screen for faster access on event day.
+          </Alert.Description>
+        </Alert.Content>
+        <Button size="sm" onPress={install}>
           Install
-        </button>
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label="Dismiss install prompt"
-          className="rounded-full p-1.5 text-text-muted hover:text-text-primary"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+        </Button>
+        <CloseButton aria-label="Dismiss install prompt" onPress={dismiss} />
+      </Alert>
     </div>
   );
 }

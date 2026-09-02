@@ -1,10 +1,11 @@
-import { Skeleton, SkeletonCard, SkeletonText } from "@/components/skeleton";
+import { Card } from "@heroui/react";
+import { Skeleton, SkeletonText } from "@/components/skeleton";
 
 export default function ConnectLoading() {
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-md px-4 pt-8 lg:pt-10">
-        <Skeleton className="h-9 w-36" />
+        <Skeleton className="h-8 w-36 rounded-md" />
         <SkeletonText className="mt-3 w-56" />
         <SkeletonCard className="mt-6 px-6 py-8 text-center">
           {/* Platform dropdown */}
@@ -24,10 +25,10 @@ export default function ConnectLoading() {
           <Skeleton className="mx-auto mt-3 h-12 w-full rounded-full" />
           {/* Actions */}
           <div className="mt-6 flex flex-col gap-3">
-            <Skeleton className="h-12 w-full rounded-full" />
-            <Skeleton className="h-12 w-full rounded-full" />
+            <Skeleton className="h-11 w-full rounded-lg" />
+            <Skeleton className="h-11 w-full rounded-lg" />
           </div>
-        </SkeletonCard>
+        </Card>
       </div>
     </main>
   );

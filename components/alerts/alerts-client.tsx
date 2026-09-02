@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card, Chip, Typography } from "@heroui/react";
+import { BellOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { NotificationRow } from "@/lib/supabase/queries/notifications";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
@@ -11,40 +13,36 @@ import { useRealtimeRefetch } from "@/hooks/use-realtime-refetch";
 import { useToast } from "@/components/toast/toast-provider";
 import { useAlertsCount } from "@/components/alerts-count-provider";
 import { SessionModal } from "@/components/sessions/session-modal";
-import { EmptyCity } from "@/components/empty-states";
-import { toggleBookmark, type ToggleBookmarkResult } from "@/app/(app)/home/actions";
+import { EmptyState } from "@/components/empty-states";
+import {
+  toggleBookmark,
+  type ToggleBookmarkResult,
+} from "@/app/(app)/home/actions";
 
 interface AlertsClientProps {
   initialNotifications: NotificationRow[];
   initialBookmarkedIds: string[];
 }
 
-function TypeBadge({ type }: { type: string }) {
-  if (type === "session_live") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-state-success px-2.5 py-0.5 text-xs font-bold text-charcoal shadow-[0_0_12px_rgba(88,222,105,0.5)] animate-pulse">
-        Live
-      </span>
-    );
-  }
-  if (type === "session_reminder") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-pastel-yellow/60 px-2.5 py-0.5 text-xs font-bold text-pastel-yellow">
-        Soon
-      </span>
-    );
-  }
-  if (type === "announcement") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-pastel-yellow px-2.5 py-0.5 text-xs font-bold text-charcoal">
-        Announcement
-      </span>
-    );
-  }
+/**
+ * Alert kind is monochrome: emphasis runs from a solid chip (live, most
+ * urgent) down to a soft chip (wrapped, archival).
+ */
+const TYPE_CHIPS: Record<
+  string,
+  { label: string; variant: "primary" | "secondary" | "tertiary" | "soft" }
+> = {
+  session_live: { label: "Live", variant: "primary" },
+  session_reminder: { label: "Soon", variant: "secondary" },
+  announcement: { label: "Announcement", variant: "tertiary" },
+};
+
+function TypeChip({ type }: { type: string }) {
+  const chip = TYPE_CHIPS[type] ?? { label: "Wrapped", variant: "soft" as const };
   return (
-    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs text-text-primary/45">
-      Wrapped
-    </span>
+    <Chip size="sm" variant={chip.variant}>
+      {chip.label}
+    </Chip>
   );
 }
 
@@ -97,7 +95,7 @@ export function AlertsClient({
     void (async () => {
       const result: ToggleBookmarkResult = await toggleBookmark(sessionId);
       if (result.error) {
-        toast("Couldn't update your flow", "error");
+        toast("Could not update your flow", "error");
         setBookmarks((previous) => {
           const reverted = new Set(previous);
           if (reverted.has(sessionId)) {
@@ -115,63 +113,67 @@ export function AlertsClient({
 
   return (
     <>
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-6 flex flex-col gap-3">
         {notifications.map((notification) => {
           const tappable = notification.related_session_id !== null;
 
-          const card = (
+          const body = (
             <>
               <div className="flex items-center justify-between gap-2">
-                <TypeBadge type={notification.type} />
-                <time
-                  dateTime={notification.created_at}
-                  className="text-xs text-text-muted"
-                >
-                  {formatRelativeTime(notification.created_at)}
-                </time>
+                <TypeChip type={notification.type} />
+                <Typography type="body-xs" color="muted">
+                  <time dateTime={notification.created_at}>
+                    {formatRelativeTime(notification.created_at)}
+                  </time>
+                </Typography>
               </div>
-              <h3 className="mt-2 font-bold leading-snug text-text-primary">
+
+              <Typography type="body" weight="semibold" className="mt-2">
                 {notification.title}
-              </h3>
+              </Typography>
+
               {notification.body ? (
-                <p className="mt-1 text-sm leading-snug text-text-muted">
+                <Typography type="body-sm" color="muted" className="mt-1">
                   {notification.body}
-                </p>
+                </Typography>
               ) : null}
+
               {tappable ? (
-                <p className="mt-2 text-xs font-bold text-pastel-yellow/80">
-                  View session →
-                </p>
+                <Typography type="body-xs" weight="medium" className="mt-3">
+                  View session
+                </Typography>
               ) : null}
             </>
           );
 
-          return tappable ? (
-            <button
-              key={notification.id}
-              type="button"
-              onClick={() => void openLinkedSession(notification.related_session_id!)}
-              aria-haspopup="dialog"
-              className="w-full rounded-2xl border border-border-default bg-bg-base px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:bg-accent-primary/20"
-            >
-              {card}
-            </button>
-          ) : (
-            <article
-              key={notification.id}
-              className="rounded-2xl border border-border-default bg-bg-base px-4 py-4"
-            >
-              {card}
-            </article>
+          return (
+            <Card key={notification.id}>
+              {tappable ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void openLinkedSession(notification.related_session_id!)
+                  }
+                  aria-haspopup="dialog"
+                  className="w-full px-5 py-4 text-left"
+                >
+                  {body}
+                </button>
+              ) : (
+                <div className="px-5 py-4">{body}</div>
+              )}
+            </Card>
           );
         })}
+
         {notifications.length === 0 ? (
-          <div className="rounded-2xl border border-border-default bg-bg-base px-5 py-8 text-center">
-            <EmptyCity />
-            <p className="mt-3 text-sm text-text-muted">
-              No alerts yet — they&apos;ll appear here during the event.
-            </p>
-          </div>
+          <Card variant="transparent" className="border-border border border-dashed">
+            <EmptyState
+              icon={<BellOff />}
+              title="No alerts yet"
+              description="Session updates and announcements appear here during the event."
+            />
+          </Card>
         ) : null}
       </div>
 

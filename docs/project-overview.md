@@ -6,7 +6,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ## Goals
 
-1. Let an attendee go from landing page to a fully usable account via LinkedIn sign-in, with no manual registration form beyond a one-time profile URL entry
+1. Let an attendee go from landing page to a fully usable account via Google sign-in, with no manual registration form and nothing typed
 2. Surface session status (not started / ongoing / finished) in real time, with zero manual posting required from anyone
 3. Let an attendee generate and share a LinkedIn networking QR code without retyping their profile URL more than once
 4. Make the app installable as a PWA so it behaves like a native app from the home screen
@@ -26,7 +26,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 ## Features
 
 ### Authentication
-- Sign in with LinkedIn — auto-fills name and profile photo
+- Sign in with Google — auto-fills name and profile photo
 - One-time manual entry of a valid `linkedin.com/in/` profile URL, normalized for the networking QR code
 
 ### Program Flow
@@ -71,7 +71,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ### In Scope
 
-- LinkedIn OAuth sign-in
+- Google OAuth sign-in
 - Real-time program flow with automatic session status
 - Automatic, schedule-driven session reminders and start/end notifications
 - Organizer announcements managed directly in the database

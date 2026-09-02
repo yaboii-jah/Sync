@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Card, Typography } from "@heroui/react";
 import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 import { LinkedInUrlForm } from "./linkedin-url-form";
 
@@ -8,21 +9,25 @@ export default async function OnboardingPage() {
   if (!result || !result.profile) redirect("/login");
   if (result.profile.linkedin_url) redirect("/home");
 
-  const displayName =
-    result.profile.name || result.user.email || "there";
+  const displayName = result.profile.name || result.user.email || "there";
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border-default px-8 py-10 text-center">
-        <h1 className="text-2xl font-bold text-text-primary">
-          Welcome, {displayName}
-        </h1>
-        <p className="mt-3 text-text-muted">
-          One last step — paste your LinkedIn profile URL. It powers your
-          networking QR code so people you meet can find you instantly.
-        </p>
-        <LinkedInUrlForm />
-      </div>
+    <main className="flex flex-1 items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-sm">
+        <Card.Header>
+          <Typography.Heading level={1}>
+            Welcome, {displayName}
+          </Typography.Heading>
+          <Card.Description>One last step</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <Typography type="body-sm" color="muted">
+            Paste your LinkedIn profile URL. It powers your networking QR code
+            so people you meet can find you instantly.
+          </Typography>
+          <LinkedInUrlForm />
+        </Card.Content>
+      </Card>
     </main>
   );
 }

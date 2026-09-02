@@ -2,6 +2,15 @@
 
 import { useActionState, useEffect } from "react";
 import {
+  Button,
+  Card,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  TextField,
+} from "@heroui/react";
+import {
   updateProfile,
   type UpdateProfileState,
 } from "@/app/(app)/settings/actions";
@@ -30,59 +39,46 @@ export function SettingsForm({
   }, [state.success]);
 
   return (
-    <form action={formAction} className="mt-4 flex flex-col gap-4">
-      <div>
-        <label
-          htmlFor="name"
-          className="text-sm font-bold text-text-muted"
-        >
-          Name
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          defaultValue={initialName}
-          required
-          className="mt-1 w-full rounded-lg border border-border-default bg-bg-base px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-border-default"
-        />
-      </div>
-      <div>
-        <label
-          htmlFor="linkedin_url"
-          className="text-sm font-bold text-text-muted"
-        >
-          LinkedIn profile URL
-        </label>
-        <input
-          id="linkedin_url"
-          name="linkedin_url"
-          type="url"
-          defaultValue={initialUrl}
-          required
-          placeholder="https://linkedin.com/in/your-name"
-          className="mt-1 w-full rounded-lg border border-border-default bg-bg-base px-4 py-3 text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-border-default"
-        />
-      </div>
+    <Card className="mt-4">
+      <Card.Header>
+        <Card.Title>Profile</Card.Title>
+        <Card.Description>How you appear across the app.</Card.Description>
+      </Card.Header>
 
-      {state.error ? (
-        <p className="rounded-lg bg-state-error/20 px-3 py-2 text-sm text-state-error">
-          {state.error}
-        </p>
-      ) : null}
-      {state.success ? (
-        <p className="rounded-lg bg-state-success/20 px-3 py-2 text-sm text-state-success">
-          Profile saved.
-        </p>
-      ) : null}
+      <Card.Content>
+        <Form action={formAction} className="flex flex-col gap-4">
+          <TextField
+            fullWidth
+            isRequired
+            name="name"
+            defaultValue={initialName}
+            isInvalid={Boolean(state.error)}
+          >
+            <Label>Name</Label>
+            <Input variant="secondary" />
+          </TextField>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-full bg-pastel-yellow px-5 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:opacity-60 active:scale-95"
-      >
-        {pending ? "Saving…" : "Save changes"}
-      </button>
-    </form>
+          <TextField
+            fullWidth
+            isRequired
+            name="linkedin_url"
+            type="url"
+            defaultValue={initialUrl}
+            isInvalid={Boolean(state.error)}
+          >
+            <Label>LinkedIn profile URL</Label>
+            <Input
+              variant="secondary"
+              placeholder="https://linkedin.com/in/your-name"
+            />
+            <FieldError>{state.error}</FieldError>
+          </TextField>
+
+          <Button type="submit" fullWidth isPending={pending}>
+            Save changes
+          </Button>
+        </Form>
+      </Card.Content>
+    </Card>
   );
 }

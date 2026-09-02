@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Alert, Card, Switch, Typography } from "@heroui/react";
 import {
   ensurePushSubscription,
   getPushDeviceId,
@@ -162,62 +163,78 @@ export function NotificationSettings() {
   const busy = status === "busy" || status === "checking";
   const enabled = status === "enabled";
 
+  const statusLabel = busy
+    ? "Checking this device"
+    : enabled
+      ? "Enabled on this device"
+      : blocked
+        ? "Blocked by browser"
+        : unavailable
+          ? "Unavailable in this browser"
+          : "Disabled on this device";
+
   return (
-    <section className="mt-8 rounded-2xl border border-border-default bg-bg-base px-5 py-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-sm font-bold text-text-primary">Session alerts</h2>
-          <p className="mt-1 max-w-sm text-sm leading-snug text-text-muted">
-            Receive reminders, live updates, and wrapped alerts on this device.
-          </p>
+    <Card className="mt-4">
+      <Card.Header>
+        <Card.Title>Session alerts</Card.Title>
+        <Card.Description>
+          Reminders, live updates, and wrapped alerts on this device.
+        </Card.Description>
+      </Card.Header>
+
+      <Card.Content className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-4">
+          <Typography type="body-sm" color="muted">
+            {statusLabel}
+          </Typography>
+
+          {!unavailable && !blocked ? (
+            <Switch
+              isSelected={enabled}
+              isDisabled={busy}
+              aria-label="Toggle session alerts"
+              onChange={() => void (enabled ? disable() : enable())}
+            >
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch>
+          ) : null}
         </div>
-        {!unavailable && !blocked ? (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={enabled}
-            aria-label="Toggle session alerts"
-            onClick={() => void (enabled ? disable() : enable())}
-            disabled={busy}
-            className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors disabled:opacity-60 ${
-              enabled
-                ? "border-state-success bg-state-success"
-                : "border-border-default bg-accent-primary"
-            }`}
-          >
-            <span
-              className={`absolute top-1 left-1 h-5 w-5 rounded-full bg-text-primary transition-transform ${
-                enabled ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
+
+        {blocked ? (
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Description>
+                Notifications are blocked. Allow them in your browser or device
+                settings, then return here to enable session alerts.
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
         ) : null}
-      </div>
 
-      <p className="mt-3 text-xs font-bold tracking-[0.14em] text-text-muted uppercase">
-        {busy ? "Checking device..." : enabled ? "Enabled on this device" : null}
-        {!busy && !enabled && !blocked && !unavailable
-          ? "Disabled on this device"
-          : null}
-        {blocked ? "Blocked by browser" : null}
-        {unavailable ? "Unavailable in this browser" : null}
-      </p>
+        {unavailable ? (
+          <Alert>
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Description>
+                This browser does not support push notifications. Try an
+                installed PWA or a supported mobile browser.
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
+        ) : null}
 
-      {blocked ? (
-        <p className="mt-2 text-sm leading-snug text-state-error">
-          Notifications are blocked. Allow them in your browser or device
-          settings, then return here to enable session alerts.
-        </p>
-      ) : null}
-      {unavailable ? (
-        <p className="mt-2 text-sm leading-snug text-text-muted">
-          This browser does not support push notifications. Try an installed
-          PWA or a supported mobile browser.
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mt-2 text-sm leading-snug text-state-error">{error}</p>
-      ) : null}
-    </section>
+        {error ? (
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Description>{error}</Alert.Description>
+            </Alert.Content>
+          </Alert>
+        ) : null}
+      </Card.Content>
+    </Card>
   );
 }
