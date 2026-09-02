@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Button } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
@@ -11,13 +11,17 @@ const OPTIONS = [
   { key: "system", label: "System", icon: Monitor },
 ] as const;
 
-export function ThemeSwitch() {
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export function ThemeSwitch() {
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="flex items-center gap-2" role="group" aria-label="Theme">
@@ -30,6 +34,7 @@ export function ThemeSwitch() {
             key={option.key}
             size="sm"
             variant={isActive ? "primary" : "secondary"}
+            aria-pressed={isActive}
             onPress={() => setTheme(option.key)}
             className="flex-1"
           >

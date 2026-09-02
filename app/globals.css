@@ -24,6 +24,8 @@
 :root,
 .light,
 [data-theme="light"] {
+  color-scheme: light;
+
   /* Primitives */
   --white: oklch(1 0 0);
   --black: oklch(0 0 0);
@@ -76,6 +78,8 @@
 
 .dark,
 [data-theme="dark"] {
+  color-scheme: dark;
+
   /*
    * Base. Dark follows iOS's grouped dark palette: a true-black ground with
    * cells at systemGray6 (#1C1C1E) and systemGray5 (#2C2C2E) equivalents. The
