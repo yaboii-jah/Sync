@@ -2,13 +2,13 @@
 
 ## Overview
 
-Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and a QR-based networking card, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
+Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based social networking, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
 
 ## Goals
 
 1. Let an attendee go from landing page to a fully usable account via Google sign-in, with no manual registration form and nothing typed
 2. Surface session status (not started / ongoing / finished) in real time, with zero manual posting required from anyone
-3. Let an attendee share a networking card — LinkedIn, Instagram, Facebook, or any mix of the three — from a QR code that never has to be reprinted when the links change
+3. Let an attendee generate and share a networking QR code for LinkedIn, Instagram, or Facebook without retyping their profile URL more than once
 4. Make the app installable as a PWA so it behaves like a native app from the home screen
 5. Give approved event operators a secure, auditable way to correct live program state and communicate with attendees
 
@@ -16,7 +16,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 1. User lands on the public landing page and taps "Get Started"
 2. User signs in with Google (name and photo auto-filled)
-3. User adds the social profiles they want to share in Settings, then turns their card on in Connect
+3. User enters their social profile URL (LinkedIn, Instagram, or Facebook) once, generating their networking QR code
 4. User lands on the Home dashboard showing the current session and what's next
 5. User taps into a session to view its description, room, and speaker
 6. User receives schedule-driven session reminders and start/end notifications for sessions saved to My Flow
@@ -42,9 +42,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Real-time Alerts feed with persisted unread state; session-linked alerts open the session detail modal
 
 ### Networking (Connect)
-- Personal networking card carrying any of LinkedIn, Instagram and Facebook, each entered once and normalized
-- QR code encoding the card's own token, so links can be added, changed or withdrawn without a new code
-- The card is off until the attendee turns it on, and a withdrawn card stops resolving on the next scan
+- Personal networking card with auto-generated QR code linking to social profiles (LinkedIn, Instagram, Facebook)
 
 ### Speakers & Sponsors
 - Browsable directory with photo, name, role, and organization
@@ -78,7 +76,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Automatic, schedule-driven session reminders and start/end notifications
 - Organizer announcements managed directly in the database
 - Persisted unread alert count and session-linked alert detail access
-- QR-based networking card
+- QR-based social networking (LinkedIn, Instagram, Facebook)
 - Speaker/sponsor directory
 - Quick links to external providers
 - PWA installability
@@ -93,9 +91,9 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ## Success Criteria
 
-1. A user can sign in via Google and reach the Home dashboard with no manual form at all
+1. A user can sign in via Google and reach the Home dashboard with no manual form beyond the one-time social profile URL entry
 2. Session status badges update in real time across all connected clients with no manual re-posting
-3. A user can publish a networking card whose QR code resolves to the profiles they chose, and stops resolving when they withdraw it
+3. A user can generate a networking QR code that correctly resolves to their social profile (LinkedIn, Instagram, or Facebook)
 4. A user can install the app to a device home screen and launch it as a standalone PWA
 5. A user can browse the full speaker/sponsor directory and open an entry's LinkedIn profile when one is provided
 6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override

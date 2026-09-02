@@ -16,8 +16,7 @@
 - `app/` — Next.js routes for attendee screens plus a separate `/admin` route group with its own responsive operations shell. Admin routes cover the dashboard, immediate notification composer/history/delivery results, session override controls, read-only attendee search, and mutation audit history.
 - Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, and `/login` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
 - `lib/supabase/` — Supabase client setup, generated database types, and typed queries/mutations for program flow, directory, quick links, notifications, and profiles
-- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card, directory + bio modals, side rail / bottom tab navigation
-- `app/(app)/c/[token]` — where a scanned card resolves; sign-in is still required, so a reader is a fellow attendee rather than anyone pointing a camera at a photo of the code
+- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card (supports LinkedIn, Instagram, Facebook), directory + bio modals, side rail / bottom tab navigation
 - `public/sw.js` + `public/manifest.webmanifest` + `public/icons/` — hand-authored service worker (static PWA asset caching + push/notification-click handlers), PWA manifest, and icons; authenticated pages and Next.js route data are deliberately excluded from caches, and the service worker is source code, never build-generated
 
 ## Storage Model
@@ -30,8 +29,7 @@
 
 ## Auth and Access Model
 
-- Every user signs in via Supabase Auth using Google (OIDC) — no separate registration form. Networking links are optional and unrelated to sign-in: an attendee adds any of LinkedIn, Instagram and Facebook in Settings, and publishes them as a card in Connect
-- A networking card is read by anyone holding its `public_token`, and only while its owner has published it. `get_public_networking_card` is the whole read path — it returns name, photo and links, never the owner's id or token — so withdrawing a card takes effect on the next scan. Writes go through `save_social_profiles` and `set_networking_card_public`, both of which additionally require a Google identity; `social_profiles` has no client write grant at all
+- Every user signs in via Supabase Auth using Google (OIDC) — no separate registration form. Social profile URLs (LinkedIn, Instagram, Facebook) are optional networking data an attendee may add in Settings; the QR uses the entered URL directly
 - Administrators use the same sign-in but gain operational access only through an out-of-band `admin_users` allowlist; attendee metadata and pass type never grant admin access
 - Each user's profile is a single row tied 1:1 to their auth identity — no shared or delegated ownership
 - Attendees have read-only access to sessions, speakers/sponsors, and notifications, enforced via Row Level Security — not just app-level checks
