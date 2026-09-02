@@ -29,6 +29,7 @@ export default async function ConnectPage({
 }) {
   const { shared } = await searchParams;
   const { profile } = await requireCompleteProfile();
+  const card = await getOwnNetworkingCard();
   const name = profile.name || "Attendee";
 
   const supabase = await createClient();

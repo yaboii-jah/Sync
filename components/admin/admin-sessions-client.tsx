@@ -11,8 +11,22 @@ import {
   Description,
   Typography,
 } from "@heroui/react";
-import { Radio, RotateCcw, Square } from "lucide-react";
-import { changeSessionStatus } from "@/app/(admin)/admin/actions";
+import {
+  Eye,
+  EyeOff,
+  Pencil,
+  Plus,
+  Radio,
+  RotateCcw,
+  Square,
+  Trash2,
+} from "lucide-react";
+import {
+  changeSessionStatus,
+  deleteSessionAction,
+  setSessionPublishedAction,
+} from "@/app/(admin)/admin/actions";
+import { SessionEditor } from "@/components/admin/session-editor";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import { formatTimeRange } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badge";
@@ -28,9 +42,14 @@ const ACTION_LABELS: Record<SessionAction, string> = {
 
 export function AdminSessionsClient({
   sessions,
+  eventId,
 }: {
   sessions: SessionWithSpeakers[];
+  eventId: string | null;
 }) {
+  const [editing, setEditing] = useState<{
+    session: SessionWithSpeakers | null;
+  } | null>(null);
   const [pending, startTransition] = useTransition();
   const [selection, setSelection] = useState<{
     session: SessionWithSpeakers;
@@ -40,6 +59,45 @@ export function AdminSessionsClient({
   const [sendNotification, setSendNotification] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
+
+  /** Both take the same shape: mutate, report, refresh. */
+  function runMutation(
+    run: () => Promise<{ error?: string }>,
+    success: string,
+  ) {
+    startTransition(async () => {
+      const result = await run();
+      if (result.error) {
+        toast(result.error, "error");
+        return;
+      }
+      toast(success);
+      router.refresh();
+    });
+  }
+
+  function togglePublished(session: SessionWithSpeakers) {
+    runMutation(
+      () =>
+        setSessionPublishedAction({
+          sessionId: session.id,
+          published: !session.published,
+          requestId: crypto.randomUUID(),
+        }),
+      session.published ? "Session unpublished" : "Session published",
+    );
+  }
+
+  function remove(session: SessionWithSpeakers) {
+    runMutation(
+      () =>
+        deleteSessionAction({
+          sessionId: session.id,
+          requestId: crypto.randomUUID(),
+        }),
+      "Session deleted",
+    );
+  }
 
   function open(session: SessionWithSpeakers, action: SessionAction) {
     setSelection({ session, action, requestId: crypto.randomUUID() });
@@ -72,7 +130,16 @@ export function AdminSessionsClient({
 
   return (
     <>
-      <div className="mt-8 flex flex-col gap-3">
+      {eventId ? (
+        <div className="mt-6 flex justify-end">
+          <Button size="sm" onPress={() => setEditing({ session: null })}>
+            <Plus className="size-4" aria-hidden />
+            New session
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="mt-4 flex flex-col gap-3">
         {sessions.map((session) => (
           <Card
             key={session.id}
@@ -94,6 +161,11 @@ export function AdminSessionsClient({
                       Manual
                     </Chip>
                   ) : null}
+                  {session.published ? null : (
+                    <Chip size="sm" variant="soft">
+                      Draft
+                    </Chip>
+                  )}
                 </div>
 
                 <Typography type="h6" className="mt-2">
@@ -105,6 +177,41 @@ export function AdminSessionsClient({
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => setEditing({ session })}
+                >
+                  <Pencil className="size-4" aria-hidden />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isDisabled={pending}
+                  onPress={() => togglePublished(session)}
+                >
+                  {session.published ? (
+                    <EyeOff className="size-4" aria-hidden />
+                  ) : (
+                    <Eye className="size-4" aria-hidden />
+                  )}
+                  {session.published ? "Unpublish" : "Publish"}
+                </Button>
+                {/* Only drafts and mistakes are deletable; anything that has
+                    run is part of the event's record and is unpublished
+                    instead — the RPC enforces this too. */}
+                {session.status === "not_started" ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    isDisabled={pending}
+                    onPress={() => remove(session)}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    Delete
+                  </Button>
+                ) : null}
                 {session.status === "not_started" ? (
                   <Button size="sm" onPress={() => open(session, "start")}>
                     <Radio className="size-4" aria-hidden />
@@ -199,6 +306,13 @@ export function AdminSessionsClient({
           </AlertDialog.Container>
         </AlertDialog.Backdrop>
       </AlertDialog>
+      {editing && eventId ? (
+        <SessionEditor
+          session={editing.session}
+          eventId={eventId}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
     </>
   );
 }

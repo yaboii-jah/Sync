@@ -18,26 +18,30 @@ Anything else that needs a new visual should be assembled from HeroUI parts firs
 
 ## Theme
 
-**Monochrome, light and dark, following the system by default.**
+**Neutral surfaces plus a single tint, light and dark, following the system by default.**
 
 `next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="system"`, `enableSystem`). HeroUI reads it directly; there is no HeroUI provider. Settings offers a Light / Dark / System control (`components/theme-switch.tsx`) that persists the choice.
 
-`app/globals.css` imports Tailwind, then `@heroui/styles`, then re-points HeroUI's own theme variables at zero-chroma values. Nothing new is invented; every override is a HeroUI token:
+`app/globals.css` imports Tailwind, then `@heroui/styles`, then re-points HeroUI's own theme variables. Surfaces stay zero-chroma; `--accent` and the status tokens carry HeroUI's stock values. Nothing new is invented; every override is a HeroUI token:
+
+The dark ground follows iOS's grouped palette — true black with cells stepping through systemGray6/5/4 equivalents — so cards read as cells rather than smudges. Light uses iOS's `#F2F2F7` grouped ground for the same reason: white cells need something to sit on.
 
 | Token | Light | Dark |
 | --- | --- | --- |
-| `--background` | `oklch(0.97 0 0)` | `oklch(0.145 0 0)` |
+| `--background` | `#f2f2f7` | `oklch(0 0 0)` |
 | `--foreground` | `oklch(0.21 0 0)` | `oklch(0.99 0 0)` |
-| `--surface` | `oklch(1 0 0)` | `oklch(0.21 0 0)` |
-| `--surface-secondary` | `oklch(0.952 0 0)` | `oklch(0.255 0 0)` |
+| `--surface` | `oklch(1 0 0)` | `oklch(0.235 0 0)` |
+| `--surface-secondary` | `oklch(0.952 0 0)` | `oklch(0.295 0 0)` |
 | `--muted` | `oklch(0.552 0 0)` | `oklch(0.705 0 0)` |
 | `--default` | `oklch(0.94 0 0)` | `oklch(0.274 0 0)` |
-| `--accent` | `oklch(0.21 0 0)` | `oklch(0.99 0 0)` |
+| `--accent` | `#006fee` | `#006fee` |
 | `--border` | `oklch(0.9 0 0)` | `oklch(0.29 0 0)` |
 
 The override blocks sit outside `@layer` deliberately: unlayered rules beat the layered defaults `@heroui/styles` ships, which is the override path HeroUI documents.
 
-**Status carries no hue.** `--success`, `--warning` and `--danger` all resolve to the accent, so a HeroUI component that reaches for them still renders monochrome. Meaning is carried by fill weight instead:
+**One tint, HeroUI's own.** `--accent` is `#006fee` in both themes — the stock HeroUI primary — and `--success` / `--warning` / `--danger` carry HeroUI's stock status palette (`#17c964`, `#f5a524`, `#f31260`). The tint is spent only where iOS spends it: live state, primary chips, the active tab, the bookmark, focus rings. Everything else stays neutral, which is what keeps one accent from becoming a colour scheme.
+
+Status still leans on fill weight as well as hue:
 
 | Meaning | Treatment |
 | --- | --- |
@@ -48,11 +52,22 @@ The override blocks sit outside `@layer` deliberately: unlayered rules beat the 
 
 `components/status-badge.tsx` is the single mapping for session status; `alerts-client.tsx` uses the same ladder for alert kinds.
 
-The one place a coloured-looking signal survives is the live-session dot in `live-mini-bar.tsx`, and it is `bg-foreground` with a ping that collapses under `motion-reduce`. It marks real state (a session is running now), which is the only case a status dot is allowed.
+Live state is the one signal allowed a dot: `live-mini-bar.tsx`, the hero eyebrow and the `/home` time headers each pair an accent dot with a ping that collapses under `motion-reduce`. It marks real state — a session is running now.
+
+## iOS conventions on /home
+
+`/home` is the one screen tuned deliberately toward a native-app read, using HeroUI parts throughout:
+
+- **One dramatic surface.** The hero is a saturated accent gradient (`#00369c → #0072f5`, solid — no translucency) carrying white text, a live dot, a `ProgressBar` and a ticking countdown. Every other card stays a quiet grouped cell. Apple's deference principle: exactly one element may be loud.
+- **Squircles.** `corner-shape: squircle` via the `.squircle` utility on hero, cells, capsule and dialog. Progressive enhancement — browsers without it keep the plain radius.
+- **A progress rail.** The program list runs a 12px rail whose line fills through what is finished, part-fills across the running session, and stays hollow ahead, with a NOW divider at the cut. Start times sit as headers above each cell (Luma's pattern) rather than in a fixed left column, which cost ~90px of a 390px screen.
+- **Press feedback.** `active:scale-[0.98]` on cards and the capsule, `active:scale-95` on tabs, all collapsing under `motion-reduce`.
+- **Safe areas.** The tab bar pads by `env(safe-area-inset-bottom)`.
+- **Dialogs are centred**, capped at `85dvh` with `scroll="inside"` so a long session scrolls internally instead of overflowing.
 
 ## Typography
 
-HeroUI's built-in type scale, through the `Typography` component, on every authenticated screen — no custom fonts there.
+HeroUI's built-in type scale, through the `Typography` component, on every authenticated screen — no custom fonts there. `/home` sets two iOS-scale exceptions in the header and section title (28px and 22px, bold, tight tracking) so the screen opens with a large title the way a native app does.
 
 Lato and Perandory are loaded in `app/layout.tsx` solely for the portal: it sets Lato inline on its `<main>` and reaches Perandory through the `font-display` utility. Neither is the app-wide `--font-sans`, so HeroUI's own type stack is untouched.
 

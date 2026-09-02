@@ -27,7 +27,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ### Authentication
 - Sign in with Google — auto-fills name and profile photo
-- One-time manual entry of a valid `linkedin.com/in/` profile URL, normalized for the networking QR code
+- No further entry required to use the app; networking links are optional and added later
 
 ### Program Flow
 - "Happening Now" live banner
@@ -53,7 +53,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Link to the photo booth
 
 ### Account Settings
-- View/update name and LinkedIn profile URL from the authenticated header or desktop navigation rail
+- View/update name and the three networking links from the authenticated header or desktop navigation rail
 
 ### Admin Operations
 - Database-allowlisted administrators switch between attendee and admin views in the same app

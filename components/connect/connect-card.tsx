@@ -80,13 +80,7 @@ export function ConnectCard({
         <Avatar size="lg" className="size-20">
           {photoUrl ? (
             <Avatar.Image asChild src={photoUrl}>
-              <Image
-                src={photoUrl}
-                alt=""
-                width={80}
-                height={80}
-                unoptimized
-              />
+              <Image src={photoUrl} alt="" width={80} height={80} unoptimized />
             </Avatar.Image>
           ) : null}
           <Avatar.Fallback>{name.charAt(0).toUpperCase()}</Avatar.Fallback>
