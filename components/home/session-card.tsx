@@ -1,5 +1,6 @@
 "use client";
 
+import { Card, ToggleButton, Typography } from "@heroui/react";
 import { Bookmark } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
@@ -39,79 +40,71 @@ export function SessionCard({
         );
 
   return (
-    <article
+    <Card
       id={`session-${session.id}`}
-      className={`relative overflow-hidden rounded-2xl border bg-bg-base transition-all hover:-translate-y-0.5 ${
-        ongoing
-          ? "border-pastel-yellow/50 shadow-[0_0_24px_rgba(188,131,48,0.25)]"
-          : finished
-            ? "border-border-default opacity-50"
-            : "border-border-default"
-      }`}
+      variant={ongoing ? "secondary" : "default"}
+      className={`relative overflow-hidden ${finished ? "opacity-60" : ""}`}
     >
       {ongoing ? (
         <span
           aria-hidden
-          className="absolute inset-y-0 left-0 w-1 bg-pastel-yellow"
+          className="bg-foreground absolute inset-y-0 left-0 w-1"
         />
       ) : null}
 
       <button
         type="button"
         onClick={() => onOpen(session)}
-        className="w-full px-4 py-4 text-left"
         aria-haspopup="dialog"
+        className="w-full px-5 py-4 text-left"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-bold tracking-wide text-text-muted uppercase">
+          <Typography type="body-sm" color="muted" suppressHydrationWarning>
             {formatTimeRange(session.start_time, session.end_time)}
-            {relative ? (
-              <span
-                suppressHydrationWarning
-                className={`ml-2 normal-case ${
-                  ongoing ? "text-pastel-yellow" : "text-text-muted/70"
-                }`}
-              >
-                · {relative}
-              </span>
-            ) : null}
-          </span>
+            {relative ? ` · ${relative}` : ""}
+          </Typography>
           <StatusBadge status={status} />
         </div>
-        <h3 className="mt-2 text-lg font-bold leading-snug text-text-primary">
+
+        <Typography type="h6" className="mt-2">
           {session.title}
-        </h3>
-        <p className="mt-1 text-sm text-text-muted">{session.room ?? "TBA"}</p>
+        </Typography>
+
+        <Typography type="body-sm" color="muted" className="mt-1">
+          {session.room ?? "TBA"}
+        </Typography>
+
         {session.status_override ? (
-          <p className="mt-2 text-xs font-bold tracking-wide text-pastel-yellow uppercase">
+          <Typography type="body-xs" color="muted" className="mt-2">
             Live status updated by event operations
-          </p>
+          </Typography>
         ) : null}
+
         {session.speakers.length > 0 ? (
-          <p className="mt-2 text-sm text-text-muted">
-            {session.speakers.map((speaker) => speaker.name).join(" · ")}
-          </p>
+          <Typography type="body-sm" color="muted" className="mt-2">
+            {session.speakers.map((speaker) => speaker.name).join(", ")}
+          </Typography>
         ) : null}
       </button>
+
       {!finished ? (
-        <div className="flex items-center justify-end px-3 pb-2">
-          <button
-            type="button"
+        <div className="flex items-center justify-end px-3 pb-3">
+          <ToggleButton
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            isSelected={bookmarked}
+            onChange={() => onToggleBookmark(session.id)}
             aria-label={bookmarked ? "Remove from My Flow" : "Add to My Flow"}
-            aria-pressed={bookmarked}
-            onClick={() => onToggleBookmark(session.id)}
-            className={`rounded-lg p-2 transition-all hover:scale-110 active:scale-90 ${
-              bookmarked ? "text-pastel-yellow" : "text-text-muted hover:text-text-primary"
-            }`}
           >
             <Bookmark
-              key={bookmarked ? "on" : "off"}
-              className={`h-5 w-5 ${bookmarked ? "animate-[bookmark-pop_0.4s_ease]" : ""}`}
+              className="size-5"
+              aria-hidden
               fill={bookmarked ? "currentColor" : "none"}
             />
-          </button>
+          </ToggleButton>
         </div>
       ) : null}
-    </article>
+    </Card>
   );
 }
