@@ -13,6 +13,8 @@ change.
 
 ## Completed
 
+- **Develop build regression repaired:** removed the duplicate `subscribe` declaration in the shared theme control and the unused desktop-navigation image import. Lint and TypeScript checks pass on `develop`; production-build completion still needs a runner that permits Next's worker processes.
+
 - **Home branding and program-flow polish:** the Home page now includes a desktop-only Google Maps link for Asia Pacific College inside the countdown hero, keeps the two-tab filter within its container without an overflow chevron, and adds calendar, duration, and location icons to the program flow.
 
 - **Event badge branding:** the supplied AWS Student Community Day badge is now the shared logo in the public portal, authenticated mobile header, desktop rail, metadata, and PWA icon set. The icon generator reads `public/logo.png`, and the static service worker caches the source logo alongside the generated icon sizes.
