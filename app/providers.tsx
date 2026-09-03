@@ -8,8 +8,8 @@ import { ThemeProvider } from "next-themes";
  * App-wide client providers.
  *
  * - next-themes drives HeroUI's built-in light/dark themes by writing the
- *   `dark` class onto <html>. New sessions default to light mode; System remains
- *   available through Settings when users want to follow the OS.
+ *   `dark` class onto <html>. New sessions default to light mode and the
+ *   navigation control switches explicitly between light and dark.
  * - Toast.Provider is HeroUI's toast region. It is mounted once here; toasts
  *   are fired imperatively from anywhere via the `toast()` function.
  */

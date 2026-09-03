@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Badge, Separator, Typography } from "@heroui/react";
+import { Badge, Typography } from "@heroui/react";
 import {
   Bell,
   House,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { useAlertsCount } from "@/components/alerts-count-provider";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 interface RailItem {
   label: string;
@@ -29,11 +30,11 @@ const RAIL_ITEMS: RailItem[] = [
   { label: "More", icon: MoreHorizontal, href: "/more" },
 ];
 
-function railLinkClass(active: boolean) {
-  return `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+function topNavLinkClass(active: boolean) {
+  return `inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
     active
-      ? "bg-default text-foreground font-semibold"
-      : "text-muted hover:bg-default hover:text-foreground"
+      ? "text-foreground font-semibold"
+      : "text-muted hover:text-foreground"
   }`;
 }
 
@@ -42,23 +43,17 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
   const { unreadCount } = useAlertsCount();
 
   return (
-    <aside className="border-border bg-surface fixed inset-y-0 left-0 z-40 hidden w-[232px] flex-col border-r lg:flex">
-      <div className="flex items-center gap-3 px-6 py-6">
-        <Image
-          src="/logo.png"
-          alt=""
-          width={40}
-          height={40}
-          className="size-10 rounded-full object-cover"
-        />
+    <header className="relative z-40 isolate hidden min-h-24 shrink-0 w-full items-center gap-8 bg-linear-to-b from-white via-white/95 to-transparent px-8 dark:from-background dark:via-background/95 lg:flex">
+      <Link
+        href="/home"
+        className="shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+      >
         <Typography type="h5" weight="semibold">
           Sync
         </Typography>
-      </div>
+      </Link>
 
-      <Separator />
-
-      <nav aria-label="Primary" className="flex flex-col gap-1 px-3 py-4">
+      <nav aria-label="Primary" className="flex items-center gap-1">
         {RAIL_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
@@ -69,7 +64,7 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
               key={item.label}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={railLinkClass(active)}
+              className={topNavLinkClass(active)}
             >
               <Badge.Anchor>
                 <Icon className="size-5" aria-hidden />
@@ -83,24 +78,24 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-1 px-3 pb-6">
-        <Separator className="mb-3" />
+      <div className="ml-auto flex items-center gap-1">
         {isAdmin ? (
-          <Link href="/admin" className={railLinkClass(false)}>
+          <Link href="/admin" className={topNavLinkClass(false)}>
             <ShieldCheck className="size-5" aria-hidden />
             Admin view
           </Link>
         ) : null}
+        <ThemeSwitch />
         <Link
           href="/settings"
           aria-current={pathname.startsWith("/settings") ? "page" : undefined}
-          className={railLinkClass(pathname.startsWith("/settings"))}
+          className={topNavLinkClass(pathname.startsWith("/settings"))}
         >
           <User className="size-5" aria-hidden />
           Account
         </Link>
-        <SignOutButton variant="labeled" />
+        <SignOutButton variant="icon" />
       </div>
-    </aside>
+    </header>
   );
 }

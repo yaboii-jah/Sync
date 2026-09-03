@@ -20,7 +20,7 @@ Anything else that needs a new visual should be assembled from HeroUI parts firs
 
 **Neutral surfaces plus a single tint, light and dark, with light mode as the default.**
 
-`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="light"`, `enableSystem`). HeroUI reads it directly; there is no HeroUI provider. Settings offers a Light / Dark / System control (`components/theme-switch.tsx`) that persists the choice.
+`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="light"`). HeroUI reads it directly; there is no HeroUI provider. The shared Light / Dark toggle (`components/theme-switch.tsx`) persists the explicit choice. Desktop navigation exposes it beside Account; mobile keeps navigation unchanged.
 
 `app/globals.css` imports Tailwind, then `@heroui/styles`, then re-points HeroUI's own theme variables. Surfaces stay zero-chroma; `--accent` and the status tokens carry HeroUI's stock values. Nothing new is invented; every override is a HeroUI token:
 
@@ -95,7 +95,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
 - **Lists**: stacked `Card`s. Long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).
-- **Bottom tabs** (`<1024px`) and **232px side rail** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
+- **Bottom tabs** (`<1024px`) and a **transparent horizontal top navigation** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
 - **Loading**: HeroUI `Skeleton` shaped like the content it replaces, per route `loading.tsx`.
 
