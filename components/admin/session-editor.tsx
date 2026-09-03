@@ -173,7 +173,13 @@ export function SessionEditor({
                     isSelected={publishNow}
                     onChange={setPublishNow}
                     aria-label="Publish immediately"
-                  />
+                  >
+                    <Switch.Content>
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                    </Switch.Content>
+                  </Switch>
                 </div>
               )}
             </Modal.Body>

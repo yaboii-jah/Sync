@@ -195,9 +195,11 @@ export function NotificationSettings() {
               aria-label="Toggle session alerts"
               onChange={() => void (enabled ? disable() : enable())}
             >
-              <Switch.Control>
-                <Switch.Thumb />
-              </Switch.Control>
+              <Switch.Content>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+              </Switch.Content>
             </Switch>
           ) : null}
         </div>

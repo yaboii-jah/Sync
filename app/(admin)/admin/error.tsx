@@ -1,9 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button, Card, Typography } from "@heroui/react";
 import { RotateCcw } from "lucide-react";
 
-export default function AdminError({ reset }: { reset: () => void }) {
+export default function AdminError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[admin] route error", error);
+  }, [error]);
+
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4">
       <Card className="w-full max-w-sm">

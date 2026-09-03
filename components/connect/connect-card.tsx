@@ -159,9 +159,11 @@ export function ConnectCard({
             aria-label="Share my networking card"
             onChange={onPublicationChange}
           >
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
+            <Switch.Content>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
           </Switch>
         </div>
       </Card.Content>

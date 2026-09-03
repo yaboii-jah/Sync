@@ -167,9 +167,7 @@ export function NotificationComposer({
           <TextField fullWidth value={title} onChange={setTitle}>
             <div className="flex items-baseline justify-between">
               <Label>Title</Label>
-              <Typography type="body-xs" color="muted">
-                {title.length}/80
-              </Typography>
+              <span className="text-muted text-xs">{title.length}/80</span>
             </div>
             <Input
               variant="secondary"
@@ -181,9 +179,7 @@ export function NotificationComposer({
           <TextField fullWidth value={body} onChange={setBody}>
             <div className="flex items-baseline justify-between">
               <Label>Body</Label>
-              <Typography type="body-xs" color="muted">
-                {body.length}/240
-              </Typography>
+              <span className="text-muted text-xs">{body.length}/240</span>
             </div>
             <TextArea
               variant="secondary"

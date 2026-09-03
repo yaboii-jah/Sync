@@ -28,12 +28,14 @@ export function ConnectClient({
 
   function changePublication(published: boolean) {
     startPublishTransition(async () => {
-      const result = await setNetworkingCardPublished(published);
+      const result = await setNetworkingCardPublished(published, isPublic);
       setIsPublic(result.isPublic);
-      toast(
-        result.error ??
-          (result.isPublic ? "Your card is now shared" : "Your card is private"),
-      );
+      if (result.error) {
+        toast(result.error, "error");
+        return;
+      }
+
+      toast(result.isPublic ? "Your card is now shared" : "Your card is private");
     });
   }
 
