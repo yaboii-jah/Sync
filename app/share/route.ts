@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   }
 
   /*
-   * `save_social_profiles` replaces the whole set, so the other two links have
+   * `save_social_profiles` replaces the whole set, so the other links have
    * to be read back and re-sent. Posting only LinkedIn here would silently drop
    * an attendee's Instagram and Facebook links.
    */
@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     linkedin_url: linkedinUrl,
     instagram_url: card?.links.instagram ?? "",
     facebook_url: card?.links.facebook ?? "",
+    github_url: card?.links.github ?? "",
   });
 
   if (error) {

@@ -1,110 +1,50 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { ListBox, Select } from "@heroui/react";
-import { ConnectCard } from "./connect-card";
-import { saveSocialProfile, type SaveSocialProfileState } from "@/app/(app)/connect/actions";
+import { useState, useTransition } from "react";
+import { setNetworkingCardPublished } from "@/app/(app)/connect/actions";
 import { useToast } from "@/components/toast/toast-provider";
-import {
-  PLATFORM_LIST,
-  type SocialPlatform,
-  type PlatformConfig,
-} from "@/lib/platforms";
-
-interface PlatformState {
-  url: string;
-  qrValue: string | null;
-}
-
-function buildInitialPlatformState(savedUrls: Partial<Record<SocialPlatform, string>>): Record<SocialPlatform, PlatformState> {
-  return {
-    linkedin: { url: savedUrls.linkedin ?? "", qrValue: savedUrls.linkedin ?? null },
-    instagram: { url: savedUrls.instagram ?? "", qrValue: savedUrls.instagram ?? null },
-    facebook: { url: savedUrls.facebook ?? "", qrValue: savedUrls.facebook ?? null },
-  };
-}
+import { SOCIAL_NETWORKS, type SocialLinks } from "@/lib/social";
+import { ConnectCard } from "./connect-card";
 
 interface ConnectClientProps {
-  name: string;
-  photoUrl: string | null;
-  savedUrls: Partial<Record<SocialPlatform, string>>;
+  cardUrl: string;
+  initialIsPublic: boolean;
+  initialLinks: SocialLinks;
 }
 
-const initialState: SaveSocialProfileState = { error: null, success: false };
-
-export function ConnectClient({ name, photoUrl, savedUrls }: ConnectClientProps) {
-  const [selectedPlatform, setSelectedPlatform] =
-    useState<SocialPlatform>("linkedin");
-  const [platformState, setPlatformState] = useState(() =>
-    buildInitialPlatformState(savedUrls),
-  );
-  const [saveState, saveAction, savePending] = useActionState(
-    saveSocialProfile,
-    initialState,
-  );
+export function ConnectClient({
+  cardUrl,
+  initialIsPublic,
+  initialLinks,
+}: ConnectClientProps) {
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [publishPending, startPublishTransition] = useTransition();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (saveState.success) {
-      toast("Profile saved");
-    } else if (saveState.error) {
-      toast(saveState.error);
-    }
-  }, [saveState.success, saveState.error, toast]);
+  const configuredNetworks = SOCIAL_NETWORKS.filter(
+    (network) => initialLinks[network],
+  );
+  const hasSavedLinks = configuredNetworks.length > 0;
 
-  const currentPlatform = PLATFORM_LIST.find(
-    (p) => p.id === selectedPlatform,
-  ) as PlatformConfig;
-  const currentState = platformState[selectedPlatform];
-
-  function handleUrlChange(url: string) {
-    setPlatformState((prev) => ({
-      ...prev,
-      [selectedPlatform]: { ...prev[selectedPlatform], url },
-    }));
-  }
-
-  function handleGenerateQr() {
-    const url = platformState[selectedPlatform].url.trim();
-    if (!url) return;
-    setPlatformState((prev) => ({
-      ...prev,
-      [selectedPlatform]: { ...prev[selectedPlatform], qrValue: url },
-    }));
-    const formData = new FormData();
-    formData.set("network", selectedPlatform);
-    formData.set("url", url);
-    saveAction(formData);
+  function changePublication(published: boolean) {
+    startPublishTransition(async () => {
+      const result = await setNetworkingCardPublished(published);
+      setIsPublic(result.isPublic);
+      toast(
+        result.error ??
+          (result.isPublic ? "Your card is now shared" : "Your card is private"),
+      );
+    });
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Select
-        selectedKey={selectedPlatform}
-        onSelectionChange={(key) => setSelectedPlatform(key as SocialPlatform)}
-      >
-        <Select.Trigger className="w-full">
-          <Select.Value />
-        </Select.Trigger>
-        <Select.Popover>
-          <ListBox>
-            <ListBox.Item id="linkedin">LinkedIn</ListBox.Item>
-            <ListBox.Item id="instagram">Instagram</ListBox.Item>
-            <ListBox.Item id="facebook">Facebook</ListBox.Item>
-          </ListBox>
-        </Select.Popover>
-      </Select>
-
-      <ConnectCard
-        name={name}
-        photoUrl={photoUrl}
-        platform={currentPlatform}
-        url={currentState.url}
-        onUrlChange={handleUrlChange}
-        qrValue={currentState.qrValue}
-        onGenerateQr={handleGenerateQr}
-        isSaving={savePending}
-      />
-    </div>
+    <ConnectCard
+      configuredNetworks={configuredNetworks}
+      cardUrl={cardUrl}
+      isPublic={isPublic}
+      publishPending={publishPending}
+      hasSavedLinks={hasSavedLinks}
+      onPublicationChange={changePublication}
+    />
   );
 }

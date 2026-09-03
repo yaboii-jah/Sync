@@ -23,7 +23,7 @@ export interface UpdateProfileState {
  * attendee, so a single action keeps one submit and one error surface.
  *
  * Every link is optional. `save_social_profiles` replaces the whole set, so the
- * form always posts all three fields: an emptied field is a removal, and
+ * form always posts all supported fields: an emptied field is a removal, and
  * clearing the last one unpublishes the card in the same statement.
  */
 export async function updateProfile(
@@ -75,6 +75,7 @@ export async function updateProfile(
     linkedin_url: links.linkedin ?? "",
     instagram_url: links.instagram ?? "",
     facebook_url: links.facebook ?? "",
+    github_url: links.github ?? "",
   });
 
   if (linksError) {

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Alert } from "@heroui/react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { ConnectClient } from "@/components/connect/connect-client";
 import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
-import type { SocialPlatform } from "@/lib/platforms";
 
 export const metadata: Metadata = {
   title: "Connect — Sync",
@@ -28,8 +28,7 @@ export default async function ConnectPage({
   searchParams: Promise<{ shared?: string }>;
 }) {
   const { shared } = await searchParams;
-  const { profile } = await requireCompleteProfile();
-  const name = profile.name || "Attendee";
+  await requireCompleteProfile();
 
   /*
    * Read through the card RPC rather than selecting `social_profiles`
@@ -37,8 +36,19 @@ export default async function ConnectPage({
    * published.
    */
   const card = await getOwnNetworkingCard();
-  const savedUrls: Partial<Record<SocialPlatform, string>> = card?.links ?? {};
+  if (!card) throw new Error("Networking card recovery failed");
 
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  const protocol =
+    headerList.get("x-forwarded-proto") ??
+    (host?.startsWith("localhost") ? "http" : "https");
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!configuredOrigin && !host) {
+    throw new Error("Could not determine the networking card origin");
+  }
+  const origin = configuredOrigin ?? `${protocol}://${host}`;
+  const cardUrl = new URL(`/c/${card.publicToken}`, origin).toString();
   const sharedMessage = shared
     ? (SHARED_MESSAGES[shared] ?? {
         status: "danger" as const,
@@ -66,9 +76,9 @@ export default async function ConnectPage({
 
         <div className="mt-6">
           <ConnectClient
-            name={name}
-            photoUrl={profile.photo_url}
-            savedUrls={savedUrls}
+            cardUrl={cardUrl}
+            initialIsPublic={card.isPublic}
+            initialLinks={card.links}
           />
         </div>
       </div>

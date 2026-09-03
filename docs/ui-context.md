@@ -92,6 +92,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 ## Layout patterns
 
 - **Landing / login**: a single centred `Card` with the wordmark, one line of description and one primary action. The previous starfield, comet shower, gradient lockup, grain overlay and skyline SVG are all removed.
+- **Public networking card**: `/c/[token]` is a focused, noindex card page outside the authenticated navigation shell. It uses HeroUI surfaces and link-button styles, shows the published attendee identity and social destinations, and gives malformed, unknown, private, and empty tokens the same unavailable state. The owner may append `?preview=1` to inspect their own private card; that exception never makes a private card public.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
 - **Lists**: stacked `Card`s. Long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).

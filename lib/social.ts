@@ -1,5 +1,5 @@
 /**
- * Canonical forms for the three networking destinations an attendee may publish.
+ * Canonical forms for the networking destinations an attendee may publish.
  *
  * The database holds the real rule: `social_profiles.social_profiles_canonical_url_check`
  * accepts only one exact URL shape per network. These patterns mirror that
@@ -8,7 +8,12 @@
  * trailing punctuation — are reduced to the one shape the column accepts. The
  * database stays the authority: anything that slips past here still fails there.
  */
-export const SOCIAL_NETWORKS = ["linkedin", "instagram", "facebook"] as const;
+export const SOCIAL_NETWORKS = [
+  "linkedin",
+  "instagram",
+  "facebook",
+  "github",
+] as const;
 
 export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number];
 
@@ -24,6 +29,8 @@ interface NetworkSpec {
   handle: RegExp;
   /** Builds the single URL shape the column's check constraint accepts. */
   canonical: (handle: string) => string;
+  /** Root paths belonging to the platform rather than to a profile. */
+  reserved?: ReadonlySet<string>;
 }
 
 export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
@@ -40,6 +47,16 @@ export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
     url: /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?instagram\.com\/([a-z0-9._]{1,30})\/?$/i,
     handle: /^@?([a-z0-9._]{1,30})$/i,
     canonical: (handle) => `https://www.instagram.com/${handle}/`,
+    reserved: new Set([
+      "about",
+      "accounts",
+      "direct",
+      "explore",
+      "p",
+      "reel",
+      "reels",
+      "stories",
+    ]),
   },
   facebook: {
     label: "Facebook",
@@ -47,6 +64,50 @@ export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
     url: /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?facebook\.com\/(profile\.php\?id=[0-9]{1,200}|[a-z0-9.]{1,50})\/?$/i,
     handle: /^@?([a-z0-9.]{1,50})$/i,
     canonical: (handle) => `https://www.facebook.com/${handle}`,
+    reserved: new Set([
+      "about",
+      "events",
+      "groups",
+      "help",
+      "marketplace",
+      "pages",
+      "photo",
+      "reel",
+      "share",
+      "stories",
+      "watch",
+    ]),
+  },
+  github: {
+    label: "GitHub",
+    placeholder: "https://github.com/your-name",
+    url: /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?)\/?$/i,
+    handle: /^@?([a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?)$/i,
+    canonical: (handle) => `https://github.com/${handle}`,
+    reserved: new Set([
+      "about",
+      "apps",
+      "collections",
+      "contact",
+      "enterprise",
+      "events",
+      "explore",
+      "features",
+      "login",
+      "marketplace",
+      "new",
+      "notifications",
+      "organizations",
+      "orgs",
+      "pricing",
+      "search",
+      "settings",
+      "signup",
+      "sponsors",
+      "topics",
+      "trending",
+      "users",
+    ]),
   },
 };
 
@@ -82,7 +143,10 @@ export function normalizeSocialUrl(
 
   if (!match) return null;
 
-  return spec.canonical(match[1].toLowerCase());
+  const handle = match[1].toLowerCase();
+  if (spec.reserved?.has(handle)) return null;
+
+  return spec.canonical(handle);
 }
 
 /**

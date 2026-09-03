@@ -1,68 +1,41 @@
 "use client";
 
-import Image from "next/image";
-import { useRef, useState } from "react";
+import Link from "next/link";
+import { useRef } from "react";
 import {
-  Avatar,
   Button,
   Card,
-  FieldError,
-  Input,
-  Label,
-  TextField,
+  Chip,
+  Separator,
+  Switch,
   Typography,
 } from "@heroui/react";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, Eye, QrCode } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
-import { primaryLinkClass } from "@/components/ui/link-button";
-import type { PlatformConfig } from "@/lib/platforms";
-import { isValidPlatformUrl } from "@/lib/platforms";
+import { secondaryLinkClass } from "@/components/ui/link-button";
+import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
 
-/*
- * The QR tile keeps a fixed light ground in both themes. Scanners need a light
- * background and dark modules, so this is a functional constant, not a colour
- * choice: near-black modules on white.
- */
 const QR_FOREGROUND = "#171717";
 const QR_BACKGROUND = "#FFFFFF";
 
 interface ConnectCardProps {
-  name: string;
-  photoUrl: string | null;
-  platform: PlatformConfig;
-  url: string;
-  onUrlChange: (url: string) => void;
-  qrValue: string | null;
-  onGenerateQr: () => void;
-  isSaving?: boolean;
+  configuredNetworks: SocialNetwork[];
+  cardUrl: string | null;
+  isPublic: boolean;
+  publishPending: boolean;
+  hasSavedLinks: boolean;
+  onPublicationChange: (published: boolean) => void;
 }
 
 export function ConnectCard({
-  name,
-  photoUrl,
-  platform,
-  url,
-  onUrlChange,
-  qrValue,
-  onGenerateQr,
-  isSaving = false,
+  configuredNetworks,
+  cardUrl,
+  isPublic,
+  publishPending,
+  hasSavedLinks,
+  onPublicationChange,
 }: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
-  const [urlError, setUrlError] = useState<string | null>(null);
-
-  function handleGenerateQr() {
-    const trimmed = url.trim();
-    if (!trimmed) {
-      setUrlError("URL cannot be empty.");
-      return;
-    }
-    if (!isValidPlatformUrl(platform.id, trimmed)) {
-      setUrlError(`Enter a valid ${platform.name} profile URL.`);
-      return;
-    }
-    setUrlError(null);
-    onGenerateQr();
-  }
 
   function saveQr() {
     const canvas = canvasWrapRef.current?.querySelector("canvas");
@@ -70,104 +43,133 @@ export function ConnectCard({
 
     const link = document.createElement("a");
     link.href = canvas.toDataURL("image/png");
-    link.download = `sync-${platform.id}-qr.png`;
+    link.download = "sync-networking-card-qr.png";
     link.click();
+  }
+
+  function previewCard() {
+    if (!cardUrl) return;
+
+    const previewUrl = new URL(cardUrl);
+    previewUrl.searchParams.set("preview", "1");
+    window.open(previewUrl.toString(), "_blank", "noopener,noreferrer");
   }
 
   return (
     <Card>
-      <Card.Content className="flex flex-col items-center gap-1 py-8 text-center">
-        <Avatar size="lg" className="size-20">
-          {photoUrl ? (
-            <Avatar.Image asChild src={photoUrl}>
-              <Image src={photoUrl} alt="" width={80} height={80} unoptimized />
-            </Avatar.Image>
-          ) : null}
-          <Avatar.Fallback>{name.charAt(0).toUpperCase()}</Avatar.Fallback>
-        </Avatar>
+      <Card.Content className="flex flex-col gap-6">
+        <div className="flex flex-col items-center text-center">
+          <Chip variant={isPublic ? "primary" : "soft"} size="sm">
+            {isPublic ? "Shared" : "Private"}
+          </Chip>
 
-        <Typography type="h5" className="mt-4">
-          {name}
-        </Typography>
-        <Typography type="body-sm" color="muted">
-          Show your {platform.name} code.
-        </Typography>
+          {hasSavedLinks && cardUrl ? (
+            <div
+              className="border-border mt-4 w-fit rounded-2xl border p-4"
+              style={{ backgroundColor: QR_BACKGROUND }}
+            >
+              <QRCodeSVG
+                value={cardUrl}
+                size={220}
+                fgColor={QR_FOREGROUND}
+                bgColor={QR_BACKGROUND}
+              />
+            </div>
+          ) : (
+            <div className="border-border mt-4 flex size-[220px] items-center justify-center rounded-2xl border border-dashed">
+              <div className="flex flex-col items-center gap-2 px-6">
+                <QrCode className="size-6" aria-hidden />
+                <Typography type="body-sm" color="muted">
+                  Save a profile to create your networking code.
+                </Typography>
+              </div>
+            </div>
+          )}
 
-        <div className="mt-6 w-full px-4">
-          <TextField fullWidth>
-            <Label>{platform.name} profile URL</Label>
-            <Input
-              variant="secondary"
-              placeholder={platform.urlPlaceholder}
-              value={url}
-              onChange={(e) => {
-                onUrlChange(e.target.value);
-                if (urlError) setUrlError(null);
-              }}
-            />
-            {urlError ? <FieldError>{urlError}</FieldError> : null}
-          </TextField>
+          <Typography type="body-xs" color="muted" className="mt-3">
+            {isPublic
+              ? "Scan to open all of my shared profiles"
+              : "This code stays the same. Scans are unavailable while private."}
+          </Typography>
         </div>
 
-        {qrValue ? (
-          <div
-            className="border-border mt-6 w-fit rounded-2xl border p-4"
-            style={{ backgroundColor: QR_BACKGROUND }}
-          >
-            <QRCodeSVG
-              value={qrValue}
-              size={220}
-              fgColor={QR_FOREGROUND}
-              bgColor={QR_BACKGROUND}
-            />
-          </div>
-        ) : (
-          <div className="border-border mt-6 flex size-[220px] items-center justify-center rounded-2xl border border-dashed">
-            <Typography type="body-sm" color="muted">
-              Enter a URL and generate a QR code
-            </Typography>
-          </div>
-        )}
-
-        <Typography type="body-xs" color="muted" className="mt-3">
-          {qrValue ? "Scan to open my profile" : "QR code will appear here"}
-        </Typography>
-      </Card.Content>
-
-      <Card.Footer className="flex flex-col gap-3">
         <Button
           variant="secondary"
           fullWidth
-          isDisabled={!url.trim() || isSaving}
-          isPending={isSaving}
-          onPress={handleGenerateQr}
-        >
-          Generate QR
-        </Button>
-        <a
-          href={url.trim() || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${primaryLinkClass} w-full ${!url.trim() ? "pointer-events-none opacity-50" : ""}`}
-        >
-          <ExternalLink className="size-4" aria-hidden />
-          {platform.openButtonLabel}
-        </a>
-        <Button
-          variant="secondary"
-          fullWidth
-          isDisabled={!qrValue}
+          isDisabled={!hasSavedLinks || !cardUrl}
           onPress={saveQr}
         >
           <Download className="size-4" aria-hidden />
           Save QR
         </Button>
-      </Card.Footer>
+
+        <Button
+          variant="secondary"
+          fullWidth
+          isDisabled={!hasSavedLinks || !cardUrl}
+          onPress={previewCard}
+        >
+          <Eye className="size-4" aria-hidden />
+          Preview social card
+        </Button>
+
+        <Separator />
+
+        <div className="flex flex-col gap-3">
+          <div>
+            <Typography type="body-sm">Configured profiles</Typography>
+            <Typography type="body-xs" color="muted">
+              Manage your profile links in Account Settings.
+            </Typography>
+          </div>
+
+          {configuredNetworks.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {configuredNetworks.map((network) => (
+                <Chip key={network} size="sm" variant="secondary">
+                  {SOCIAL_SPECS[network].label}
+                </Chip>
+              ))}
+            </div>
+          ) : (
+            <Typography type="body-sm" color="muted">
+              No social profiles configured yet.
+            </Typography>
+          )}
+
+          <Link href="/settings" className={`${secondaryLinkClass} w-full`}>
+            Manage in Account Settings
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <Typography type="body-sm">Share my card</Typography>
+            <Typography type="body-xs" color="muted">
+              {hasSavedLinks
+                ? "Anyone with your code can open it."
+                : "Add at least one profile in Settings first."}
+            </Typography>
+          </div>
+          <Switch
+            isSelected={isPublic}
+            isDisabled={!hasSavedLinks || publishPending}
+            aria-label="Share my networking card"
+            onChange={onPublicationChange}
+          >
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch>
+        </div>
+      </Card.Content>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">
-        {qrValue ? (
+        {hasSavedLinks && cardUrl ? (
           <QRCodeCanvas
-            value={qrValue}
+            value={cardUrl}
             size={512}
             fgColor={QR_FOREGROUND}
             bgColor={QR_BACKGROUND}
