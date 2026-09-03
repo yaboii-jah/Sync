@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Avatar, Typography } from "@heroui/react";
 import { ShieldCheck } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -18,7 +19,15 @@ export async function AppHeader() {
   return (
     <header className="flex items-center justify-between lg:hidden">
       {/* iOS large-title treatment: the brand is the page title. */}
-      <Link href="/home">
+      <Link href="/home" className="flex items-center gap-2">
+        <Image
+          src="/logo.png"
+          alt=""
+          width={36}
+          height={36}
+          priority
+          className="size-9 rounded-full object-cover"
+        />
         <Typography.Heading
           level={1}
           className="text-[28px] font-bold tracking-tight"
