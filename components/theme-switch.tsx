@@ -7,6 +7,10 @@ import { Moon, Sun } from "lucide-react";
 
 const subscribe = () => () => {};
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function ThemeSwitch() {
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const { theme, resolvedTheme, setTheme } = useTheme();

@@ -22,7 +22,7 @@
 ## Styling
 
 - Use CSS custom property tokens for color and spacing — no hardcoded hex values
-- Follow the dark-only theme defined in `ui-context.md` — dark-teal grounds, pale-lime text, golden-brown hairline borders — with the card-based, bottom-tab-navigation layout; never revert to a light or list-heavy layout
+- Follow the light/dark theme defined in `ui-context.md` with neutral HeroUI surfaces, one accent tint, and the card-based, bottom-tab-navigation layout; keep both modes readable and consistent
 - Status badges (Not Started / Ongoing / Finished) use a consistent color mapping wherever they appear — schedule, notifications, session detail
 
 ## API Routes / Edge Functions
