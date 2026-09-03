@@ -21,16 +21,17 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
   return (
     <AlertDialog>
       <AlertDialog.Trigger>
-        {variant === "icon" ? (
-          <Button isIconOnly variant="ghost" size="sm" aria-label="Sign out">
-            <LogOut className="size-5" aria-hidden />
-          </Button>
-        ) : (
-          <Button variant="ghost" size="sm" fullWidth className="justify-start">
-            <LogOut className="size-5" aria-hidden />
-            Sign out
-          </Button>
-        )}
+        <span
+          aria-label={variant === "icon" ? "Sign out" : undefined}
+          className={
+            variant === "icon"
+              ? "button button--icon-only button--sm button--ghost"
+              : "button button--full-width button--sm button--ghost justify-start"
+          }
+        >
+          <LogOut className="size-5" aria-hidden />
+          {variant === "labeled" ? "Sign out" : null}
+        </span>
       </AlertDialog.Trigger>
 
       <AlertDialog.Backdrop>

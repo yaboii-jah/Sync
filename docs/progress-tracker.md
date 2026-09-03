@@ -13,6 +13,10 @@ change.
 
 ## Completed
 
+- **Home hydration and trigger regression repaired:** the server captures one initial clock value and passes it through `HomeClient` to `useNow`; the interval starts after hydration, so countdown and time-derived session state no longer begin with independently evaluated clocks. The sign-out alert trigger now owns the single focusable control instead of nesting a second HeroUI button inside it, and only mounts in the responsive shell where it can be focused.
+
+- **Desktop navigation backdrop corrected:** the attendee top navigation is now a desktop-only overlay above the scroll container, fading continuously from the theme-aware surface into transparency so Home and Alerts content scroll beneath it. Existing initial page spacing, navigation layout, active states, theme control, account link, sign-out affordance, and mobile navigation are unchanged.
+
 - **Develop build regression repaired:** removed the duplicate `subscribe` declaration in the shared theme control and the unused desktop-navigation image import. Lint and TypeScript checks pass on `develop`; production-build completion still needs a runner that permits Next's worker processes.
 
 - **Home branding and program-flow polish:** the Home page now includes a desktop-only Google Maps link for Asia Pacific College inside the countdown hero, keeps the two-tab filter within its container without an overflow chevron, and adds calendar, duration, and location icons to the program flow.

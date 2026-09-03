@@ -2,9 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Avatar, Typography } from "@heroui/react";
 import { ShieldCheck } from "lucide-react";
-import { SignOutButton } from "@/components/sign-out-button";
 import { currentUserIsAdmin } from "@/lib/supabase/admin-auth";
 import { getAuthenticatedProfile } from "@/lib/supabase/profile";
+import { ResponsiveSignOutButton } from "@/components/responsive-sign-out-button";
 
 const iconLink =
   "text-muted hover:text-foreground hover:bg-default rounded-lg p-2 transition-colors";
@@ -64,7 +64,7 @@ export async function AppHeader() {
             </Avatar.Fallback>
           </Avatar>
         </Link>
-        <SignOutButton variant="icon" />
+        <ResponsiveSignOutButton showOn="mobile" />
       </div>
     </header>
   );

@@ -13,6 +13,10 @@ import { HomeClient } from "@/components/home/home-client";
 import { InstallChip } from "@/components/push/install-chip";
 import { PushGate } from "@/components/push/push-gate";
 
+function getServerNow(): number {
+  return Date.now();
+}
+
 export default async function HomePage() {
   await requireCompleteProfile();
 
@@ -22,6 +26,7 @@ export default async function HomePage() {
     getSessionsWithSpeakers(supabase),
     getBookmarkedSessionIds(supabase),
   ]);
+  const initialNow = getServerNow();
 
   return (
     <main className="w-full">
@@ -35,6 +40,7 @@ export default async function HomePage() {
               initialEvent={event}
               initialSessions={sessions}
               initialBookmarks={bookmarks}
+              initialNow={initialNow}
             />
           </div>
         ) : (

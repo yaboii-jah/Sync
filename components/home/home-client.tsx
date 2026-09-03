@@ -50,12 +50,15 @@ interface HomeClientProps {
   initialEvent: EventInfo;
   initialSessions: SessionWithSpeakers[];
   initialBookmarks: string[];
+  /** Server-captured clock value used for the first hydrated render. */
+  initialNow: number;
 }
 
 export function HomeClient({
   initialEvent,
   initialSessions,
   initialBookmarks,
+  initialNow,
 }: HomeClientProps) {
   const [event, setEvent] = useState(initialEvent);
   const [sessions, setSessions] = useState(initialSessions);
@@ -65,7 +68,7 @@ export function HomeClient({
   const [view, setView] = useState<View>("all");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const now = useNow(1000);
+  const now = useNow(initialNow, 1000);
   const { toast } = useToast();
   const activeSession =
     sessions.find((session) => session.id === activeSessionId) ?? null;
