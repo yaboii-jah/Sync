@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Badge, Separator, Typography } from "@heroui/react";
 import {
@@ -42,7 +43,14 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <aside className="border-border bg-surface fixed inset-y-0 left-0 z-40 hidden w-[232px] flex-col border-r lg:flex">
-      <div className="px-6 py-6">
+      <div className="flex items-center gap-3 px-6 py-6">
+        <Image
+          src="/logo.png"
+          alt=""
+          width={40}
+          height={40}
+          className="size-10 rounded-full object-cover"
+        />
         <Typography type="h5" weight="semibold">
           Sync
         </Typography>

@@ -29,8 +29,8 @@ export const metadata: Metadata = {
     "Your companion app for AWS Student Community Day Mega Manila 2026.",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icons/icon-192.png", type: "image/png" }],
-    apple: "/icons/icon-192.png",
+    icon: [{ url: "/logo.png", type: "image/png" }],
+    apple: "/logo.png",
   },
 };
 

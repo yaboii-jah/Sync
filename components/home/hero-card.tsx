@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, ProgressBar, Typography } from "@heroui/react";
+import { Card, Link, ProgressBar, Typography } from "@heroui/react";
+import { ExternalLink, MapPin } from "lucide-react";
 import type {
   EventInfo,
   SessionWithSpeakers,
@@ -31,6 +32,8 @@ const heroSurface =
   "squircle rounded-[24px] border-none bg-linear-to-br from-[#00369c] via-[#0053d6] to-[#0072f5] shadow-xl shadow-[#0053d6]/25";
 const heroTitle = "text-white";
 const heroMuted = "text-white/75";
+const venueMapUrl =
+  "https://www.google.com/maps/search/?api=1&query=Asia+Pacific+College";
 
 /**
  * Time left in a running session, live-activity style: a ticking `mm:ss` in the
@@ -295,9 +298,22 @@ export function HeroCard({
         </div>
       </Card.Content>
       <Card.Footer>
-        <Typography type="body-sm" className={heroMuted}>
-          {event.venue}
+        <Typography type="body-sm" className={`lg:hidden ${heroMuted}`}>
+          {event.venue ?? "Asia Pacific College"}
         </Typography>
+        <Link
+          href={venueMapUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Open Asia Pacific College in Google Maps"
+          className={`hidden min-w-0 items-center gap-2 ${heroMuted} transition-opacity hover:opacity-100 lg:flex`}
+        >
+          <MapPin className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">
+            {event.venue ?? "Asia Pacific College"}
+          </span>
+          <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+        </Link>
       </Card.Footer>
     </Card>
   );
