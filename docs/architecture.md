@@ -16,7 +16,7 @@
 - `app/` — Next.js routes for attendee screens, a public `/c/[token]` networking-card route outside the attendee shell, plus a separate `/admin` route group with its own responsive operations shell. Admin routes cover the dashboard, immediate notification composer/history/delivery results, session override controls, read-only attendee search, and mutation audit history.
 - Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, `/login`, and `/c/*` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
 - `lib/supabase/` — Supabase client setup, generated database types, and typed queries/mutations for program flow, directory, quick links, notifications, and profiles
-- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card (supports LinkedIn, Instagram, Facebook, GitHub), directory + bio modals, side rail / bottom tab navigation
+- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card (supports LinkedIn, Instagram, Facebook, GitHub), directory + bio modals, desktop top navigation / side rail, and mobile bottom tab navigation
 - `public/sw.js` + `public/manifest.webmanifest` + `public/icons/` — hand-authored service worker (static PWA asset caching + push/notification-click handlers), PWA manifest, and icons; authenticated pages and Next.js route data are deliberately excluded from caches, and the service worker is source code, never build-generated
 
 ## Storage Model

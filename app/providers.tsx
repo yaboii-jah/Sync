@@ -8,8 +8,8 @@ import { ThemeProvider } from "next-themes";
  * App-wide client providers.
  *
  * - next-themes drives HeroUI's built-in light/dark themes by writing the
- *   `dark` class onto <html>. Default is "system" so the app follows the OS
- *   until the user picks a mode in Settings.
+ *   `dark` class onto <html>. New sessions default to light mode and the
+ *   navigation control switches explicitly between light and dark.
  * - Toast.Provider is HeroUI's toast region. It is mounted once here; toasts
  *   are fired imperatively from anywhere via the `toast()` function.
  */
@@ -17,7 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      defaultTheme="light"
       enableSystem
       disableTransitionOnChange
     >

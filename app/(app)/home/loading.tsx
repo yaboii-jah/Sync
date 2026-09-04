@@ -9,7 +9,7 @@ export default function HomeLoading() {
         <Skeleton className="size-9 rounded-lg" />
       </header>
 
-      <div className="mx-auto w-full max-w-md px-4 pt-6 lg:max-w-[1280px] lg:px-10 lg:pt-2">
+      <div className="mx-auto w-full max-w-md px-4 pt-6 lg:max-w-[1280px] lg:px-10 lg:pt-10">
         <div className="lg:flex lg:items-start lg:gap-12">
           <div className="lg:sticky lg:top-10 lg:w-[38%] lg:max-w-sm lg:self-start">
             <Card className="px-5 py-6">

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { signInWithGoogle } from "./actions";
 
@@ -102,6 +103,14 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
       </div>
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
+        <Image
+          src="/logo.png"
+          alt="AWS Student Community Day Mega Manila 2026 event logo"
+          width={128}
+          height={128}
+          priority
+          className="size-32 rounded-full object-cover shadow-xl"
+        />
         <p className="text-[0.68rem] font-bold tracking-[0.24em] text-text-muted uppercase">
           AWS Student Community Day Mega Manila 2026
         </p>
