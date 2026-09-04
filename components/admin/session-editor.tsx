@@ -10,7 +10,6 @@ import {
   Modal,
   Switch,
   TextField,
-  Typography,
 } from "@heroui/react";
 import {
   createSessionAction,
@@ -159,28 +158,27 @@ export function SessionEditor({
               </TextField>
 
               {editing ? null : (
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <Typography type="body-sm" weight="medium">
-                      Publish immediately
-                    </Typography>
-                    <Typography type="body-xs" color="muted">
-                      Off keeps it a draft — hidden from attendees, and the
-                      scheduled job will not announce it.
-                    </Typography>
-                  </div>
-                  <Switch
-                    isSelected={publishNow}
-                    onChange={setPublishNow}
-                    aria-label="Publish immediately"
-                  >
-                    <Switch.Content>
-                      <Switch.Control>
-                        <Switch.Thumb />
-                      </Switch.Control>
-                    </Switch.Content>
-                  </Switch>
-                </div>
+                <Switch
+                  className="w-full"
+                  isSelected={publishNow}
+                  onChange={setPublishNow}
+                  aria-label="Publish immediately"
+                >
+                  <Switch.Content className="w-full justify-between gap-4">
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-foreground">
+                        Publish immediately
+                      </span>
+                      <span className="block text-xs font-normal text-muted">
+                        Off keeps it a draft — hidden from attendees, and the
+                        scheduled job will not announce it.
+                      </span>
+                    </span>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch.Content>
+                </Switch>
               )}
             </Modal.Body>
 

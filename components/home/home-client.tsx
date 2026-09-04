@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Card, Tabs, Typography } from "@heroui/react";
+import type { Key } from "react-aria-components/Tabs";
 import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type {
@@ -305,7 +306,7 @@ export function HomeClient({
           <Tabs
             className="mt-4"
             selectedKey={view}
-            onSelectionChange={(key) => setView(key as View)}
+             onSelectionChange={(key: Key) => setView(key as View)}
           >
             <Tabs.List
               aria-label="Session filter"
@@ -321,10 +322,10 @@ export function HomeClient({
               </Tabs.Tab>
             </Tabs.List>
 
-            <Tabs.Panel id="all" className="mt-4">
+             <Tabs.Panel {...{ id: "all" }} className="mt-4">
               {renderList(allSessions, false)}
             </Tabs.Panel>
-            <Tabs.Panel id="flow" className="mt-4">
+             <Tabs.Panel {...{ id: "flow" }} className="mt-4">
               {renderList(flowSessions, true)}
             </Tabs.Panel>
           </Tabs>

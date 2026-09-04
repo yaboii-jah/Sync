@@ -15,9 +15,11 @@ There are exactly three admitted exceptions, and each is a real anchor or a nav 
 Anything else that needs a new visual should be assembled from HeroUI parts first.
 
 HeroUI compound components must retain their interactive primitive. In
-particular, `Switch.Content` wraps `Switch.Control`, and field-adjacent counters
-must not use `Typography` inside a `TextField` because React Aria reserves nested
-text slots for descriptions and errors.
+particular, `Switch.Content` is the clickable label and must wrap both the
+visible label content and `Switch.Control`; wrapping only the track leaves the
+rest of the row inert. Field-adjacent counters must not use `Typography` inside
+a `TextField` because React Aria reserves nested text slots for descriptions and
+errors.
 
 **The one exempt screen is the signed-out portal, `app/page.tsx`.** It keeps its ceremonial teal/gold night-sky treatment — starfield, comets, sheened Perandory lockup, city skyline — and uses no HeroUI component. It is a poster, not an interface, and it is the only surface an attendee sees before the app proper. Its styles live in a clearly fenced block at the bottom of `app/globals.css` and are opt-in: brand colours are exposed as their own `--color-*` utilities (`bg-bg-base`, `text-text-primary`, `text-text-muted`, `bg-pastel-yellow`, `text-charcoal`) that no other screen references, and no HeroUI token is redefined. Everything behind sign-in stays monochrome HeroUI.
 
@@ -25,7 +27,7 @@ text slots for descriptions and errors.
 
 **Neutral surfaces plus a single tint, light and dark, with light mode as the default.**
 
-`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="light"`). HeroUI reads it directly; there is no HeroUI provider. The shared Light / Dark toggle (`components/theme-switch.tsx`) persists the explicit choice. Desktop navigation exposes it beside Account; mobile keeps navigation unchanged.
+`next-themes` writes the `dark` class onto `<html>` (`app/providers.tsx`, `defaultTheme="light"`). HeroUI reads it directly; there is no HeroUI provider. `components/theme-switch.tsx` persists the choice and renders a compact Light / Dark toggle beside Account in desktop navigation; Account Settings exposes Light, Dark, and System choices. Mobile navigation remains unchanged.
 
 `app/globals.css` imports Tailwind, then `@heroui/styles`, then re-points HeroUI's own theme variables. Surfaces stay zero-chroma; `--accent` and the status tokens carry HeroUI's stock values. Nothing new is invented; every override is a HeroUI token:
 
