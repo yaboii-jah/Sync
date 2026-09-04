@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Toast } from "@heroui/react";
 import { ThemeProvider } from "next-themes";
+import { InstallProvider } from "@/components/push/install-provider";
 
 /**
  * App-wide client providers.
@@ -21,7 +22,7 @@ export function Providers({ children }: { children: ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      {children}
+      <InstallProvider>{children}</InstallProvider>
       <Toast.Provider placement="bottom" />
     </ThemeProvider>
   );

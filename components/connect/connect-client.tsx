@@ -1,52 +1,70 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { setNetworkingCardPublished } from "@/app/(app)/connect/actions";
-import { useToast } from "@/components/toast/toast-provider";
+import { useState } from "react";
+import Link from "next/link";
+import { Modal, Typography } from "@heroui/react";
+import { QrCode, Settings } from "lucide-react";
+import { primaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_NETWORKS, type SocialLinks } from "@/lib/social";
 import { ConnectCard } from "./connect-card";
 
 interface ConnectClientProps {
   cardUrl: string;
-  initialIsPublic: boolean;
   initialLinks: SocialLinks;
 }
 
 export function ConnectClient({
   cardUrl,
-  initialIsPublic,
   initialLinks,
 }: ConnectClientProps) {
-  const [isPublic, setIsPublic] = useState(initialIsPublic);
-  const [publishPending, startPublishTransition] = useTransition();
-  const { toast } = useToast();
-
   const configuredNetworks = SOCIAL_NETWORKS.filter(
     (network) => initialLinks[network],
   );
   const hasSavedLinks = configuredNetworks.length > 0;
-
-  function changePublication(published: boolean) {
-    startPublishTransition(async () => {
-      const result = await setNetworkingCardPublished(published, isPublic);
-      setIsPublic(result.isPublic);
-      if (result.error) {
-        toast(result.error, "error");
-        return;
-      }
-
-      toast(result.isPublic ? "Your card is now shared" : "Your card is private");
-    });
-  }
+  const [showSetup, setShowSetup] = useState(!hasSavedLinks);
 
   return (
-    <ConnectCard
-      configuredNetworks={configuredNetworks}
-      cardUrl={cardUrl}
-      isPublic={isPublic}
-      publishPending={publishPending}
-      hasSavedLinks={hasSavedLinks}
-      onPublicationChange={changePublication}
-    />
+    <>
+      <ConnectCard
+        configuredNetworks={configuredNetworks}
+        cardUrl={cardUrl}
+        hasSavedLinks={hasSavedLinks}
+      />
+
+      {!hasSavedLinks ? (
+        <Modal>
+          <Modal.Backdrop isOpen={showSetup} onOpenChange={setShowSetup}>
+            <Modal.Container size="sm">
+              <Modal.Dialog aria-label="Set up your networking card">
+                <Modal.CloseTrigger />
+                <Modal.Header>
+                  <Modal.Icon>
+                    <QrCode className="size-5" aria-hidden />
+                  </Modal.Icon>
+                  <Modal.Heading>Set up your card</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body className="flex flex-col gap-3">
+                  <Typography type="body-sm">
+                    Your stable QR code is ready, but it stays unavailable until
+                    you add at least one social profile.
+                  </Typography>
+                  <Typography type="body-sm" color="muted">
+                    Open Account Settings, add the profiles you want to share,
+                    and save your changes. Existing QR copies will activate
+                    automatically.
+                  </Typography>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Link href="/settings" className={`${primaryLinkClass} w-full`}>
+                    <Settings className="size-4" aria-hidden />
+                    Open Account Settings
+                  </Link>
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
+      ) : null}
+    </>
   );
 }

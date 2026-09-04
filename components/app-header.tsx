@@ -47,7 +47,7 @@ export async function AppHeader() {
         ) : null}
         {/*
           * The account entry is your face, the way iOS apps do it (App Store,
-          * FaceTime): the LinkedIn/Google photo when there is one, otherwise
+           * FaceTime): the Google photo when there is one, otherwise
           * the initial.
           */}
         <Link

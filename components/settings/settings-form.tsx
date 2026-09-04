@@ -70,7 +70,6 @@ export function SettingsForm({
               key={network}
               fullWidth
               name={network}
-              type="url"
               defaultValue={initialLinks[network] ?? ""}
               isInvalid={Boolean(state.error)}
             >

@@ -1,4 +1,4 @@
-const CACHE_NAME = "sync-static-v2";
+const CACHE_NAME = "sync-static-v3";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/logo.png",

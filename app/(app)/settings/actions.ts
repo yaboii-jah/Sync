@@ -24,7 +24,7 @@ export interface UpdateProfileState {
  *
  * Every link is optional. `save_social_profiles` replaces the whole set, so the
  * form always posts all supported fields: an emptied field is a removal, and
- * clearing the last one unpublishes the card in the same statement.
+ * clearing the last one deactivates the card in the same statement.
  */
 export async function updateProfile(
   _prevState: UpdateProfileState,

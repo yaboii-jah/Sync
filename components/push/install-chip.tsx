@@ -1,42 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, Button, CloseButton } from "@heroui/react";
 import { Download } from "lucide-react";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-}
+import {
+  getInstallInstructions,
+  useInstall,
+} from "@/components/push/install-provider";
 
 const STORAGE_KEY = "install-chip-dismissed";
 
 export function InstallChip() {
-  const [promptEvent, setPromptEvent] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [dismissed, setDismissed] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.sessionStorage.getItem(STORAGE_KEY) === "1",
+  );
+  const [pending, setPending] = useState(false);
+  const { ready, canPrompt, isInstalled, platform, promptInstall } = useInstall();
 
-  useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
-
-    const handler = (event: Event) => {
-      event.preventDefault();
-      setPromptEvent(event as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  if (!promptEvent) return null;
+  if (!ready || isInstalled || dismissed) return null;
 
   async function install() {
-    await promptEvent!.prompt();
-    localStorage.setItem(STORAGE_KEY, "1");
-    setPromptEvent(null);
+    setPending(true);
+    try {
+      await promptInstall();
+    } finally {
+      setPending(false);
+    }
   }
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
-    setPromptEvent(null);
+    sessionStorage.setItem(STORAGE_KEY, "1");
+    setDismissed(true);
   }
 
   return (
@@ -45,16 +41,20 @@ export function InstallChip() {
         <Alert.Indicator>
           <Download className="size-5" aria-hidden />
         </Alert.Indicator>
-        <Alert.Content>
-          <Alert.Title>Install Sync</Alert.Title>
-          <Alert.Description>
-            Add it to your home screen for faster access on event day.
-          </Alert.Description>
-        </Alert.Content>
-        <Button size="sm" onPress={install}>
-          Install
-        </Button>
-        <CloseButton aria-label="Dismiss install prompt" onPress={dismiss} />
+          <Alert.Content>
+            <Alert.Title>Install Sync</Alert.Title>
+            <Alert.Description>
+              {canPrompt
+                ? "Add it to your home screen for faster access on event day."
+                : getInstallInstructions(platform)}
+            </Alert.Description>
+          </Alert.Content>
+          {canPrompt ? (
+            <Button size="sm" isPending={pending} onPress={install}>
+              Install
+            </Button>
+          ) : null}
+          <CloseButton aria-label="Dismiss install prompt" onPress={dismiss} />
       </Alert>
     </div>
   );

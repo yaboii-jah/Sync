@@ -8,6 +8,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { SettingsBackButton } from "@/components/settings/settings-back-button";
 import { NotificationSettings } from "@/components/settings/notification-settings";
+import { InstallSettings } from "@/components/push/install-settings";
 
 export const metadata: Metadata = {
   title: "Account Settings — Sync",
@@ -44,6 +45,7 @@ export default async function SettingsPage() {
           </Card.Content>
         </Card>
 
+        <InstallSettings />
         <NotificationSettings />
       </div>
     </main>

@@ -16,7 +16,7 @@ import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 
 export const metadata: Metadata = {
   title: "Networking Card — Sync",
-  description: "A shared attendee networking card.",
+  description: "An attendee networking card.",
   robots: {
     index: false,
     follow: false,
@@ -94,7 +94,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
             <EmptyState
               icon={<UserX />}
               title="Card unavailable"
-              description="This networking card is private, unavailable, or no longer shared."
+              description="This networking card is unavailable or has no active profiles."
             />
           </Card>
         )}

@@ -27,6 +27,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=oauth", origin));
   }
 
+  const picture = user.user_metadata?.picture;
+  const avatar = user.user_metadata?.avatar_url;
+  const photoUrl =
+    typeof picture === "string" && picture.trim()
+      ? picture.trim()
+      : typeof avatar === "string" && avatar.trim()
+        ? avatar.trim()
+        : null;
+
+  if (photoUrl) {
+    const { error: photoError } = await supabase
+      .from("profiles")
+      .update({ photo_url: photoUrl })
+      .eq("id", user.id);
+
+    if (photoError) {
+      console.error("[auth/callback] profile photo refresh failed:", photoError.message);
+    }
+  }
+
   /*
    * Straight to the app — there is no longer a LinkedIn-URL step to detour
    * through (see the note in `requireCompleteProfile`) — unless the proxy

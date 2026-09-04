@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -173,6 +148,7 @@ export type Database = {
           at: string
           attendee_id: string | null
           attendee_name: string | null
+          detail: string | null
           device: string
           outcome: string
           raw: string | null
@@ -183,6 +159,7 @@ export type Database = {
           at: string
           attendee_id?: string | null
           attendee_name?: string | null
+          detail?: string | null
           device: string
           outcome: string
           raw?: string | null
@@ -193,6 +170,7 @@ export type Database = {
           at?: string
           attendee_id?: string | null
           attendee_name?: string | null
+          detail?: string | null
           device?: string
           outcome?: string
           raw?: string | null
@@ -881,10 +859,6 @@ export type Database = {
             }
             Returns: undefined
           }
-      set_networking_card_public: {
-        Args: { published: boolean }
-        Returns: boolean
-      }
       sync_program_flow_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
@@ -1014,9 +988,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

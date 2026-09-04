@@ -4,53 +4,89 @@ import { createClient } from "@/lib/supabase/server";
 import { extractLinkedInProfileUrl } from "@/lib/social";
 import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
 
+function isTrustedShareRequest(request: NextRequest, origin: string): boolean {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") {
+    return false;
+  }
+
+  const requestOrigin = request.headers.get("origin");
+  if (requestOrigin && requestOrigin !== origin) return false;
+
+  const referer = request.headers.get("referer");
+  if (referer) {
+    try {
+      if (new URL(referer).origin !== origin) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function redirectTo(origin: string, path: string) {
+  return NextResponse.redirect(new URL(path, origin), 303);
+}
+
 /**
  * Web Share Target endpoint — how an attendee sets their exact profile link
  * without typing anything.
  *
+ * The manifest uses POST because this endpoint changes the attendee's saved
+ * links. Origin and Fetch Metadata checks reject cross-site form submissions;
+ * the no-header case remains valid for installed-browser share requests.
+ *
  * Sync is an installable PWA, so registering a `share_target` in the manifest
  * puts it in the Android share sheet. Inside the LinkedIn app the attendee taps
- * *Share profile → Sync*, and the URL arrives here directly. Two taps, no
+ * *Share profile -> Sync*, and the URL arrives here directly. Two taps, no
  * keyboard, once ever; from then on their QR card offers a direct profile link
  * instead of a name search.
- *
- * This is an upgrade path, never a requirement. A card can equally be filled in
- * by hand in Settings — see `/c/[token]` for what a scanner then sees.
  *
  * Chrome documents that Android frequently leaves `url` empty and puts the link
  * in `text`, so all three params are scanned. A share that carries no profile
  * URL — a post, a company page, a stray screenshot — redirects to Connect
- * unchanged rather than erroring, because a share sheet is easy to mis-tap and
- * losing the user into an error page for it would be worse than doing nothing.
- *
- * Availability, stated rather than assumed: Web Share Target is Chrome on
- * Android and requires the PWA to be installed. iOS Safari does not implement
- * it, which is exactly why nothing depends on this route.
+ * unchanged rather than erroring.
  */
-export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+export async function POST(request: NextRequest) {
+  const { origin } = new URL(request.url);
+
+  if (!isTrustedShareRequest(request, origin)) {
+    return redirectTo(origin, "/connect?shared=error");
+  }
+
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return redirectTo(origin, "/connect?shared=error");
+  }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.redirect(new URL("/", origin));
+  if (!user) return redirectTo(origin, "/");
 
+  const getText = (key: string) => {
+    const value = formData.get(key);
+    return typeof value === "string" ? value : null;
+  };
   const linkedinUrl = extractLinkedInProfileUrl(
-    searchParams.get("url"),
-    searchParams.get("text"),
-    searchParams.get("title"),
+    getText("url"),
+    getText("text"),
+    getText("title"),
   );
 
   if (!linkedinUrl) {
-    return NextResponse.redirect(new URL("/connect?shared=miss", origin));
+    return redirectTo(origin, "/connect?shared=miss");
   }
 
   /*
-   * `save_social_profiles` replaces the whole set, so the other links have
-   * to be read back and re-sent. Posting only LinkedIn here would silently drop
-   * an attendee's Instagram and Facebook links.
+   * `save_social_profiles` replaces the whole set, so the other links have to
+   * be read back and re-sent. Posting only LinkedIn would silently drop an
+   * attendee's Instagram, Facebook, or GitHub links.
    */
   const card = await getOwnNetworkingCard();
 
@@ -63,8 +99,8 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[share] failed to save shared profile URL:", error.message);
-    return NextResponse.redirect(new URL("/connect?shared=error", origin));
+    return redirectTo(origin, "/connect?shared=error");
   }
 
-  return NextResponse.redirect(new URL("/connect?shared=ok", origin));
+  return redirectTo(origin, "/connect?shared=ok");
 }

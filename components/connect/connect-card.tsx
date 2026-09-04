@@ -7,10 +7,9 @@ import {
   Card,
   Chip,
   Separator,
-  Switch,
   Typography,
 } from "@heroui/react";
-import { Download, Eye, QrCode } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { secondaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
@@ -20,20 +19,14 @@ const QR_BACKGROUND = "#FFFFFF";
 
 interface ConnectCardProps {
   configuredNetworks: SocialNetwork[];
-  cardUrl: string | null;
-  isPublic: boolean;
-  publishPending: boolean;
+  cardUrl: string;
   hasSavedLinks: boolean;
-  onPublicationChange: (published: boolean) => void;
 }
 
 export function ConnectCard({
   configuredNetworks,
   cardUrl,
-  isPublic,
-  publishPending,
   hasSavedLinks,
-  onPublicationChange,
 }: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
 
@@ -59,37 +52,25 @@ export function ConnectCard({
     <Card>
       <Card.Content className="flex flex-col gap-6">
         <div className="flex flex-col items-center text-center">
-          <Chip variant={isPublic ? "primary" : "soft"} size="sm">
-            {isPublic ? "Shared" : "Private"}
-          </Chip>
-
-          {hasSavedLinks && cardUrl ? (
-            <div
-              className="border-border mt-4 w-fit rounded-2xl border p-4"
-              style={{ backgroundColor: QR_BACKGROUND }}
-            >
+          <div
+            className="border-border mt-4 w-full max-w-[320px] rounded-2xl border p-4"
+            style={{ backgroundColor: QR_BACKGROUND }}
+          >
+            <div className="mx-auto aspect-square w-full max-w-[288px]">
               <QRCodeSVG
                 value={cardUrl}
-                size={220}
+                size={288}
+                className="block size-full"
                 fgColor={QR_FOREGROUND}
                 bgColor={QR_BACKGROUND}
               />
             </div>
-          ) : (
-            <div className="border-border mt-4 flex size-[220px] items-center justify-center rounded-2xl border border-dashed">
-              <div className="flex flex-col items-center gap-2 px-6">
-                <QrCode className="size-6" aria-hidden />
-                <Typography type="body-sm" color="muted">
-                  Save a profile to create your networking code.
-                </Typography>
-              </div>
-            </div>
-          )}
+          </div>
 
           <Typography type="body-xs" color="muted" className="mt-3">
-            {isPublic
-              ? "Scan to open all of my shared profiles"
-              : "This code stays the same. Scans are unavailable while private."}
+            {hasSavedLinks
+              ? "Scan to open my networking card"
+              : "Add a social profile to activate this code"}
           </Typography>
         </div>
 
@@ -143,30 +124,6 @@ export function ConnectCard({
         </div>
 
         <Separator />
-
-        <Switch
-          className="w-full"
-          isSelected={isPublic}
-          isDisabled={!hasSavedLinks || publishPending}
-          aria-label="Share my networking card"
-          onChange={onPublicationChange}
-        >
-          <Switch.Content className="w-full justify-between gap-4">
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-foreground">
-                Share my card
-              </span>
-              <span className="block text-xs font-normal text-muted">
-                {hasSavedLinks
-                  ? "Anyone with your code can open it."
-                  : "Add at least one profile in Settings first."}
-              </span>
-            </span>
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
-          </Switch.Content>
-        </Switch>
       </Card.Content>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">

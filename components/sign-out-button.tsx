@@ -46,7 +46,7 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
                   <AlertDialog.Heading>Sign out?</AlertDialog.Heading>
                 </AlertDialog.Header>
                 <AlertDialog.Body>
-                  You will need to sign back in with LinkedIn to return.
+                  You will need to sign in again to return.
                 </AlertDialog.Body>
                 <AlertDialog.Footer>
                   <Button

@@ -32,8 +32,7 @@ export default async function ConnectPage({
 
   /*
    * Read through the card RPC rather than selecting `social_profiles`
-   * directly, so one query answers both what is saved and whether the card is
-   * published.
+   * directly, so one query answers what is saved for the stable card.
    */
   const card = await getOwnNetworkingCard();
   if (!card) throw new Error("Networking card recovery failed");
@@ -77,7 +76,6 @@ export default async function ConnectPage({
         <div className="mt-6">
           <ConnectClient
             cardUrl={cardUrl}
-            initialIsPublic={card.isPublic}
             initialLinks={card.links}
           />
         </div>

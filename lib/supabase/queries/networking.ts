@@ -5,10 +5,9 @@ import {
   type SocialNetwork,
 } from "@/lib/social";
 
-/** An attendee's own card: the QR's destination, plus whether it resolves. */
+/** An attendee's own card: the stable QR destination and configured links. */
 export interface OwnNetworkingCard {
   publicToken: string;
-  isPublic: boolean;
   links: SocialLinks;
 }
 
@@ -58,7 +57,6 @@ export async function getOwnNetworkingCard(): Promise<OwnNetworkingCard | null> 
 
   return {
     publicToken: data[0].public_token,
-    isPublic: data[0].is_public,
     links: collectLinks(data),
   };
 }
@@ -67,9 +65,9 @@ export async function getOwnNetworkingCard(): Promise<OwnNetworkingCard | null> 
  * Resolves a scanned card token.
  *
  * The token is a bearer credential: it identifies the card, and the RPC returns
- * rows only while its owner has published it. An unknown token, a withdrawn
- * card, and a card with no links are all the same empty result, so a stale QR
- * renders "card not found" instead of leaking that the token was once valid.
+ * rows only while its owner has active links. An unknown token or a card with
+ * no links is the same empty result, so an inactive QR renders "card
+ * unavailable" instead of leaking that the token was once valid.
  */
 export async function getPublicNetworkingCard(
   token: string,
