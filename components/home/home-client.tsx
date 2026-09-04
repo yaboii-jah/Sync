@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Card, Tabs, Typography } from "@heroui/react";
+import type { Key } from "react-aria-components/Tabs";
 import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type {
@@ -50,12 +51,15 @@ interface HomeClientProps {
   initialEvent: EventInfo;
   initialSessions: SessionWithSpeakers[];
   initialBookmarks: string[];
+  /** Server-captured clock value used for the first hydrated render. */
+  initialNow: number;
 }
 
 export function HomeClient({
   initialEvent,
   initialSessions,
   initialBookmarks,
+  initialNow,
 }: HomeClientProps) {
   const [event, setEvent] = useState(initialEvent);
   const [sessions, setSessions] = useState(initialSessions);
@@ -65,7 +69,7 @@ export function HomeClient({
   const [view, setView] = useState<View>("all");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const now = useNow(1000);
+  const now = useNow(initialNow, 1000);
   const { toast } = useToast();
   const activeSession =
     sessions.find((session) => session.id === activeSessionId) ?? null;
@@ -286,12 +290,15 @@ export function HomeClient({
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
-          <Typography.Heading
-            level={2}
-            className="text-[22px] font-bold tracking-tight"
-          >
-            Program flow
-          </Typography.Heading>
+          <div className="flex items-center gap-2">
+            <CalendarClock className="text-accent size-5" aria-hidden />
+            <Typography.Heading
+              level={2}
+              className="text-[22px] font-bold tracking-tight"
+            >
+              Program flow
+            </Typography.Heading>
+          </div>
           <Typography type="body-sm" color="muted" className="mt-1">
             {formatManilaDate(event.starts_at)}
           </Typography>
@@ -299,26 +306,26 @@ export function HomeClient({
           <Tabs
             className="mt-4"
             selectedKey={view}
-            onSelectionChange={(key) => setView(key as View)}
+             onSelectionChange={(key: Key) => setView(key as View)}
           >
-            <Tabs.ListContainer>
-              <Tabs.List aria-label="Session filter">
-                <Tabs.Tab id="all">
-                  All
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="flow">
-                  <Tabs.Separator />
-                  My Flow
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              </Tabs.List>
-            </Tabs.ListContainer>
+            <Tabs.List
+              aria-label="Session filter"
+              className="w-full gap-0 rounded-[calc(var(--radius)*2.5)] bg-default p-1"
+            >
+              <Tabs.Tab id="all" className="min-w-0 basis-0 flex-1">
+                All
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="flow" className="min-w-0 basis-0 flex-1">
+                My Flow
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            </Tabs.List>
 
-            <Tabs.Panel id="all" className="mt-4">
+             <Tabs.Panel {...{ id: "all" }} className="mt-4">
               {renderList(allSessions, false)}
             </Tabs.Panel>
-            <Tabs.Panel id="flow" className="mt-4">
+             <Tabs.Panel {...{ id: "flow" }} className="mt-4">
               {renderList(flowSessions, true)}
             </Tabs.Panel>
           </Tabs>

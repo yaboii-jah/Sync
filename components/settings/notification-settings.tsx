@@ -183,26 +183,26 @@ export function NotificationSettings() {
       </Card.Header>
 
       <Card.Content className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-4">
+        {!unavailable && !blocked ? (
+          <Switch
+            className="w-full"
+            isSelected={enabled}
+            isDisabled={busy}
+            aria-label="Toggle session alerts"
+            onChange={() => void (enabled ? disable() : enable())}
+          >
+            <Switch.Content className="w-full justify-between gap-4">
+              <span className="text-sm font-normal text-muted">{statusLabel}</span>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
+          </Switch>
+        ) : (
           <Typography type="body-sm" color="muted">
             {statusLabel}
           </Typography>
-
-          {!unavailable && !blocked ? (
-            <Switch
-              isSelected={enabled}
-              isDisabled={busy}
-              aria-label="Toggle session alerts"
-              onChange={() => void (enabled ? disable() : enable())}
-            >
-              <Switch.Content>
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-              </Switch.Content>
-            </Switch>
-          ) : null}
-        </div>
+        )}
 
         {blocked ? (
           <Alert status="danger">

@@ -40,7 +40,7 @@ export default async function SettingsPage() {
             </Card.Description>
           </Card.Header>
           <Card.Content>
-            <ThemeSwitch />
+            <ThemeSwitch showSystem />
           </Card.Content>
         </Card>
 

@@ -144,28 +144,29 @@ export function ConnectCard({
 
         <Separator />
 
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <Typography type="body-sm">Share my card</Typography>
-            <Typography type="body-xs" color="muted">
-              {hasSavedLinks
-                ? "Anyone with your code can open it."
-                : "Add at least one profile in Settings first."}
-            </Typography>
-          </div>
-          <Switch
-            isSelected={isPublic}
-            isDisabled={!hasSavedLinks || publishPending}
-            aria-label="Share my networking card"
-            onChange={onPublicationChange}
-          >
-            <Switch.Content>
-              <Switch.Control>
-                <Switch.Thumb />
-              </Switch.Control>
-            </Switch.Content>
-          </Switch>
-        </div>
+        <Switch
+          className="w-full"
+          isSelected={isPublic}
+          isDisabled={!hasSavedLinks || publishPending}
+          aria-label="Share my networking card"
+          onChange={onPublicationChange}
+        >
+          <Switch.Content className="w-full justify-between gap-4">
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-foreground">
+                Share my card
+              </span>
+              <span className="block text-xs font-normal text-muted">
+                {hasSavedLinks
+                  ? "Anyone with your code can open it."
+                  : "Add at least one profile in Settings first."}
+              </span>
+            </span>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch.Content>
+        </Switch>
       </Card.Content>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">

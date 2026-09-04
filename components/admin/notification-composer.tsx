@@ -18,6 +18,7 @@ import {
   Typography,
 } from "@heroui/react";
 import { Search, Send, Users } from "lucide-react";
+import type { Key } from "react-aria-components/Tabs";
 import {
   searchAttendeesAction,
   sendAdminNotification,
@@ -213,7 +214,9 @@ export function NotificationComposer({
           <Tabs
             variant="secondary"
             selectedKey={audience}
-            onSelectionChange={(key) => setAudience(key as "all" | "selected")}
+            onSelectionChange={(key: Key) =>
+              setAudience(key as "all" | "selected")
+            }
           >
             <Tabs.ListContainer>
               <Tabs.List aria-label="Choose the audience">
@@ -229,7 +232,7 @@ export function NotificationComposer({
               </Tabs.List>
             </Tabs.ListContainer>
 
-            <Tabs.Panel id="all" className="mt-4">
+            <Tabs.Panel {...{ id: "all" }} className="mt-4">
               <Card variant="secondary">
                 <Card.Content className="py-4">
                   <div className="flex items-center gap-2">
@@ -246,7 +249,7 @@ export function NotificationComposer({
               </Card>
             </Tabs.Panel>
 
-            <Tabs.Panel id="selected" className="mt-4">
+            <Tabs.Panel {...{ id: "selected" }} className="mt-4">
               <Form
                 className="flex items-end gap-2"
                 onSubmit={(event) => {

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Avatar, Button, Card, Chip, Modal, Tabs, Typography } from "@heroui/react";
+import type { Key } from "react-aria-components/Tabs";
 import { ExternalLink, Users } from "lucide-react";
 import type { Person } from "@/lib/supabase/queries/directory";
 import { EmptyState } from "@/components/empty-states";
@@ -110,7 +111,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
       <Tabs
         variant="secondary"
         selectedKey={filter}
-        onSelectionChange={(key) => setFilter(key as FilterKey)}
+         onSelectionChange={(key: Key) => setFilter(key as FilterKey)}
       >
         <Tabs.ListContainer>
           <Tabs.List aria-label="Filter people by role">
@@ -125,7 +126,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
         </Tabs.ListContainer>
 
         {FILTERS.map((f) => (
-          <Tabs.Panel key={f.key} id={f.key} className="mt-4">
+          <Tabs.Panel key={f.key} {...{ id: f.key }} className="mt-4">
             {renderList(byFilter[f.key])}
           </Tabs.Panel>
         ))}
