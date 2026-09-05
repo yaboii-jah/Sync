@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { getSafeInternalPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { SignInButton } from "@/components/auth/sign-in-button";
 
@@ -9,6 +10,7 @@ interface LandingPageProps {
     error?: string;
     code?: string;
     next?: string;
+    sb_flow_id?: string;
   }>;
 }
 
@@ -42,10 +44,13 @@ function cometStyle(comet: CometConfig): CSSProperties {
 }
 
 export default async function LandingPage({ searchParams }: LandingPageProps) {
-  const { error, code, next } = await searchParams;
+  const { error, code, next, sb_flow_id: flowId } = await searchParams;
 
   if (code) {
-    redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
+    const callbackParams = new URLSearchParams({ code });
+    if (next) callbackParams.set("next", getSafeInternalPath(next));
+    if (flowId) callbackParams.set("sb_flow_id", flowId);
+    redirect(`/auth/callback?${callbackParams.toString()}`);
   }
 
   const supabase = await createClient();
@@ -137,11 +142,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
 
         <div className="mt-10">
           <SignInButton
-            next={
-              next && next.startsWith("/") && !next.startsWith("//")
-                ? next
-                : undefined
-            }
+            next={next ? getSafeInternalPath(next) : undefined}
           />
         </div>
       </div>

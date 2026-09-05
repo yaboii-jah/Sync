@@ -191,14 +191,12 @@ You (browser)                Our server/Supabase            Google
 2. **Consent.** Google authenticates you and returns the standard identity claims we need for name, email, and photo.
 3. **Callback to Supabase.** Google hands a one-time code to `https://…supabase.co/auth/v1/callback`, which exchanges it for an application session.
 4. **Supabase creates your account** — an `auth.users` row with your name/photo — and a **database trigger** (`handle_new_user`, see §6) instantly creates your matching `profiles` row.
-5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler exchanges the code using the browser-shared verifier cookie and refreshes the profile photo when Google provides one. Duplicate callbacks recover to the established session instead of displaying a PKCE storage error. A plain-teal `/auth/complete` handoff then performs one clean document navigation to `/home` or the captured internal destination so Android browsers cannot retain Google's wide viewport scale.
+5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler exchanges the code using the browser-shared verifier cookie and refreshes the profile photo when Google provides one. Duplicate callbacks recover to the established session instead of displaying a PKCE storage error. An app-shaped `/auth/complete` handoff starts one clean hard-document navigation during HTML parsing, with a client-side fallback, so Android browsers cannot retain Google's wide viewport scale and users do not wait for the handoff component to hydrate.
 
 **The code that decides where you land** (`app/auth/callback/route.ts`):
 
 ```ts
-const next = searchParams.get("next");
-const destination =
-  next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+const destination = getSafeInternalPath(searchParams.get("next"));
 ```
 
 **War story #1 — the redirect loop.** Early on, sign-ins kept failing with the browser landing on `/login?code=…` going in circles. Two causes, both fixed and worth remembering:

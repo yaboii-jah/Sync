@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getSafeInternalPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next");
-  const destination =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+  const destination = getSafeInternalPath(next);
 
   if (!code) {
     return redirectTo(request, "/");
