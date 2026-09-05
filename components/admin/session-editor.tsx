@@ -17,6 +17,7 @@ import {
 } from "@/app/(admin)/admin/actions";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import { useToast } from "@/components/toast/toast-provider";
+import { formatManilaDateTimeInput } from "@/lib/format";
 
 interface SessionEditorProps {
   /** Absent when creating; the session being edited otherwise. */
@@ -27,14 +28,12 @@ interface SessionEditorProps {
 }
 
 /**
- * `datetime-local` inputs speak wall-clock time with no zone, so an ISO
- * timestamp has to be rendered in the browser's own zone to round-trip
- * correctly. `toISOString` would shift it to UTC and show the wrong hour.
+ * `datetime-local` inputs speak wall-clock time with no zone. The event is
+ * always in Manila, so format the instant explicitly instead of using the
+ * browser's local timezone.
  */
 function toLocalInputValue(iso: string): string {
-  const date = new Date(iso);
-  const offsetMs = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+  return formatManilaDateTimeInput(iso);
 }
 
 export function SessionEditor({
@@ -133,7 +132,7 @@ export function SessionEditor({
                   onChange={setStartTime}
                   isRequired
                 >
-                  <Label>Starts</Label>
+                  <Label>Starts (PHT)</Label>
                   <Input variant="secondary" type="datetime-local" />
                 </TextField>
 
@@ -143,7 +142,7 @@ export function SessionEditor({
                   onChange={setEndTime}
                   isRequired
                 >
-                  <Label>Ends</Label>
+                  <Label>Ends (PHT)</Label>
                   <Input variant="secondary" type="datetime-local" />
                 </TextField>
               </div>

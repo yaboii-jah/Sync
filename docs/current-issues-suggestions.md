@@ -1,18 +1,10 @@
 ## Issues
-
-- [x] Sign-out confirmation used outdated LinkedIn copy. It now uses provider-neutral sign-in wording.
+- [x] Editing a session preserves its Asia/Manila wall-clock time instead of reinterpreting the value in the browser or server timezone.
+- [x] Unpublished sessions are hidden from attendee Home, Realtime refetches, and linked alert lookups, including when an admin is using the attendee view.
+- [x] Deleting a session requires confirmation and is limited to unpublished, not-started drafts; the database enforces the same rule.
 
 ## Suggestions
-
-- [x] Account Settings now exposes installation status, the native install prompt when available, and platform-specific manual instructions.
-- [x] Social URL handling accepts direct profile variants, bare handles, HTTP inputs normalized to HTTPS, trusted subdomains, and Facebook native `/share/<token>/` links while rejecting unrelated platform paths and lookalike domains.
-- [x] Google profile photos refresh on OAuth sign-in when metadata provides a photo; the existing first-name initial remains the fallback and edited display names are preserved.
-- [x] The networking QR is always displayed. Cards activate automatically when at least one social link is saved, and empty cards resolve to the generic unavailable state.
-- [x] Social-card icons and labels use one centered fixed grid for consistent alignment.
-- [x] The on-screen QR now scales responsively up to 288px, and publication-state UI has been removed. Empty cards show the QR but do not offer a download.
+- [x] Remove the duplicate theme under the program date and center the theme at the top of every hero state.
 
 ## Questions
-
-- [x] The install banner could disappear because its `beforeinstallprompt` listener mounted only on Home, the event is not replayed, and browsers control whether the event fires. Installation state is now captured at the app root; Home dismissal lasts for the current browser session, while Account Settings remains available.
-
-Physical-device acceptance is still required for native installation prompts and manual iOS/Android guidance.
+- [x] Push behavior is documented in `docs/app-guide.md` and the formal architecture/project docs. Automatic session alerts target bookmarked-session recipients; manual status alerts and announcements use their configured all/selected snapshot, and push delivery is device/subscription dependent.

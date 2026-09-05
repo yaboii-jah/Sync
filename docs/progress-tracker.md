@@ -5,11 +5,11 @@ change.
 
 ## Current Phase
 
-- Revised finalized program and parallel schedule UX completed; post-deployment acceptance testing remains for the updated attendee and admin flows.
+- Revised finalized program and parallel schedule UX completed; current admin/session issue fixes are implemented locally and applied to the linked database. Post-deployment acceptance remains, along with an owner decision about three finalized sessions manually deleted from the linked data before the deletion guard was applied.
 
 ## Current Goal
 
-- Complete post-deployment acceptance for the approved 16-row finalized flow, including the revised afternoon timeline, event theme, facilitator directory role, parallel schedule choices, and bookmark conflict behavior while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
+- Complete post-deployment acceptance for the approved 16-row finalized flow and the admin/session issue fixes: explicit Asia/Manila editing, publication-safe attendee reads, confirmed draft deletion, centered hero theme, and documented push audiences while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
 
 ## Completed
 
@@ -20,6 +20,7 @@ change.
 - **Revised finalized PDF alignment:** migration `20260905022332_align_final_program_pdf.sql` updates the linked event to the revised Final Timeline: Panel Discussion and Workshop C end at 4:00 PM, Plenary Reconvene runs 4:00-4:30 PM, Organizing Committee Acknowledgement runs 4:30-4:50 PM, Awarding runs 4:50-5:30 PM, and Closing runs 5:30-6:00 PM. It also applies the PDF's full Plenary and Organizing Committee titles, exact panel/workshop descriptions and facilitator details, while treating workshop breaks/transitions as operational notes rather than new attendee-selectable rows. Applied and verified remotely; the event remains 16 rows with three parallel start blocks, zero bookmarks, and zero linked notifications. Database lint, advisors, TypeScript, ESLint, production build, and diff checks pass; the existing advisor warnings and build `metadataBase` warning remain non-blocking.
 
 - **Current issues/suggestions batch completed.** Sign-out copy is provider-neutral, Google photos refresh on OAuth sign-in without overwriting attendee-edited names, and installation state is captured by a root-level provider shared by Home and Account Settings. The Home banner uses session-only dismissal, native prompt cancellation remains retryable, standalone mode shows as Installed, and unsupported browsers receive manual guidance. Connect now always renders the stable QR up to 288px, opens setup guidance for empty cards, removes publication controls, keeps Preview for active cards, and disables QR download until a link exists. The new networking migrations activate cards transactionally when links exist, backfill existing linked cards, accept approved direct/share URL variants including Facebook `/share/<token>/`, remove the old publication RPC, and are applied to the linked project. The Web Share Target is POST-only with same-origin/fetch-site checks and a bumped service-worker cache. Verified with URL smoke cases, rollback-only database activation/resolution/deactivation checks, linked database lint, migration dry-run parity, TypeScript, ESLint, production build, and diff checks. Native install and share-sheet behavior remain device-testing items.
+- **Admin/session issue-fix batch completed.** Manila wall-clock editing, published-only attendee reads, unavailable linked drafts in Alerts, centered hero themes, and confirmation-gated draft deletion are implemented. Migration `20260905052509_restrict_draft_session_deletion.sql` is applied remotely; local and remote migration histories match. Rollback-only linked checks verified admin draft visibility, non-admin publication filtering, published/started deletion guards, and eligible draft deletion. TypeScript, ESLint, production build, database lint, migration dry-run/application, and diff checks pass. Authenticated browser acceptance remains user-driven.
 - **React Aria dependency install repaired.** Restored the documented `react-aria@3.51.0`, `react-aria-components@1.20.0`, and `react-stately@3.49.0` pins after a dependency update installed an incompatible package layout. A clean `npm ci` now restores the required ESM entrypoints, and the production build, TypeScript check, and ESLint pass.
 - **HeroUI switch pointer activation completed.** Share my card, Session alerts, and admin Publish immediately all had valid hidden checkboxes and worked with keyboard Space, but their visible text sat outside `Switch.Content`; only the small track belonged to HeroUI's clickable label. Each switch now makes `Switch.Content` a full-width row containing both label content and control, restoring a clear pointer target without changing publication, push, or session-draft state behavior. Disabled push and no-social-link states remain inert by design.
 - **Post-merge settings regression repaired.** Account Settings again exposes Light, Dark, and System choices through the shared theme component while the desktop top navigation retains its compact Light/Dark control. The app still defaults new sessions to Light, and selecting System persists through `next-themes`. The Share my card and Session alerts controls were confirmed to retain the repaired HeroUI `Switch.Content` composition on local `develop`; the apparent recurrence came from `origin/develop` not yet containing the local interaction-fix merge.
@@ -91,12 +92,13 @@ change.
 
 ## In Progress  
 
-- Post-deployment authenticated browser and real-device acceptance testing for the admin operations unit.
+- Owner decision on restoring three audited finalized-session deletions, plus authenticated browser and real-device acceptance for the admin/session issue-fix batch, remain.
 
 ## Next Up
 
 - Backlog (content, awaiting inputs): real photo-booth URL
-- Sign in with the provisioned admin account, exercise `/admin`, send a self-targeted test alert, and execute the admin RLS/idempotency/device tests
+- Linked data currently has 13 sessions instead of the documented 16: IDs ending `0001`, `0002`, and `0004` were deleted by the provisioned admin and recorded in `admin_audit_log`; restore only after owner confirmation.
+- Sign in with the provisioned admin account, exercise `/admin`, send a self-targeted test alert, and execute the remaining admin idempotency/device tests
 - Deferred UI candidates: pull-to-refresh (Realtime already keeps data fresh)
 - Production testing punch list (user-driven, post-deploy)
 
@@ -127,7 +129,7 @@ change.
 
 ## Session Notes
 
-- Planning docs reflect the implemented attendee app: Google auth, program flow, Realtime, smart notifications, unread Alerts state, the multi-social Connect card, directory, Settings, and the hand-authored PWA service worker. `app-guide.md` remains an informal historical walkthrough and contains stale pre-Google/pre-networking-card passages.
+- Planning docs reflect the implemented attendee app: Google auth, program flow, Realtime, smart notifications, unread Alerts state, the multi-social Connect card, directory, Settings, and the hand-authored PWA service worker. `app-guide.md` is an informal walkthrough aligned with the current Google-authenticated, published-session, and multi-social-card flows.
 - The original Home mockup remains a visual reference; the implemented layout now includes the responsive bottom-tabs/desktop-rail shell and dashboard behavior described above.
 - App name is **Sync**; the event identity is **AWS Student Community Day Mega Manila 2026**.
 - Next work should complete missing profile enrichment, confirm the real photo-booth URL, and execute the production-testing punch list.

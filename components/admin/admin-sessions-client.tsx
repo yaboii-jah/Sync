@@ -56,6 +56,10 @@ export function AdminSessionsClient({
     action: SessionAction;
     requestId: string;
   } | null>(null);
+  const [deletion, setDeletion] = useState<{
+    session: SessionWithSpeakers;
+    requestId: string;
+  } | null>(null);
   const [sendNotification, setSendNotification] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
@@ -64,6 +68,7 @@ export function AdminSessionsClient({
   function runMutation(
     run: () => Promise<{ error?: string }>,
     success: string,
+    onSuccess?: () => void,
   ) {
     startTransition(async () => {
       const result = await run();
@@ -72,6 +77,7 @@ export function AdminSessionsClient({
         return;
       }
       toast(success);
+      onSuccess?.();
       router.refresh();
     });
   }
@@ -89,13 +95,20 @@ export function AdminSessionsClient({
   }
 
   function remove(session: SessionWithSpeakers) {
+    setDeletion({ session, requestId: crypto.randomUUID() });
+  }
+
+  function confirmDeletion() {
+    if (!deletion) return;
+
     runMutation(
       () =>
         deleteSessionAction({
-          sessionId: session.id,
-          requestId: crypto.randomUUID(),
+          sessionId: deletion.session.id,
+          requestId: deletion.requestId,
         }),
       "Session deleted",
+      () => setDeletion(null),
     );
   }
 
@@ -198,10 +211,9 @@ export function AdminSessionsClient({
                   )}
                   {session.published ? "Unpublish" : "Publish"}
                 </Button>
-                {/* Only drafts and mistakes are deletable; anything that has
-                    run is part of the event's record and is unpublished
-                    instead — the RPC enforces this too. */}
-                {session.status === "not_started" ? (
+                {/* Only unpublished drafts that have not started are deletable;
+                    the database RPC enforces the same rule. */}
+                {!session.published && session.status === "not_started" ? (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -243,6 +255,51 @@ export function AdminSessionsClient({
           </Card>
         ))}
       </div>
+
+      <AlertDialog>
+        <AlertDialog.Backdrop
+          isOpen={deletion !== null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen && !pending) setDeletion(null);
+          }}
+        >
+          <AlertDialog.Container size="sm">
+            <AlertDialog.Dialog>
+              <AlertDialog.Header>
+                <AlertDialog.Heading>Delete draft?</AlertDialog.Heading>
+              </AlertDialog.Header>
+
+              <AlertDialog.Body>
+                <Typography type="body-sm" weight="semibold">
+                  {deletion?.session.title}
+                </Typography>
+                <Typography type="body-sm" color="muted" className="mt-2">
+                  This permanently removes the unpublished session. Published
+                  or already-started sessions must be kept and unpublished
+                  instead.
+                </Typography>
+              </AlertDialog.Body>
+
+              <AlertDialog.Footer>
+                <Button
+                  variant="secondary"
+                  isDisabled={pending}
+                  onPress={() => setDeletion(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  isPending={pending}
+                  onPress={confirmDeletion}
+                >
+                  Delete draft
+                </Button>
+              </AlertDialog.Footer>
+            </AlertDialog.Dialog>
+          </AlertDialog.Container>
+        </AlertDialog.Backdrop>
+      </AlertDialog>
 
       <AlertDialog>
         <AlertDialog.Backdrop

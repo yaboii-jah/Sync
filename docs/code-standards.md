@@ -6,6 +6,8 @@
 - Fix root causes, don't layer workarounds — if Realtime data arrives in the wrong shape, fix the query or the schema, don't patch it in the UI layer
 - Don't mix unrelated concerns in one component or route — auth logic, data fetching, and presentation stay separated
 - Don't build toward deferred scope such as workshop registration or general content management; admin work remains limited to the approved event-operations surface
+- Treat `datetime-local` values as Asia/Manila wall-clock input at the boundary; never let the browser or server default timezone reinterpret an event time
+- Keep attendee queries explicitly publication-filtered even when RLS also permits allowlisted admins to read drafts
 
 ## TypeScript
 
@@ -30,6 +32,7 @@
 - Validate and parse request input before any logic runs
 - Enforce auth before any mutation — no route trusts a client-supplied user ID
 - Every admin mutation must verify the database allowlist, use a request UUID for idempotency, and append its audit record transactionally
+- Destructive admin actions require a HeroUI `AlertDialog`, and database functions must enforce the same eligibility rule independently of the UI
 - Return consistent, predictable response shapes across all routes
 - Reserve custom routes and Supabase Edge Functions for what RLS and the Supabase client can't handle directly — primarily, sending a Web Push notification when a session's status changes
 

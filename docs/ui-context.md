@@ -69,6 +69,7 @@ Live state is the one signal allowed a dot: `live-mini-bar.tsx`, the hero eyebro
 - **Squircles.** `corner-shape: squircle` via the `.squircle` utility on hero, cells, capsule and dialog. Progressive enhancement — browsers without it keep the plain radius.
 - **Grouped time blocks.** The program list uses one time heading per start-time block and stacks concurrent choices beneath it. The old continuous progress rail is omitted because a single day-progress line is misleading when sessions run in parallel.
 - **Parallel hero choices.** Happening Now and Up Next show every live session or every session in the earliest upcoming time block; each choice opens its own detail dialog.
+- **Event theme placement.** `event.theme` is centered at the top of every hero state, including the pre-event countdown; it is not repeated beneath the program date.
 - **Conflict feedback.** My Flow permits overlapping bookmarks, warns on save, and marks every involved saved card with a HeroUI warning chip.
 - **Press feedback.** `active:scale-[0.98]` on cards and the capsule, `active:scale-95` on tabs, all collapsing under `motion-reduce`.
 - **Safe areas.** The tab bar pads by `env(safe-area-inset-bottom)`.
@@ -105,6 +106,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
 - **Lists**: stacked `Card`s. Program Flow uses grouped time headings with stacked session cards; long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).
+- **Admin session editing**: schedule fields are labeled `(PHT)` and use the event's Asia/Manila wall-clock timezone. Deleting a draft always opens a destructive confirmation dialog.
 - **Bottom tabs** (`<1024px`) and a **transparent horizontal top navigation** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
 - **Directory**: the people filters include a dedicated Facilitators category for workshop leaders.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.

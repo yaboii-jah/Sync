@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { parseManilaDateTimeInput } from "@/lib/format";
 import {
   createAdminNotification,
   createAdminSession,
@@ -128,9 +129,9 @@ interface SessionFormInput {
 }
 
 /**
- * Shared validation for create and edit. Times arrive as `datetime-local`
- * strings, which carry no zone, so they are read in the browser's zone and
- * sent as ISO — the same convention the rest of the app stores in.
+ * Shared validation for create and edit. `datetime-local` values carry no
+ * zone, so they must be interpreted as Asia/Manila wall-clock times before
+ * being sent to the timestamptz columns.
  */
 function validateSessionForm(
   input: SessionFormInput,
@@ -147,14 +148,16 @@ function validateSessionForm(
   }
   if (!UUID_PATTERN.test(input.requestId)) return { error: "Invalid request." };
 
-  const start = new Date(input.startTime);
-  const end = new Date(input.endTime);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+  const startIso = parseManilaDateTimeInput(input.startTime);
+  const endIso = parseManilaDateTimeInput(input.endTime);
+  if (!startIso || !endIso) {
     return { error: "Enter a valid start and end time." };
   }
-  if (end <= start) return { error: "End time must be after the start time." };
+  if (new Date(endIso) <= new Date(startIso)) {
+    return { error: "End time must be after the start time." };
+  }
 
-  return { startIso: start.toISOString(), endIso: end.toISOString(), title };
+  return { startIso, endIso, title };
 }
 
 export async function createSessionAction(

@@ -35,6 +35,14 @@ const heroMuted = "text-white/75";
 const venueMapUrl =
   "https://www.google.com/maps/search/?api=1&query=Asia+Pacific+College";
 
+function HeroTheme({ theme }: { theme: string }) {
+  return (
+    <Card.Description className={`${heroMuted} w-full text-center`}>
+      {theme}
+    </Card.Description>
+  );
+}
+
 /**
  * Time left in a running session, live-activity style: a ticking `mm:ss` in the
  * final hour, coarser above that where seconds are noise rather than news.
@@ -163,7 +171,7 @@ export function HeroCard({
     return (
       <Card className={heroSurface}>
         <Card.Header>
-          <Card.Description className={heroMuted}>{event.theme}</Card.Description>
+          <HeroTheme theme={event.theme} />
           <Card.Title className={heroTitle}>That is a wrap</Card.Title>
         </Card.Header>
         <Card.Content>
@@ -179,7 +187,7 @@ export function HeroCard({
     return (
       <Card className={heroSurface}>
         <Card.Header>
-          <Card.Description className={heroMuted}>{event.theme}</Card.Description>
+          <HeroTheme theme={event.theme} />
           <div className="mt-2 flex items-center gap-2">
             <span aria-hidden className="relative flex size-2 shrink-0">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-60 motion-reduce:animate-none" />
@@ -214,7 +222,7 @@ export function HeroCard({
     return (
       <Card className={heroSurface}>
         <Card.Header>
-          <Card.Description className={heroMuted}>{event.theme}</Card.Description>
+          <HeroTheme theme={event.theme} />
           <Card.Title className={`mt-1 ${heroTitle}`}>Up next</Card.Title>
         </Card.Header>
         <Card.Content className="flex flex-col gap-3">
@@ -238,7 +246,7 @@ export function HeroCard({
     return (
       <Card className={heroSurface}>
         <Card.Header>
-          <Card.Description className={heroMuted}>{event.theme}</Card.Description>
+          <HeroTheme theme={event.theme} />
           <Card.Title className={heroTitle}>No session is live</Card.Title>
         </Card.Header>
         <Card.Content>
@@ -262,7 +270,7 @@ export function HeroCard({
   return (
     <Card className={heroSurface}>
       <Card.Header>
-        <Card.Description className={heroMuted}>{event.theme}</Card.Description>
+        <HeroTheme theme={event.theme} />
         <Card.Title className={`mt-1 ${heroTitle}`}>Starts in</Card.Title>
       </Card.Header>
       <Card.Content>

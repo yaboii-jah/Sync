@@ -12,7 +12,7 @@ import type {
 import {
   getBookmarkedSessionIds,
   getEvent,
-  getSessionsWithSpeakers,
+  getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { formatManilaDate, formatManilaTime } from "@/lib/format";
 import {
@@ -71,7 +71,7 @@ export function HomeClient({
     const client = createClient();
     const [nextEvent, nextSessions, nextBookmarks] = await Promise.all([
       getEvent(client),
-      getSessionsWithSpeakers(client),
+      getPublishedSessionsWithSpeakers(client),
       getBookmarkedSessionIds(client),
     ]);
 
@@ -256,10 +256,6 @@ export function HomeClient({
           <Typography type="body-sm" color="muted" className="mt-1">
             {formatManilaDate(event.starts_at)}
           </Typography>
-          <Typography type="body-xs" color="muted" className="mt-1">
-            {event.theme}
-          </Typography>
-
           <Tabs
             className="mt-4"
             selectedKey={view}

@@ -15,8 +15,8 @@
 4. [Tour of the Codebase](#4-tour-of-the-codebase)
 5. [How Each Feature Works](#5-how-each-feature-works)
    - 5.1 [Landing Page](#51-landing-page--the-poster)
-   - 5.2 [LinkedIn Sign-In](#52-linkedin-sign-in--oauth-explained-like-a-story)
-   - 5.3 [Onboarding Gate](#53-onboarding--the-blocking-gate)
+   - 5.2 [Google Sign-In](#52-google-sign-in--oauth-explained-like-a-story)
+   - 5.3 [Profile and Networking Setup](#53-profile-and-networking-setup)
    - 5.4 [Home Dashboard](#54-home-dashboard--the-happening-now-machine)
    - 5.5 [Live Updates (Realtime)](#55-live-updates--realtime)
    - 5.6 [My Flow Bookmarks](#56-my-flow-bookmarks--optimistic-ui)
@@ -44,9 +44,9 @@ Attendees install Sync on their phone like a native app. During the event it ans
 - **Who is this person I just met?** → the Connect QR card
 - **Who's speaking today?** → the More directory
 
-It is **not** a social network or ticketing system. General event content still lives directly in Supabase, while a narrow allowlisted `/admin` control room handles event-day alerts, live status correction, delivery monitoring, attendee lookup, and mutation auditing.
+It is **not** a social network or ticketing system. General directory content still lives directly in Supabase, while the narrow allowlisted `/admin` control room handles event-day alerts, schedule corrections, delivery monitoring, attendee lookup, and mutation auditing. Operators use the protected composer for announcements rather than inserting them directly.
 
-The name of the game remains automation-first: session statuses, reminders, and live/wrapped notifications derive from schedule timestamps. When the real event drifts, an admin Start or End override remains authoritative until Resume Auto, and approved operators can send immediate audited alerts from the app.
+The name of the game remains automation-first: session statuses, reminders, and live/wrapped notifications derive from schedule timestamps. Published sessions are visible to attendees; unpublished drafts stay in the admin workspace and are ignored by schedule automation. When the real event drifts, an admin Start or End override remains authoritative until Resume Auto, and approved operators can send immediate audited alerts from the app.
 
 ---
 
@@ -55,19 +55,18 @@ The name of the game remains automation-first: session statuses, reminders, and 
 Here is what a real attendee experiences, from start to finish:
 
 ```
-1. Opens the link          → Landing page (dark-teal poster, comets, "SYNC" in gold)
+1. Opens the link            → Landing page (ceremonial poster)
 2. Taps "Sign in with Google" → Google asks permission → back in the app
-3. First time only         → "Paste your LinkedIn profile URL" screen
-4. Lands on Home           → Countdown or "Happening Now" card + full schedule
-5. Taps a session          → Modal with description, room, speaker, bookmark button
-6. Bookmarks sessions      → "My Flow" — their personal schedule; finished sessions leave the flow automatically
-7. Gets a phone notification → bookmarked sessions send reminders plus live/wrapped updates
-8. Meets someone           → Opens Connect tab, shows their QR code
-9. Curious about a speaker → More tab, taps a face, reads their bio
-10. End of day             → "That's a wrap" card, alerts feed shows everything that happened
+3. Lands on Home             → Countdown or "Happening Now" card + published schedule
+4. Taps a session            → Modal with description, room, speaker, bookmark button
+5. Bookmarks sessions        → "My Flow" — their personal schedule; finished sessions leave the flow automatically
+6. Gets an alert             → bookmarked sessions send reminders plus live/wrapped updates
+7. Meets someone             → Opens Connect, shows the stable multi-social QR card
+8. Curious about a speaker   → More, taps a face, reads their bio
+9. End of day                → "That's a wrap" card; Alerts retains the recipient's feed
 ```
 
-**Visually**, the app is dark-only: dark-teal backgrounds (`#024056`), pale-lime text (`#E6FFC9`), gold hairline borders (`#BC8330`) instead of drop shadows. The landing page gets the full ceremonial treatment (starfield, comets, city silhouette, animated sheen on the logo). Everything after sign-in is deliberately plain and legible — data screens don't get glitter.
+**Visually**, the landing page gets the full ceremonial treatment. Everything after sign-in uses the neutral HeroUI light/dark system, with one accent tint and a single saturated hero surface. The event theme is centered at the top of every hero state and is not repeated below the program date.
 
 **On desktop** (≥1024px), the bottom tab bar is replaced by a left sidebar ("rail"), and Home splits into two panes: the Happening Now card pins on the left while the schedule scrolls on the right.
 
@@ -100,8 +99,8 @@ sync/
 ├── app/                      ← Every screen lives here (Next.js routing)
 │   ├── page.tsx              ← Landing page ("/")
 │   ├── login/                ← Sign-in page (now a shim to "/")
-│   ├── onboarding/           ← First-time LinkedIn URL capture
 │   ├── auth/callback/        ← OAuth return stop
+│   ├── (admin)/               ← Protected operations workspace
 │   └── (app)/                ← Route group: pages WITH the nav rail/tabs
 │       ├── layout.tsx        ← Sidebar + tab bar wrap every page below
 │       ├── home/             ← Dashboard (+ actions.ts = server actions)
@@ -125,7 +124,7 @@ sync/
 ├── lib/                      ← Non-UI logic
 │   ├── supabase/             ← Clients (browser + server), types, queries
 │   ├── format.ts             ← Manila-time + relative-time formatters
-│   ├── linkedin.ts           ← URL validation + normalization
+│   ├── social.ts             ← Social URL validation + normalization
 │   └── push.ts               ← Browser push subscription helpers
 ├── proxy.ts                  ← Traffic cop: refreshes sessions, gates private routes
 ├── public/                   ← Static files: sw.js (service worker), icons, manifest
@@ -163,25 +162,25 @@ Each section follows the same pattern: **what you see → what happens under the
 
 **Files:** `app/page.tsx` (markup), `app/globals.css` (all animation keyframes), `app/layout.tsx` (loads the Lato + Perandory fonts).
 
-**One lesson baked in:** the sign-in button is a `<form action={signInWithLinkedIn}>`. That `signInWithLinkedIn` is a **Server Action** — a function that runs *on the server* even though it's wired to a plain HTML form. No API endpoint needed.
+**One lesson baked in:** the sign-in button is a `<form action={signInWithGoogle}>`. That `signInWithGoogle` is a **Server Action** — a function that runs *on the server* even though it's wired to a plain HTML form. No API endpoint needed.
 
 ---
 
-### 5.2 LinkedIn Sign-In — OAuth Explained Like a Story
+### 5.2 Google Sign-In — OAuth Explained Like a Story
 
-**What you see:** tap the button → LinkedIn's page asks you to log in and approve → you're back in the app, already signed in with your real name and photo.
+**What you see:** tap the button → Google's page asks you to sign in and approve → you're back in the app, already signed in with your Google name and photo.
 
 **The story of what actually happened:**
 
 ```
-You (browser)                Our server/Supabase            LinkedIn
+You (browser)                Our server/Supabase            Google
      │  1. tap button               │                          │
      │ ──signInWithOAuth()─────────▶│                          │
      │                              │ 2. build authorize URL   │
-     │ ◀── redirect to LinkedIn ────│─────────────────────────▶│
+      │ ◀── redirect to Google ──────│─────────────────────────▶│
      │  3. consent screen           │                          │
      │ ────────────── you approve ────────────────────────────▶│
-     │                              │ 4. LinkedIn calls back   │
+      │                              │ 4. Google calls back     │
      │                              │◀── with a one-time code ─│
      │  5. redirect to /auth/callback?code=…                   │
      │ ── exchange code ────────────▶│                          │
@@ -189,21 +188,17 @@ You (browser)                Our server/Supabase            LinkedIn
 ```
 
 1. **Tap.** A server action calls `supabase.auth.signInWithOAuth({ provider: "google" })`. Supabase generates a Google URL that embeds *where you want to end up* (`/auth/callback`).
-2. **Consent.** LinkedIn authenticates you and asks permission for `openid`, `email`, `profile` — that's all we request.
-3. **Callback to Supabase.** LinkedIn hands a secret code to `https://…supabase.co/auth/v1/callback` (this exact URL must be registered in the LinkedIn Developer app).
+2. **Consent.** Google authenticates you and returns the standard identity claims we need for name, email, and photo.
+3. **Callback to Supabase.** Google hands a one-time code to `https://…supabase.co/auth/v1/callback`, which exchanges it for an application session.
 4. **Supabase creates your account** — an `auth.users` row with your name/photo — and a **database trigger** (`handle_new_user`, see §6) instantly creates your matching `profiles` row.
-5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`, a route handler in our app trades the code for a **session** (HTTP-only cookies), then routes you to `/onboarding` (first time) or `/home`.
+5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler refreshes the profile photo when Google provides one, then routes to `/home` or the captured internal destination.
 
 **The code that decides where you land** (`app/auth/callback/route.ts`):
 
 ```ts
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("linkedin_url")
-  .eq("id", user.id)
-  .maybeSingle();
-
-const destination = profile?.linkedin_url ? "/home" : "/onboarding";
+const next = searchParams.get("next");
+const destination =
+  next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
 ```
 
 **War story #1 — the redirect loop.** Early on, sign-ins kept failing with the browser landing on `/login?code=…` going in circles. Two causes, both fixed and worth remembering:
@@ -217,38 +212,27 @@ As a safety net, the landing page still detects a stray `?code=` and forwards it
 
 ---
 
-### 5.3 Onboarding — The Blocking Gate
+### 5.3 Profile and Networking Setup
 
-**What you see:** after first sign-in, a card: *"Welcome, {Your Name} — paste your LinkedIn profile URL."* You can't reach Home without doing it once.
+**What you see:** after sign-in, Home is available immediately. Account Settings lets an attendee edit their display name and optionally save LinkedIn, Instagram, Facebook, or GitHub links.
 
-**Why it exists:** LinkedIn's standard login scopes give us your name and photo but **not** your public profile URL. That URL powers your networking QR code (§5.9), so we ask once, manually.
+**Why it exists:** Google supplies the identity name and photo, while social links are optional attendee-owned enrichment. Connect always has a stable QR target; saving at least one approved social link activates the card.
 
 **Under the hood, three layers of defense:**
 
-1. **Route guard** — `requireCompleteProfile()` (in `lib/supabase/profile.ts`) runs at the top of every private page. If your profile has no `linkedin_url`, it calls `redirect("/onboarding")` before anything renders.
-2. **Client validation** — `lib/linkedin.ts` accepts real-world pasted URLs (http/https, `www.`, `m.`, sub-page paths, query junk like `?originalSubdomain=ph`).
-3. **Server + database validation** — the server action re-validates and **canonicalizes** before saving, and the database itself has a CHECK constraint as a final backstop.
+1. **Route guard** — `requireCompleteProfile()` (in `lib/supabase/profile.ts`) ensures an authenticated profile exists before private pages render. Missing social links are not a reason to redirect.
+2. **Client validation** — `lib/social.ts` validates approved networks and normalizes supported profile and share URL variants.
+3. **Server + database validation** — the server action re-validates the complete link set before saving, and database constraints remain a final backstop.
 
-```ts
-// lib/linkedin.ts — the normalizer
-export function normalizeLinkedInProfileUrl(value: string): string | null {
-  const trimmed = value.trim().replace(/[.,;)]+$/, "");
-  if (!isValidLinkedInProfileUrl(trimmed)) return null;
-  const match = trimmed.match(/linkedin\.com\/in\/([a-z0-9\-_%]+)/i);
-  if (!match) return null;
-  return `https://www.linkedin.com/in/${match[1].toLowerCase()}`;
-}
-```
+The QR encodes the app-owned `/c/<public_token>` card URL, not a mutable external profile URL. The stable card can activate retroactively when links are later saved.
 
-So whether you paste `http://www.linkedin.com/in/Me/Details/` or `https://linkedin.com/in/me?trk=x`, the database stores exactly `https://www.linkedin.com/in/me`. Canonical data = reliable QR codes.
-
-**Files:** `app/onboarding/`, `lib/linkedin.ts`, `lib/supabase/profile.ts`.
+**Files:** `app/(app)/settings/`, `lib/social.ts`, `lib/supabase/queries/networking.ts`, `lib/supabase/profile.ts`.
 
 ---
 
 ### 5.4 Home Dashboard — The "Happening Now" Machine
 
-**What you see (mobile):** your name/photo-free clean header, the hero card, a segmented **All | My Flow** toggle, and stacked session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right.
+**What you see (mobile):** your clean header, the hero card, a segmented **All | My Flow** toggle, and stacked published-session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right.
 
 **The hero card's four brains** (`components/home/hero-card.tsx`). It re-renders every second with the device clock and picks a state:
 
@@ -259,7 +243,7 @@ const endsAt   = new Date(event.ends_at).getTime();
 if (now >= endsAt) → "That's a wrap" card
 
 const current = sessions.find(s => now >= s.start && now < s.end);
-if (current)  → "Happening Now" + title + room (gold glow)
+if (current)  → "Happening Now" + title + room (accent treatment)
 
 const next = sessions.find(s => s.start > now);
 if (next && now >= startsAt) → "Up Next" preview card
@@ -277,7 +261,11 @@ otherwise → "Starts In" countdown (D/H/M/S boxes)
 | Ongoing | light-green fill + soft pulsing glow |
 | Finished | dimmed text |
 
-**Files:** `app/(app)/home/page.tsx` (server: fetches everything once), `components/home/home-client.tsx` (client: owns the data state), `components/home/hero-card.tsx`, `components/home/session-card.tsx`, `components/sessions/session-modal.tsx`, `lib/format.ts` (Manila-time formatting — every time on screen is Asia/Manila regardless of the phone's settings).
+The Home server query and every Realtime refetch explicitly add `published = true`. This is necessary even for an administrator signed into the attendee view because the database lets admins read drafts for the operations workspace. A linked alert uses the same published-only lookup; if a session was later unpublished, the alert says its details are unavailable.
+
+The admin session editor labels its `datetime-local` fields **(PHT)**. Those values are parsed as Asia/Manila wall-clock time and converted to an explicit UTC instant before the database RPC runs, so the browser timezone and server timezone cannot change the scheduled hour.
+
+**Files:** `app/(app)/home/page.tsx` (server: fetches everything once), `components/home/home-client.tsx` (client: owns the data state), `components/home/hero-card.tsx`, `components/home/session-card.tsx`, `components/sessions/session-modal.tsx`, `components/admin/session-editor.tsx`, `lib/format.ts` (Manila-time formatting and input conversion).
 
 ---
 
@@ -389,7 +377,20 @@ This is the most connected feature in the app — five systems passing a baton:
 4. The Edge Function claims that dispatch once, loads canonical recipients/subscriptions, sends in bounded batches, records accepted/failed/pruned device outcomes, counts recipients without push, and prunes 404/410 endpoints.
 5. The service worker displays the push and opens `/alerts`. Admin “accepted” results mean the push service accepted the message, not that the device visibly displayed it.
 
-**How your device subscribed in the first place:** after onboarding, the home screen shows the *"Get session alerts"* explainer. Granting permission triggers `pushManager.subscribe()` with our **VAPID public key** (a key pair that proves to push services that *we* are allowed to send), and the subscription (endpoint URL + encryption keys) is stored in `push_subscriptions` via a server action.
+### Notification audience matrix
+
+| Scenario | In-app Alerts | Push target |
+|---|---|---|
+| Automatic reminder, live, or wrapped session alert | Snapshotted bookmarkers only | Devices belonging to those bookmarkers |
+| Manual Start or End with **Notify every attendee** checked | Snapshotted profiles for everyone | Every available device for those profiles |
+| Manual Start or End with notification unchecked | No new notification | None |
+| Resume Auto | No new notification | None |
+| Admin announcement to Everyone | Snapshotted profiles for everyone | Every available device for those profiles |
+| Admin announcement to Selected | Snapshotted selected profiles only | Every available device for those profiles |
+
+The snapshot is immutable: users who subscribe or are selected after the send do not receive that earlier alert. A recipient without a push subscription still sees the in-app Alerts row. A recipient with multiple devices is targeted on each stored device. Failed or expired endpoints are recorded and stale 404/410 endpoints are pruned. The delivery count shown to admins means accepted by the push service, not confirmed display on a phone.
+
+**How your device subscribed in the first place:** the home screen shows the *"Get session alerts"* explainer. Granting permission triggers `pushManager.subscribe()` with our **VAPID public key** (a key pair that proves to push services that *we* are allowed to send), and the subscription (endpoint URL + encryption keys) is stored in `push_subscriptions` via a server action.
 
 **War story #3 — the silent 403.** The first live test produced no notification and no error. The debug trail (a temporary service-role-only RPC exposing pg_net's HTTP log) showed our own function answering **403 Forbidden**: the database trigger signed requests with a secret from the database, while the function compared against a *different* secret set earlier via CLI. Two generators, zero overlap. Fix: the function's secret is now always synced from the DB's `private.app_secrets`. Lesson: **a shared secret must have exactly one source of truth.**
 
@@ -401,7 +402,7 @@ This is the most connected feature in the app — five systems passing a baton:
 
 **What you see:** the **Alerts** tab — a reverse-chronological list of cards. Live alerts get a pulsing green **Live** badge, reminders get **Soon**, announcements get a gold badge, and ended sessions get a dimmed **Wrapped** badge. Timestamps read like "2 minutes ago." The navigation icon shows a persisted unread count and opening Alerts marks the current feed as read.
 
-**Under the hood:** one recipient-filtered query, newest-first, limited to 50; RLS requires a matching immutable `notification_recipients` row. Realtime makes new permitted alerts appear without refreshing. Session-linked cards still open the shared modal, while announcements remain static. `alert_read_state` uses database time so device-clock skew cannot incorrectly mark future alerts as read.
+**Under the hood:** one recipient-filtered query, newest-first, limited to 50; RLS requires a matching immutable `notification_recipients` row. Realtime makes new permitted alerts appear without refreshing. Session-linked cards open the shared modal only while the session is published; otherwise the card reports **Session details unavailable**. Announcements remain static. `alert_read_state` uses database time so device-clock skew cannot incorrectly mark future alerts as read.
 
 **Files:** `app/(app)/alerts/page.tsx`, `components/alerts/alerts-client.tsx`, `components/alerts-count-provider.tsx`, `components/sessions/session-modal.tsx`, `lib/supabase/queries/notifications.ts`, `lib/supabase/queries/alert-reads.ts`.
 
@@ -409,14 +410,14 @@ This is the most connected feature in the app — five systems passing a baton:
 
 ### 5.9 Connect Page — The QR Networking Card
 
-**What you see:** your photo in a gold ring, your name, a big pale-lime QR tile, and two buttons: **Open my LinkedIn** and **Save QR**.
+**What you see:** a large stable QR tile, Save QR, Preview social card, and the list of configured social profiles.
 
 **Under the hood:**
 
-- The QR encodes your **canonical** LinkedIn URL (§5.3) — that's why onboarding normalized your paste.
-- Rendered by `qrcode.react` as an **SVG** (`QRCodeSVG`) in brand colors: dark-teal modules on pale-lime. Dark-on-light is what scanners want; the brand just happens to agree.
+- The QR encodes the app-owned `/c/<public_token>` URL. The token stays stable while the attendee changes their social links.
+- Rendered by `qrcode.react` as an **SVG** (`QRCodeSVG`) with a fixed light ground and near-black modules so scanners get reliable contrast in both app themes.
 - **Save QR** works via a hidden **canvas** twin (`QRCodeCanvas`, 512px): clicking grabs `canvas.toDataURL("image/png")` and triggers a download. SVG for crisp screens, canvas for exportable pixels.
-- Your photo loads from LinkedIn's CDN via `next/image` (configured in `next.config.ts` with a `media.licdn.com` remote pattern). If there's no photo, a gold-ring initial-letter avatar appears instead.
+- The public card reveals the attendee's Google identity plus only their saved social destinations. With no saved links, the QR remains visible but the card is unavailable until a link is added.
 
 **Files:** `app/(app)/connect/page.tsx`, `components/connect/connect-card.tsx`, `next.config.ts`.
 
@@ -453,9 +454,9 @@ function matchesFilter(person: Person, filter: FilterKey): boolean {
 
 ### 5.11 Account Settings
 
-**What you see:** a form with your name and LinkedIn URL prefilled. Save → "Profile saved." and every screen reflects the change.
+**What you see:** a form with your name and optional social links prefilled. Save → "Profile saved." and every screen reflects the change.
 
-**Under the hood:** the `updateProfile` server action validates exactly like onboarding (same functions — one source of truth for the rules), updates **your own** profile row, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data. The page also shows current-device push status: enabling requests permission and stores the browser subscription, while disabling unsubscribes the browser and removes its own subscription row. Unsupported or denied browsers show guidance instead of an actionable toggle. A Back button returns through in-app history and falls back to `/home`.
+**Under the hood:** the `updateProfile` server action validates the name and complete social-link set through the shared normalizers, updates **your own** profile rows, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data. The page also shows current-device push status: enabling requests permission and stores the browser subscription, while disabling unsubscribes the browser and removes its own subscription row. Unsupported or denied browsers show guidance instead of an actionable toggle. A Back button returns through in-app history and falls back to `/home`.
 
 **Files:** `app/(app)/settings/page.tsx`, `app/(app)/settings/actions.ts`, `components/settings/settings-form.tsx`, `components/settings/notification-settings.tsx`, `components/settings/settings-back-button.tsx`, `app/(app)/home/actions.ts`.
 
@@ -569,8 +570,9 @@ erDiagram
 
 ```sql
 -- Everyone content table: signed-in users read, nobody writes
-create policy "Authenticated users can view sessions"
-  on public.sessions for select to authenticated using (true);
+create policy "Authenticated users can view published sessions"
+  on public.sessions for select to authenticated
+  using (published or (select private.is_admin()));
 
 -- Personal tables: strictly your own rows
 create policy "Users can delete own bookmarks"
@@ -585,7 +587,7 @@ create policy "Users can delete own bookmarks"
 | You are… | You can… | You cannot… |
 |---|---|---|
 | Signed out | See the landing page | See *any* data at all |
-| Signed in | Read all event content; edit your own profile, bookmarks, push subscriptions, and alert read state | See another user's profile, bookmarks, subscriptions, or alert state; write to any content table; delete anything you don't own |
+| Signed in | Read published event content; edit your own profile, bookmarks, push subscriptions, and alert read state | See another user's profile, bookmarks, subscriptions, or alert state; read unpublished drafts outside the admin workspace; write to any content table; delete anything you don't own |
 
 **War story #4 — proof it works.** During testing we deliberately tried to insert a bookmark with someone else's (or no) user ID. The database rejected it with a policy violation — the app code never even got a chance to be wrong. That's RLS doing its job.
 
@@ -640,7 +642,7 @@ Read the `where s.status is distinct from (...)` clause carefully — it's the q
 - A write is exactly what Realtime (§5.5) and the notification trigger (§5.7) are waiting for → the whole machine advances itself.
 - Status can never drift more than ~60 seconds from the truth, because the job runs every minute.
 
-This is why scheduled event-day behavior needs no organizer at the controls: reminders and status transitions write themselves, targeted phones receive pushes, and open clients update through Realtime. Organizers only use SQL when they intentionally need to add an announcement.
+This is why scheduled event-day behavior needs no organizer at the controls: reminders and status transitions write themselves, targeted phones receive pushes, and open clients update through Realtime. Operators use the protected admin composer for announcements; direct SQL remains for directory/quick-link maintenance and source-controlled schedule replacements.
 
 ---
 
@@ -654,7 +656,7 @@ This is why scheduled event-day behavior needs no organizer at the controls: rem
 | **Client Component** | React code that also runs in the browser (`"use client"`); needed for countdowns, toggles, modals. |
 | **Server Action** | A server function a form/button can call directly (`"use server"`) — no manual API endpoint. |
 | **Service Worker** | A background script the browser runs even with the app closed; receives pushes, caches files. |
-| **OAuth / OIDC** | The "Sign in with…" dance: you approve on LinkedIn, we get a verified identity without ever seeing your password. |
+| **OAuth / OIDC** | The "Sign in with…" dance: you approve on Google, we get a verified identity without ever seeing your password. |
 | **PKCE** | The proof-key trick making the OAuth code exchange safe for public apps. |
 | **Edge Function** | A small program deployed to Supabase that runs on demand (Deno runtime). |
 | **pg_cron** | In-database scheduler — SQL on an alarm clock. |
@@ -662,7 +664,7 @@ This is why scheduled event-day behavior needs no organizer at the controls: rem
 | **Publication (Realtime)** | Postgres's list of tables whose changes get broadcast live. |
 | **Optimistic UI** | Update the screen first, confirm with the server second, roll back on failure. |
 | **VAPID keys** | A key pair identifying our server to push services — "these pushes are really from Sync." |
-| **Canonical data** | One agreed stored form of messy input (all LinkedIn URLs saved the same way). |
+| **Canonical data** | One agreed stored form of messy input (approved social URLs are normalized before saving). |
 | **Migration** | A numbered SQL file describing a database change; applied in order, never edited after the fact. |
 | **Hydration** | The moment server-rendered HTML comes alive in the browser. Mismatches between the two cause bugs. |
 
@@ -671,7 +673,7 @@ This is why scheduled event-day behavior needs no organizer at the controls: rem
 ## 10. "How Do I…?" Cheat-Sheet
 
 **…change the schedule?**
-Use the source-controlled finalized-program migration for a complete schedule replacement. The current event has 13 main-program rows plus three parallel workshop rows; statuses, notifications, and pushes adjust automatically. Use the admin session editor only for event-day corrections and overrides.
+Use the source-controlled finalized-program migration for a complete schedule replacement. The current event has 13 main-program rows plus three parallel workshop rows; statuses, notifications, and pushes adjust automatically. Use the admin session editor for event-day title, room, and time corrections plus status overrides; its date-time fields are always Asia/Manila (PHT). Only unpublished, not-started drafts may be hard-deleted, after confirmation.
 
 **…add a quick link?**
 `insert into quick_links (label, url, icon) values ('Label', 'https://…', 'globe');` — `icon` accepts `globe` or `camera` (mapped in `app/(app)/more/page.tsx`).
@@ -692,7 +694,7 @@ Create `app/(app)/your-page/page.tsx` — it automatically gets the rail + tab c
 Run `npx supabase gen types typescript --linked --schema public` and commit the refreshed `lib/supabase/database.types.ts`.
 
 **…deploy for production?**
-Hosting isn't finalized (Vercel + Supabase Cloud is the assumed pairing). When it happens: add the production domain to Supabase's redirect allowlist **and** LinkedIn's app settings, set the same env vars on the host, and deploy the Edge Function again.
+Hosting isn't finalized (Vercel + Supabase Cloud is the assumed pairing). When it happens: add the production domain to Supabase's redirect allowlist **and** Google's OAuth app settings, set the same env vars on the host, and deploy the Edge Function again.
 
 ---
 

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getBookmarkedSessionIds,
   getEvent,
-  getSessionsWithSpeakers,
+  getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { AppHeader } from "@/components/app-header";
 import { HomeClient } from "@/components/home/home-client";
@@ -23,7 +23,7 @@ export default async function HomePage() {
   const supabase = await createClient();
   const [event, sessions, bookmarks] = await Promise.all([
     getEvent(supabase),
-    getSessionsWithSpeakers(supabase),
+    getPublishedSessionsWithSpeakers(supabase),
     getBookmarkedSessionIds(supabase),
   ]);
   const initialNow = getServerNow();

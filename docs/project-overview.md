@@ -36,11 +36,12 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Personalized schedule view ("My Flow") vs. full schedule ("All")
 - Overlapping My Flow bookmarks remain allowed but are warned about when saved and marked in My Flow
 - Session detail view — description, time, room, speaker info
+- Published sessions are attendee-visible; unpublished drafts remain available only to event operators
 
 ### Real-Time Notifications
 - Session reminder and start/end alerts generated automatically from schedule data
 - Bookmark-targeted Web Push for session-linked notifications
-- Organizer announcements inserted directly in the database and broadcast to all subscribed devices
+- Organizer announcements created through the protected admin composer and broadcast to snapshotted recipients
 - Real-time Alerts feed with persisted unread state; session-linked alerts open the session detail modal
 
 ### Networking (Connect)
@@ -63,6 +64,8 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 ### Admin Operations
 - Database-allowlisted administrators switch between attendee and admin views in the same app
 - Responsive operations dashboard for current program state, attendee reachability, recent sends, and failures
+- Session create/edit/publish controls for event-day schedule corrections; admin time inputs always use Asia/Manila (PHT)
+- Unpublished, not-started drafts can be permanently deleted after confirmation; published or started sessions are unpublished instead
 - Immediate title/body notifications sent to everyone or explicitly selected attendees
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
 - Manual Start, End, and Resume Auto controls persist against schedule automation; manual timestamps become the attendee-facing live state
@@ -79,7 +82,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Google OAuth sign-in
 - Real-time program flow with automatic session status
 - Automatic, schedule-driven session reminders and start/end notifications
-- Organizer announcements managed directly in the database
+- Organizer announcements managed through the protected admin composer and audited database RPC
 - Persisted unread alert count and session-linked alert detail access
 - QR-based social networking (LinkedIn, Instagram, Facebook, GitHub)
 - Speaker/sponsor directory
@@ -90,8 +93,8 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 ### Out of Scope
 
 - Workshop registration, capacity, and slot management (including the BuilderCards activity) remain out of scope
-- Session creation, schedule-time editing, speaker management, and other content-management tooling
-- Scheduled notifications, drafts, resend, external notification links, and multi-admin approval
+- Speaker management and other general content-management tooling outside the approved session editor
+- Scheduled notification resends, external notification links, and multi-admin approval
 - Attendee editing, access suspension, deletion, or pass-type management
 
 ## Success Criteria

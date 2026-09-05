@@ -1,15 +1,30 @@
+export const EVENT_TIME_ZONE = "Asia/Manila";
+
 const TIME_FORMAT = new Intl.DateTimeFormat("en-PH", {
   hour: "numeric",
   minute: "2-digit",
-  timeZone: "Asia/Manila",
+  timeZone: EVENT_TIME_ZONE,
 });
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-PH", {
   weekday: "long",
   month: "long",
   day: "numeric",
-  timeZone: "Asia/Manila",
+  timeZone: EVENT_TIME_ZONE,
 });
+
+const MANILA_DATE_TIME_INPUT_FORMAT = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: EVENT_TIME_ZONE,
+});
+
+const DATE_TIME_INPUT_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
 const RELATIVE_FORMAT = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
@@ -31,6 +46,49 @@ export function formatManilaTime(iso: string): string {
 
 export function formatManilaDate(iso: string): string {
   return DATE_FORMAT.format(new Date(iso));
+}
+
+/** Format an instant for an event-time `datetime-local` input in Manila time. */
+export function formatManilaDateTimeInput(iso: string): string {
+  const parts = Object.fromEntries(
+    MANILA_DATE_TIME_INPUT_FORMAT
+      .formatToParts(new Date(iso))
+      .map(({ type, value }) => [type, value]),
+  );
+
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/** Parse a `datetime-local` value as an Asia/Manila wall-clock time. */
+export function parseManilaDateTimeInput(value: string): string | null {
+  const match = value.match(DATE_TIME_INPUT_PATTERN);
+  if (!match) return null;
+
+  const [, year, month, day, hour, minute] = match;
+  const numericMonth = Number(month);
+  const numericDay = Number(day);
+  const numericHour = Number(hour);
+  const numericMinute = Number(minute);
+
+  if (
+    numericMonth < 1 ||
+    numericMonth > 12 ||
+    numericDay < 1 ||
+    numericDay > 31 ||
+    numericHour > 23 ||
+    numericMinute > 59
+  ) {
+    return null;
+  }
+
+  const instant = new Date(`${year}-${month}-${day}T${hour}:${minute}:00+08:00`);
+  if (Number.isNaN(instant.getTime())) return null;
+
+  // Date normalizes impossible dates such as February 30; reject those rather
+  // than silently moving the session to a different wall-clock day.
+  if (formatManilaDateTimeInput(instant.toISOString()) !== value) return null;
+
+  return instant.toISOString();
 }
 
 export function formatTimeRange(startIso: string, endIso: string): string {

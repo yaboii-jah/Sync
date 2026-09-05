@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { NotificationRow } from "@/lib/supabase/queries/notifications";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
-import { getSessionById } from "@/lib/supabase/queries/program-flow";
+import { getPublishedSessionById } from "@/lib/supabase/queries/program-flow";
 import { formatRelativeTime } from "@/lib/format";
 import { useRealtimeRefetch } from "@/hooks/use-realtime-refetch";
 import { useToast } from "@/components/toast/toast-provider";
@@ -56,6 +56,9 @@ export function AlertsClient({
   );
   const [activeSession, setActiveSession] =
     useState<SessionWithSpeakers | null>(null);
+  const [unavailableSessionIds, setUnavailableSessionIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const { toast } = useToast();
   const { markAllRead } = useAlertsCount();
 
@@ -75,8 +78,22 @@ export function AlertsClient({
 
   async function openLinkedSession(sessionId: string) {
     const client = createClient();
-    const session = await getSessionById(client, sessionId);
-    if (session) setActiveSession(session);
+    try {
+      const session = await getPublishedSessionById(client, sessionId);
+      if (session) {
+        setActiveSession(session);
+        return;
+      }
+
+      setUnavailableSessionIds((previous) => {
+        const next = new Set(previous);
+        next.add(sessionId);
+        return next;
+      });
+      toast("Session details are unavailable.");
+    } catch {
+      toast("Could not load session details.", "error");
+    }
   }
 
   function handleToggleBookmark(sessionId: string) {
@@ -128,7 +145,11 @@ export function AlertsClient({
     <>
       <div className="mt-6 flex flex-col gap-3">
         {notifications.map((notification) => {
-          const tappable = notification.related_session_id !== null;
+          const sessionUnavailable =
+            notification.related_session_id !== null &&
+            unavailableSessionIds.has(notification.related_session_id);
+          const tappable =
+            notification.related_session_id !== null && !sessionUnavailable;
 
           const body = (
             <>
@@ -154,6 +175,10 @@ export function AlertsClient({
               {tappable ? (
                 <Typography type="body-xs" weight="medium" className="mt-3">
                   View session
+                </Typography>
+              ) : sessionUnavailable ? (
+                <Typography type="body-xs" color="muted" className="mt-3">
+                  Session details unavailable
                 </Typography>
               ) : null}
             </>
