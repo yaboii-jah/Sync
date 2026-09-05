@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headers) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
@@ -28,17 +28,19 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options),
         );
+        Object.entries(headers).forEach(([key, value]) =>
+          response.headers.set(key, value),
+        );
       },
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claims } = await supabase.auth.getClaims();
+  setPrivateNoStore(response);
 
   const { pathname } = request.nextUrl;
 
-  if (!user && !isPublicPath(pathname)) {
+  if (!claims && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
     /*
@@ -48,16 +50,26 @@ export async function proxy(request: NextRequest) {
      * the original query, so an OAuth code can never leak onto a public page.
      */
     redirectUrl.search = `?next=${encodeURIComponent(pathname)}`;
-    return NextResponse.redirect(redirectUrl);
+    return setPrivateNoStore(NextResponse.redirect(redirectUrl));
   }
 
-  if (user && (pathname === "/" || pathname === "/login")) {
+  if (claims && (pathname === "/" || pathname === "/login")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/home";
     redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
+    return setPrivateNoStore(NextResponse.redirect(redirectUrl));
   }
 
+  return response;
+}
+
+function setPrivateNoStore(response: NextResponse): NextResponse {
+  response.headers.set(
+    "Cache-Control",
+    "private, no-cache, no-store, max-age=0, must-revalidate",
+  );
+  response.headers.set("Expires", "0");
+  response.headers.set("Pragma", "no-cache");
   return response;
 }
 

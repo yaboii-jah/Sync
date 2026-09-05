@@ -2,21 +2,34 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const next = searchParams.get("next");
+  const destination =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
 
   if (!code) {
-    return NextResponse.redirect(new URL("/", origin));
+    return redirectTo(request, "/");
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const flowId = searchParams.get("sb_flow_id");
+  const { error } = await supabase.auth.exchangeCodeForSession(
+    code,
+    flowId ? { flowId } : undefined,
+  );
 
   if (error) {
+    // A duplicated callback can arrive after the first request has already
+    // exchanged the one-time code. Keep the established session instead of
+    // sending the user back to sign-in with a misleading PKCE error.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) return redirectTo(request, destination);
+
     console.error("[auth/callback] exchange failed:", error.message);
-    return NextResponse.redirect(
-      new URL(`/?error=oauth&detail=${encodeURIComponent(error.message)}`, origin),
-    );
+    return redirectTo(request, "/?error=oauth");
   }
 
   const {
@@ -24,7 +37,7 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL("/?error=oauth", origin));
+    return redirectTo(request, "/?error=oauth");
   }
 
   const picture = user.user_metadata?.picture;
@@ -55,9 +68,16 @@ export async function GET(request: NextRequest) {
    * the identity provider and back, so it is treated as untrusted input on
    * return.
    */
-  const next = searchParams.get("next");
-  const destination =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+  return redirectTo(request, destination);
+}
 
-  return NextResponse.redirect(new URL(destination, origin));
+function redirectTo(request: NextRequest, path: string): NextResponse {
+  const response = NextResponse.redirect(new URL(path, request.url));
+  response.headers.set(
+    "Cache-Control",
+    "private, no-cache, no-store, max-age=0, must-revalidate",
+  );
+  response.headers.set("Expires", "0");
+  response.headers.set("Pragma", "no-cache");
+  return response;
 }

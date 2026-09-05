@@ -187,11 +187,11 @@ You (browser)                Our server/Supabase            Google
      │ ◀── session cookies set ──────│  + profile row created   │
 ```
 
-1. **Tap.** A server action calls `supabase.auth.signInWithOAuth({ provider: "google" })`. Supabase generates a Google URL that embeds *where you want to end up* (`/auth/callback`).
+1. **Tap.** The browser client calls `supabase.auth.signInWithOAuth({ provider: "google" })`. Supabase stores the PKCE verifier in the browser's SSR cookie storage and generates a Google URL that embeds *where you want to end up* (`/auth/callback`).
 2. **Consent.** Google authenticates you and returns the standard identity claims we need for name, email, and photo.
 3. **Callback to Supabase.** Google hands a one-time code to `https://…supabase.co/auth/v1/callback`, which exchanges it for an application session.
 4. **Supabase creates your account** — an `auth.users` row with your name/photo — and a **database trigger** (`handle_new_user`, see §6) instantly creates your matching `profiles` row.
-5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler refreshes the profile photo when Google provides one, then routes to `/home` or the captured internal destination.
+5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler exchanges the code using the browser-shared verifier cookie, refreshes the profile photo when Google provides one, then routes to `/home` or the captured internal destination. Duplicate callbacks recover to the established session instead of displaying a PKCE storage error.
 
 **The code that decides where you land** (`app/auth/callback/route.ts`):
 

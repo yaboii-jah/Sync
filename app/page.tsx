@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { signInWithGoogle } from "./actions";
 import { createClient } from "@/lib/supabase/server";
+import { SignInButton } from "@/components/auth/sign-in-button";
 
 interface LandingPageProps {
   searchParams: Promise<{
@@ -136,15 +136,15 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
           </p>
         ) : null}
 
-        <form action={signInWithGoogle} className="mt-10">
-          {next ? <input type="hidden" name="next" value={next} /> : null}
-          <button
-            type="submit"
-            className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
-          >
-            Sign in with Google
-          </button>
-        </form>
+        <div className="mt-10">
+          <SignInButton
+            next={
+              next && next.startsWith("/") && !next.startsWith("//")
+                ? next
+                : undefined
+            }
+          />
+        </div>
       </div>
 
       <svg
