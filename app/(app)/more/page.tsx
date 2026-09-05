@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Card, Typography } from "@heroui/react";
 import { Camera, Globe, type LucideIcon } from "lucide-react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
@@ -17,6 +18,10 @@ const ICONS: Record<string, LucideIcon> = {
   globe: Globe,
   camera: Camera,
 };
+
+function isInternalQuickLink(url: string) {
+  return url.startsWith("/") && !url.startsWith("//");
+}
 
 export default async function MorePage() {
   await requireCompleteProfile();
@@ -41,6 +46,30 @@ export default async function MorePage() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               {quickLinks.map((link) => {
                 const Icon = (link.icon && ICONS[link.icon]) || Globe;
+                const content = (
+                  <Card className="hover:bg-default h-full transition-colors">
+                    <Card.Content className="flex items-center gap-3 py-4">
+                      <span
+                        aria-hidden
+                        className="bg-surface-secondary flex size-10 shrink-0 items-center justify-center rounded-full"
+                      >
+                        <Icon className="size-5" />
+                      </span>
+                      <Typography type="body-sm" weight="medium">
+                        {link.label}
+                      </Typography>
+                    </Card.Content>
+                  </Card>
+                );
+
+                if (isInternalQuickLink(link.url)) {
+                  return (
+                    <Link key={link.id} href={link.url} className="rounded-xl">
+                      {content}
+                    </Link>
+                  );
+                }
+
                 return (
                   <a
                     key={link.id}
@@ -49,19 +78,7 @@ export default async function MorePage() {
                     rel="noopener noreferrer"
                     className="rounded-xl"
                   >
-                    <Card className="hover:bg-default h-full transition-colors">
-                      <Card.Content className="flex items-center gap-3 py-4">
-                        <span
-                          aria-hidden
-                          className="bg-surface-secondary flex size-10 shrink-0 items-center justify-center rounded-full"
-                        >
-                          <Icon className="size-5" />
-                        </span>
-                        <Typography type="body-sm" weight="medium">
-                          {link.label}
-                        </Typography>
-                      </Card.Content>
-                    </Card>
+                    {content}
                   </a>
                 );
               })}

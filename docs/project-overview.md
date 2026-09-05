@@ -21,7 +21,8 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 5. User taps into a session to view its description, room, and speaker
 6. User receives schedule-driven session reminders and start/end notifications for sessions saved to My Flow
 7. User opens Connect to show their QR code; scanning it opens an active card containing only the social links they chose to save
-8. User browses the More page for the speaker/sponsor directory and quick links (event website, photo booth)
+8. User opens the Photo Booth from More, captures three event-framed photos, and downloads a shareable keepsake that never leaves their device
+9. User browses the More page for the speaker/sponsor directory and event website link
 
 ## Features
 
@@ -56,7 +57,13 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ### Quick Links
 - Link to the main event website
-- Link to the photo booth
+
+### Photo Booth
+- An authenticated, local-only three-shot booth reached from More
+- Front camera by default with a front/rear switch where supported, plus an image-picker fallback
+- Three separately triggered three-second countdown captures arranged in a 9:16 event-branded story strip
+- High-quality JPEG download; attendees can retake an individual slot without losing the other two
+- Camera footage and source/result images remain in browser memory only and are never uploaded or persisted
 
 ### Account Settings
 - View/update name and networking links from the authenticated header or desktop navigation rail
@@ -86,7 +93,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Persisted unread alert count and session-linked alert detail access
 - QR-based social networking (LinkedIn, Instagram, Facebook, GitHub)
 - Speaker/sponsor directory
-- Quick links to external providers
+- Event website quick link and local Photo Booth
 - PWA installability
 - Protected event-operations admin workspace
 

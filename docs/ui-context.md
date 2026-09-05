@@ -6,11 +6,12 @@
 
 The standing rule is **no custom UI**. If HeroUI ships a component for the job, use it. Do not hand-roll a button, chip, modal, tab bar, switch, skeleton, avatar or toast. Do not write bespoke CSS for spacing, elevation, focus rings or motion; HeroUI's tokens and BEM classes already carry them.
 
-There are exactly three admitted exceptions, and each is a real anchor or a nav landmark that HeroUI does not cover:
+There are exactly four admitted exceptions, and each is a real anchor, a nav landmark, or a functional media surface that HeroUI does not cover:
 
 1. `components/ui/link-button.ts` — class strings for anchors (`target="_blank"`, `next/link` navigation) that must read as a Button. Built from HeroUI tokens only.
 2. Navigation shells — `bottom-tabs.tsx`, `side-rail.tsx`, `admin-nav.tsx`. These are `<nav>` landmarks of `next/link` elements; HeroUI's Tabs is a tab-panel widget, not routing. Styled with HeroUI tokens only.
 3. The QR tile in `connect-card.tsx` — fixed light ground and near-black modules in both themes, because scanners require that contrast. Functional, not decorative.
+4. The event strip in `components/photo-booth/photo-booth-client.tsx` — layered image windows over the supplied event-background artwork, because live camera frames and canvas output require a fixed 9:16 composition. Functional, not decorative.
 
 Anything else that needs a new visual should be assembled from HeroUI parts first.
 
@@ -112,6 +113,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Bottom tabs** (`<1024px`) and a **fixed labeled sidebar** (`232px`, `≥1024px`) for attendees; `/admin` keeps a compact mobile utility header above a fixed icon-and-label bottom bar and uses a **256px rail** on desktop.
 - **App identity assets**: browser tabs and notification thumbnails use the transparent compact mascot crop; installed app icons use the transparent full seal or a padded teal maskable variant; notification badges use a dedicated monochrome crystal mark.
 - **Directory**: the people filters include a dedicated Facilitators category for workshop leaders.
+- **Photo Booth**: `/more/photo-booth` retains the attendee shell and HeroUI controls. Its functional capture stage is a single 9:16 event-branded story-strip background with three landscape photo windows, not a generic camera mockup. Before permission, it explains local-only processing; capture uses three separate countdowns with front/rear switching where available and a one-slot image-picker fallback. Review exposes Download plus individual slot retakes. The media composition is canvas output, held only in browser memory; camera tracks stop outside active capture. The supplied event-background artwork is treated as content, not as a new authenticated-screen color system.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
 - **Loading**: HeroUI `Skeleton` shaped like the content it replaces, per route `loading.tsx`.
 

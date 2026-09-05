@@ -1,0 +1,621 @@
+"use client";
+/* eslint-disable @next/next/no-img-element -- Browser object URLs and live booth imagery cannot use Next's image optimizer. */
+
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { Alert, Button, Card, Chip, Typography } from "@heroui/react";
+import {
+  Camera,
+  Download,
+  ImagePlus,
+  RefreshCw,
+  SwitchCamera,
+} from "lucide-react";
+
+const FRAME_URL = "/assets/event-frame-source.png";
+const OUTPUT_WIDTH = 1080;
+const OUTPUT_HEIGHT = 1920;
+const SLOT_LEFT = 72;
+const SLOT_WIDTH = 936;
+const SLOT_HEIGHT = 500;
+const SLOT_TOPS = [64, 612, 1160] as const;
+const SLOT_BORDER = 8;
+
+type CameraFacing = "user" | "environment";
+type BoothStage = "intro" | "starting" | "capture" | "countdown" | "composing" | "review";
+type SlotPhotos = [string | null, string | null, string | null];
+type CompletedPhotos = [string, string, string];
+
+const EMPTY_SLOTS: SlotPhotos = [null, null, null];
+
+function copySlots(slots: SlotPhotos): SlotPhotos {
+  return [slots[0], slots[1], slots[2]];
+}
+
+function hasCompletedPhotos(slots: SlotPhotos): slots is CompletedPhotos {
+  return slots.every((slot): slot is string => slot !== null);
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not prepare that image."));
+    image.src = src;
+  });
+}
+
+function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+        reject(new Error("Could not create the photo file."));
+      },
+      "image/jpeg",
+      quality,
+    );
+  });
+}
+
+function drawCover(
+  context: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(width / sourceWidth, height / sourceHeight);
+  const cropWidth = width / scale;
+  const cropHeight = height / scale;
+  const cropX = (sourceWidth - cropWidth) / 2;
+  const cropY = (sourceHeight - cropHeight) / 2;
+
+  context.drawImage(
+    image,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    x,
+    y,
+    width,
+    height,
+  );
+}
+
+function getCameraError(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError") {
+      return "Camera access is blocked. Allow it in your browser settings, or choose a photo instead.";
+    }
+    if (error.name === "NotFoundError") {
+      return "No camera was found on this device. Choose a photo instead.";
+    }
+    if (error.name === "NotReadableError") {
+      return "Your camera is busy in another app. Close that app, then try again.";
+    }
+  }
+
+  return "The camera could not start. Try again or choose a photo instead.";
+}
+
+interface PhotoStripProps {
+  slots: SlotPhotos;
+  activeSlot?: number;
+}
+
+function PhotoStrip({ slots, activeSlot }: PhotoStripProps) {
+  return (
+    <div className="relative aspect-[9/16] w-full overflow-hidden rounded-xl bg-surface-secondary">
+      <img src={FRAME_URL} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
+      {slots.map((slot, index) => (
+        <div
+          key={index}
+          className={`absolute overflow-hidden border-[3px] border-white bg-white ${
+            activeSlot === index ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""
+          }`}
+          style={{
+            left: "6.6667%",
+            top: `${(SLOT_TOPS[index] / OUTPUT_HEIGHT) * 100}%`,
+            width: "86.6667%",
+            height: `${(SLOT_HEIGHT / OUTPUT_HEIGHT) * 100}%`,
+          }}
+        >
+          {slot ? (
+            <img
+              src={slot}
+              alt={`Photo ${index + 1}`}
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="text-muted flex size-full items-center justify-center text-sm font-medium">
+              Photo {index + 1}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function PhotoBoothClient() {
+  const [stage, setStage] = useState<BoothStage>("intro");
+  const [slots, setSlots] = useState<SlotPhotos>(EMPTY_SLOTS);
+  const [selectedSlot, setSelectedSlot] = useState(0);
+  const [cameraFacing, setCameraFacing] = useState<CameraFacing>("user");
+  const [canSwitchCamera, setCanSwitchCamera] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [streamVersion, setStreamVersion] = useState(0);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const slotsRef = useRef<SlotPhotos>(EMPTY_SLOTS);
+  const resultUrlRef = useRef<string | null>(null);
+  const countdownTimerRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
+
+  function replaceSlot(index: number, url: string | null): SlotPhotos {
+    const next = copySlots(slotsRef.current);
+    const previous = next[index];
+    if (previous && previous !== url) URL.revokeObjectURL(previous);
+
+    next[index] = url;
+    slotsRef.current = next;
+    setSlots(next);
+    return next;
+  }
+
+  function replaceResult(url: string | null) {
+    if (resultUrlRef.current && resultUrlRef.current !== url) {
+      URL.revokeObjectURL(resultUrlRef.current);
+    }
+
+    resultUrlRef.current = url;
+    setResultUrl(url);
+  }
+
+  function clearCountdown() {
+    if (countdownTimerRef.current !== null) {
+      window.clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setCountdown(null);
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }
+
+  async function composeStrip(completedSlots: CompletedPhotos) {
+    setStage("composing");
+    setError(null);
+
+    try {
+      const [frame, ...photos] = await Promise.all([
+        loadImage(FRAME_URL),
+        ...completedSlots.map((slot) => loadImage(slot)),
+      ]);
+      const canvas = document.createElement("canvas");
+      canvas.width = OUTPUT_WIDTH;
+      canvas.height = OUTPUT_HEIGHT;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Could not prepare the photo canvas.");
+
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      drawCover(context, frame, frame.width, frame.height, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+
+      SLOT_TOPS.forEach((top, index) => {
+        const photo = photos[index];
+        context.fillStyle = "#ffffff";
+        context.fillRect(
+          SLOT_LEFT - SLOT_BORDER,
+          top - SLOT_BORDER,
+          SLOT_WIDTH + SLOT_BORDER * 2,
+          SLOT_HEIGHT + SLOT_BORDER * 2,
+        );
+        drawCover(context, photo, photo.width, photo.height, SLOT_LEFT, top, SLOT_WIDTH, SLOT_HEIGHT);
+      });
+
+      const result = URL.createObjectURL(await canvasToJpeg(canvas, 0.92));
+      if (!isMountedRef.current) {
+        URL.revokeObjectURL(result);
+        return;
+      }
+
+      replaceResult(result);
+      setStage("review");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not finish your photo strip.");
+      setStage("review");
+    }
+  }
+
+  async function startCamera(facing: CameraFacing) {
+    clearCountdown();
+    stopCamera();
+    setError(null);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("This browser cannot open a camera. Choose a photo instead.");
+      setStage("intro");
+      return;
+    }
+
+    setStage("starting");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: facing },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 16 / 9 },
+        },
+      });
+      if (!isMountedRef.current || document.hidden) {
+        stream.getTracks().forEach((track) => track.stop());
+        if (isMountedRef.current) setStage("intro");
+        return;
+      }
+
+      streamRef.current = stream;
+      const actualFacing = stream.getVideoTracks()[0]?.getSettings().facingMode;
+      setCameraFacing(actualFacing === "environment" ? "environment" : "user");
+      setStage("capture");
+      setStreamVersion((value) => value + 1);
+
+      if (navigator.mediaDevices.enumerateDevices) {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          if (isMountedRef.current) {
+            setCanSwitchCamera(devices.filter((device) => device.kind === "videoinput").length > 1);
+          }
+        } catch {
+          if (isMountedRef.current) {
+            setCanSwitchCamera(false);
+          }
+        }
+      }
+    } catch (cause) {
+      if (isMountedRef.current) {
+        setError(getCameraError(cause));
+        setStage("intro");
+      }
+    }
+  }
+
+  async function takePhoto() {
+    const video = videoRef.current;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      setError("The camera is still getting ready. Try again in a moment.");
+      return;
+    }
+
+    setStage("composing");
+    setError(null);
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Could not capture this photo.");
+
+      if (cameraFacing === "user") {
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+      }
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const snapshotUrl = URL.createObjectURL(await canvasToJpeg(canvas, 0.94));
+      if (!isMountedRef.current) {
+        URL.revokeObjectURL(snapshotUrl);
+        return;
+      }
+
+      const nextSlots = replaceSlot(selectedSlot, snapshotUrl);
+      const nextOpenSlot = nextSlots.findIndex((slot) => slot === null);
+      if (hasCompletedPhotos(nextSlots)) {
+        stopCamera();
+        await composeStrip(nextSlots);
+        return;
+      }
+
+      setSelectedSlot(nextOpenSlot);
+      setStage("capture");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not capture this photo.");
+      setStage("capture");
+    }
+  }
+
+  function beginCountdown() {
+    if (stage !== "capture") return;
+
+    setError(null);
+    setCountdown(3);
+    setStage("countdown");
+    let next = 3;
+    countdownTimerRef.current = window.setInterval(() => {
+      next -= 1;
+      if (next > 0) {
+        setCountdown(next);
+        return;
+      }
+
+      clearCountdown();
+      void takePhoto();
+    }, 1000);
+  }
+
+  function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file to add it to this slot.");
+      return;
+    }
+
+    setError(null);
+    const nextSlots = replaceSlot(selectedSlot, URL.createObjectURL(file));
+    const nextOpenSlot = nextSlots.findIndex((slot) => slot === null);
+    if (hasCompletedPhotos(nextSlots)) {
+      stopCamera();
+      void composeStrip(nextSlots);
+      return;
+    }
+
+    setSelectedSlot(nextOpenSlot);
+    setStage("intro");
+  }
+
+  function retakeSlot(index: number) {
+    clearCountdown();
+    stopCamera();
+    replaceResult(null);
+    replaceSlot(index, null);
+    setSelectedSlot(index);
+    void startCamera(cameraFacing);
+  }
+
+  function downloadPhoto() {
+    if (!resultUrl) return;
+
+    const link = document.createElement("a");
+    link.href = resultUrl;
+    link.download = "sync-photo-booth-story.jpg";
+    link.click();
+  }
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!video || !stream || (stage !== "capture" && stage !== "countdown")) return;
+
+    video.srcObject = stream;
+    void video.play().catch(() => {
+      if (isMountedRef.current) {
+        setError("The camera preview could not start. Try opening the camera again.");
+        setStage("intro");
+      }
+    });
+  }, [stage, streamVersion]);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        clearCountdown();
+        stopCamera();
+        setStage((current) => (current === "capture" || current === "countdown" ? "intro" : current));
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      isMountedRef.current = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearCountdown();
+      stopCamera();
+      slotsRef.current.forEach((slot) => {
+        if (slot) URL.revokeObjectURL(slot);
+      });
+      if (resultUrlRef.current) URL.revokeObjectURL(resultUrlRef.current);
+    };
+  }, []);
+
+  const completedCount = slots.filter((slot) => slot !== null).length;
+  const activeCamera = stage === "capture" || stage === "countdown" || stage === "composing";
+
+  return (
+    <div className="flex flex-col gap-4">
+      {error ? (
+        <Alert status="danger">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      ) : null}
+
+      {stage === "review" ? (
+        <Card>
+          <Card.Content className="flex flex-col gap-4 p-3">
+            {resultUrl ? (
+              <img
+                src={resultUrl}
+                alt="Your completed three-photo event strip"
+                className="w-full rounded-xl"
+              />
+            ) : (
+              <PhotoStrip slots={slots} />
+            )}
+            <div className="px-1">
+              <Typography type="body-sm" weight="medium">
+                {resultUrl ? "Your story strip is ready." : "Your three photos are ready to finish."}
+              </Typography>
+              <Typography type="body-xs" color="muted" className="mt-1">
+                {resultUrl
+                  ? "Download a 9:16 JPEG made for Stories and Reels."
+                  : "Try finishing the strip again, or retake one photo."}
+              </Typography>
+            </div>
+          </Card.Content>
+        </Card>
+      ) : activeCamera ? (
+        <Card>
+          <Card.Content className="flex flex-col gap-4 p-3">
+            <div className="relative aspect-video overflow-hidden rounded-xl bg-surface-secondary">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className={`size-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+              />
+              {stage === "countdown" && countdown ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                  <span className="text-7xl font-bold tabular-nums text-white">{countdown}</span>
+                </div>
+              ) : null}
+              {stage === "composing" ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                  <Typography type="body-sm" className="text-white">
+                    Preparing your strip
+                  </Typography>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex items-center justify-between gap-3 px-1">
+              <div>
+                <Typography type="body-sm" weight="medium">
+                  Photo {selectedSlot + 1} of 3
+                </Typography>
+                <Typography type="body-xs" color="muted">
+                  Three-second countdown
+                </Typography>
+              </div>
+              {canSwitchCamera ? (
+                <Button
+                  isIconOnly
+                  variant="secondary"
+                  aria-label="Switch camera"
+                  isDisabled={stage !== "capture"}
+                  onPress={() => void startCamera(cameraFacing === "user" ? "environment" : "user")}
+                >
+                  <SwitchCamera className="size-5" aria-hidden />
+                </Button>
+              ) : null}
+            </div>
+          </Card.Content>
+        </Card>
+      ) : (
+        <Card>
+          <Card.Content className="flex flex-col gap-5 p-4">
+            <PhotoStrip slots={slots} activeSlot={selectedSlot} />
+            <div>
+              <Typography type="body-sm" weight="medium">
+                {stage === "starting" ? "Opening your camera." : "Three moments, one story."}
+              </Typography>
+              <Typography type="body-xs" color="muted" className="mt-1">
+                {stage === "starting"
+                  ? "Approve the browser prompt to continue, or choose a photo if camera access is unavailable."
+                  : "Your camera frames and finished strip stay on this device."}
+              </Typography>
+            </div>
+          </Card.Content>
+        </Card>
+      )}
+
+      {stage === "intro" ? (
+        <>
+          <Button fullWidth onPress={() => void startCamera(cameraFacing)}>
+            <Camera className="size-4" aria-hidden />
+            Open camera
+          </Button>
+          <Button
+            variant="secondary"
+            fullWidth
+            onPress={() => fileInputRef.current?.click()}
+          >
+            <ImagePlus className="size-4" aria-hidden />
+            Choose photo
+          </Button>
+        </>
+      ) : stage === "capture" ? (
+        <Button fullWidth onPress={beginCountdown}>
+          <Camera className="size-4" aria-hidden />
+          Take photo
+        </Button>
+      ) : stage === "review" ? (
+        <>
+          {resultUrl ? (
+            <Button fullWidth onPress={downloadPhoto}>
+              <Download className="size-4" aria-hidden />
+              Download photo
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              onPress={() => {
+                if (hasCompletedPhotos(slotsRef.current)) void composeStrip(slotsRef.current);
+              }}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Finish photo strip
+            </Button>
+          )}
+          <div className="grid grid-cols-3 gap-2">
+            {slots.map((slot, index) => (
+              <Button
+                key={index}
+                variant="secondary"
+                isDisabled={!slot}
+                onPress={() => retakeSlot(index)}
+              >
+                Retake {index + 1}
+              </Button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {stage !== "review" ? (
+        <div className="flex items-center justify-between px-1">
+          <Chip size="sm" variant="secondary">
+            {completedCount} of 3 saved
+          </Chip>
+          <Typography type="body-xs" color="muted">
+            JPEG download only
+          </Typography>
+        </div>
+      ) : null}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture={cameraFacing}
+        className="sr-only"
+        onChange={choosePhoto}
+      />
+
+      {stage === "starting" ? (
+        <div className="sr-only" role="status">
+          Opening camera
+        </div>
+      ) : null}
+    </div>
+  );
+}

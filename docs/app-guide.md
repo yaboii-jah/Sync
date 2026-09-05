@@ -23,8 +23,9 @@
    - 5.7 [Push Notifications](#57-push-notifications--the-full-pipeline)
    - 5.8 [Alerts Feed](#58-alerts-feed)
    - 5.9 [Connect Page (QR)](#59-connect-page--the-qr-networking-card)
-   - 5.10 [More Page (Directory)](#510-more-page--directory-and-quick-links)
-   - 5.11 [Account Settings](#511-account-settings)
+   - 5.10 [Photo Booth](#510-photo-booth--three-shot-story-strip)
+   - 5.11 [More Page (Directory)](#511-more-page--directory-and-quick-links)
+   - 5.12 [Account Settings](#512-account-settings)
 6. [The Database in Plain English](#6-the-database-in-plain-english)
 7. [The Security Model (RLS)](#7-the-security-model--row-level-security)
 8. [The Automation (pg_cron)](#8-the-automation--the-minute-job-that-runs-the-event)
@@ -421,9 +422,19 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 ---
 
-### 5.10 More Page — Directory and Quick Links
+### 5.10 Photo Booth — Three-Shot Story Strip
 
-**What you see:** two stacked sections — **Quick Links** (icon cards opening the event website/photo booth) and **Speakers & Sponsors**: filter chips (All · Speakers · Hosts & Panelists · Sponsors) over person cards. Tap a person → their **bio modal** (role tag, photo, organization, bio, LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
+**What you see:** open **Photo Booth** from More, take three photos with three-second countdowns, then download one event-framed vertical story strip. You can switch between front and rear cameras when the device makes both available, choose an existing image for any slot, and retake one slot without losing the other two.
+
+**Under the hood:** the browser asks for camera permission only after the attendee chooses **Open camera**. Each source image stays in browser memory as a temporary object URL. Once all three slots are full, a canvas draws the supplied event background plus three centre-cropped landscape photos into a 1080×1920 JPEG. Neither source images nor the finished JPEG are uploaded, stored in Supabase, or attached to an account. Camera tracks stop whenever review starts, the page is hidden, or the component unmounts.
+
+**Files:** `app/(app)/more/photo-booth/page.tsx`, `components/photo-booth/photo-booth-client.tsx`, `public/assets/event-frame-source.png`.
+
+---
+
+### 5.11 More Page — Directory and Quick Links
+
+**What you see:** two stacked sections — **Quick Links** (an external event-website card and an in-app Photo Booth card) and **Speakers & Sponsors**: filter chips (All · Speakers · Hosts & Panelists · Sponsors) over person cards. Tap a person → their **bio modal** (role tag, photo, organization, bio, LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
 
 **Under the hood:**
 
@@ -444,13 +455,13 @@ function matchesFilter(person: Person, filter: FilterKey): boolean {
 ```
 
 - The bio modal is the same visual language as the session modal (rounded-3xl, blurred backdrop, gold glow) — one design system, reused.
-- Quick links come from the `quick_links` table, so organizers add a link with one INSERT — no deploy.
+- Quick links come from the `quick_links` table. Root-relative destinations stay inside the PWA through `next/link`; external destinations open separately.
 
 **Files:** `app/(app)/more/page.tsx`, `components/more/directory-client.tsx`, `lib/supabase/queries/directory.ts`, `…/quick-links.ts`.
 
 ---
 
-### 5.11 Account Settings
+### 5.12 Account Settings
 
 **What you see:** a form with your name and optional social links prefilled. Save → "Profile saved." and every screen reflects the change.
 

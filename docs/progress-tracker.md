@@ -5,13 +5,15 @@ change.
 
 ## Current Phase
 
-- Revised finalized program and parallel schedule UX completed; the official 16-row program has been restored on the linked database after pre-event operations testing. Post-deployment acceptance for the admin/session issue fixes remains.
+- The local-only Photo Booth is implemented and linked from More; its quick-link migration is applied to the linked database. Authenticated browser and physical-device acceptance remain alongside the existing post-deployment program/admin checks.
 
 ## Current Goal
 
-- Complete post-deployment acceptance for the restored 16-row finalized flow and the admin/session issue fixes: explicit Asia/Manila editing, publication-safe attendee reads, confirmed draft deletion, centered hero theme, and documented push audiences while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
+- Complete post-deployment acceptance for the restored 16-row finalized flow, the admin/session issue fixes, and the local-only Photo Booth: explicit Asia/Manila editing, publication-safe attendee reads, confirmed draft deletion, centered hero theme, documented push audiences, and three-shot camera/image-picker capture while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
 
 ## Completed
+
+- **Local-only Photo Booth:** `/more/photo-booth` is an authenticated three-shot event keepsake route entered through the existing More quick-link card. It starts with a short local-processing explanation, requests camera access only after the attendee chooses to open it, defaults to the front camera, reveals a front/rear switch only when multiple video devices are available, and offers a one-slot image-picker fallback. Each of the three slots uses a separate three-second countdown. The browser canvases the supplied `public/assets/event-frame-source.png` background plus center-cropped source photos into a 1080×1920 high-quality JPEG for Story/Reel sharing; individual retakes preserve the other slots. Camera tracks and object URLs are released at review, while hidden, and at unmount; no images or media metadata have a server, database, Storage, or analytics write path. Migration `20260905181806_route_photo_booth.sql` updates only the existing Photo Booth quick-link to `/more/photo-booth` and is applied to the linked database. Local/remote migration parity, direct remote URL verification, linked database lint, TypeScript, ESLint, service-worker syntax, migration dry run, and production build pass; physical-device camera acceptance remains.
 
 - **Finalized event program and parallel schedule:** migration `20260905012723_finalize_event_program.sql` replaced the nine development/test sessions and eight placeholder directory records on the linked project with 13 main-program rows, Workshop Tracks A-C, nine named partial people, the `BUILD. FORGE. REPEAT.` event theme, and confirmed session links. The migration corrected the PDF's lunch-time typo, uses September 11 PHT timestamps, preserves only unrelated notification history, and extends the directory role constraint with `facilitator`. Attendee Home now groups equal-start sessions, shows all live and earliest-next choices, removes the misleading single-track progress rail, and marks overlapping My Flow bookmarks without blocking them. Bookmark saves use an atomic RPC and return overlap details; automatic bookmarked-session alerts and global manual status alerts retain their existing audiences. Migration `20260905015331_restrict_bookmark_rpc_execution.sql` removes anonymous bookmark-RPC execution. Verified with linked migration application, program counts/content, role/link checks, rollback bookmark-conflict RPC checks, privilege checks, database lint/advisors, TypeScript, ESLint, production build, and diff checks. Authenticated browser acceptance of the new parallel presentation remains user-driven.
 
@@ -104,10 +106,11 @@ change.
 ## In Progress  
 
 - Authenticated browser and real-device acceptance for the restored program and admin/session issue-fix batch remain.
+- Authenticated browser and physical-device acceptance for Photo Booth remain: Chrome/Android and Safari/iOS camera permission, front/rear switch, three-countdown capture, image-picker fallback, individual retake, 1080×1920 JPEG download, and camera cleanup when review/background/navigation occurs.
 
 ## Next Up
 
-- Backlog (content, awaiting inputs): real photo-booth URL
+- No additional Photo Booth content inputs are pending; the supplied event frame is committed at `public/assets/event-frame-source.png`.
 - Sign in with the provisioned admin account, exercise `/admin`, send a self-targeted test alert, and execute the remaining admin idempotency/device tests
 - Deferred UI candidates: pull-to-refresh (Realtime already keeps data fresh)
 - Production testing punch list (user-driven, post-deploy)
