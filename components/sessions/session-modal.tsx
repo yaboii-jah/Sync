@@ -24,6 +24,7 @@ const ROLE_LABELS: Record<string, string> = {
   host: "Host",
   panelist: "Panelist",
   sponsor: "Sponsor",
+  facilitator: "Facilitator",
 };
 
 const secondaryAction =

@@ -98,15 +98,28 @@ export function AlertsClient({
         toast("Could not update your flow", "error");
         setBookmarks((previous) => {
           const reverted = new Set(previous);
-          if (reverted.has(sessionId)) {
-            reverted.delete(sessionId);
-          } else {
-            reverted.add(sessionId);
-          }
+          if (wasBookmarked) reverted.add(sessionId);
+          else reverted.delete(sessionId);
           return reverted;
         });
       } else {
-        toast(wasBookmarked ? "Removed from My Flow" : "Added to My Flow");
+        const isBookmarked = result.bookmarked ?? !wasBookmarked;
+        setBookmarks((previous) => {
+          const next = new Set(previous);
+          if (isBookmarked) next.add(sessionId);
+          else next.delete(sessionId);
+          return next;
+        });
+
+        if (isBookmarked && (result.conflicts?.length ?? 0) > 0) {
+          const count = result.conflicts?.length ?? 0;
+          toast(
+            `Added to My Flow. Overlaps with ${count} saved ${count === 1 ? "session" : "sessions"}.`,
+            "warning",
+          );
+        } else {
+          toast(isBookmarked ? "Added to My Flow" : "Removed from My Flow");
+        }
       }
     })();
   }

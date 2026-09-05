@@ -671,7 +671,7 @@ This is why scheduled event-day behavior needs no organizer at the controls: rem
 ## 10. "How Do I…?" Cheat-Sheet
 
 **…change the schedule?**
-Insert/update/delete rows in the `sessions` table (Supabase dashboard → Table Editor or SQL). Statuses, notifications, and pushes adjust automatically. Remember: the seed data is placeholder — swap it wholesale with one SQL script when the real timeline arrives.
+Use the source-controlled finalized-program migration for a complete schedule replacement. The current event has 13 main-program rows plus three parallel workshop rows; statuses, notifications, and pushes adjust automatically. Use the admin session editor only for event-day corrections and overrides.
 
 **…add a quick link?**
 `insert into quick_links (label, url, icon) values ('Label', 'https://…', 'globe');` — `icon` accepts `globe` or `camera` (mapped in `app/(app)/more/page.tsx`).

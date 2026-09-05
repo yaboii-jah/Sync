@@ -20,8 +20,8 @@ export interface AdminDashboardData {
   push_device_count: number;
   override_count: number;
   failed_dispatch_count: number;
-  current_session: AdminDashboardSession | null;
-  next_session: AdminDashboardSession | null;
+  current_sessions: AdminDashboardSession[];
+  next_sessions: AdminDashboardSession[];
 }
 
 export interface AdminDashboardSession {
@@ -132,7 +132,14 @@ export async function isAdmin(client: QueryClient): Promise<boolean> {
 export async function getAdminDashboard(
   client: QueryClient,
 ): Promise<AdminDashboardData> {
-  return callRpc<AdminDashboardData>(client, "admin_get_dashboard");
+  const data = await callRpc<AdminDashboardData>(client, "admin_get_dashboard");
+  return {
+    ...data,
+    current_sessions: Array.isArray(data.current_sessions)
+      ? data.current_sessions
+      : [],
+    next_sessions: Array.isArray(data.next_sessions) ? data.next_sessions : [],
+  };
 }
 
 export async function searchAdminAttendees(

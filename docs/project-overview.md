@@ -32,7 +32,9 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 ### Program Flow
 - "Happening Now" live banner
 - Full event schedule with real-time status badges (Not Started / Ongoing / Finished)
+- Finalized schedule supports parallel sessions, grouped by time block
 - Personalized schedule view ("My Flow") vs. full schedule ("All")
+- Overlapping My Flow bookmarks remain allowed but are warned about when saved and marked in My Flow
 - Session detail view — description, time, room, speaker info
 
 ### Real-Time Notifications
@@ -48,6 +50,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ### Speakers & Sponsors
 - Browsable directory with photo, name, role, and organization
+- Facilitators have their own directory category alongside speakers, hosts, panelists, and sponsors
 - Detail view with bio and LinkedIn link
 
 ### Quick Links
@@ -86,7 +89,7 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 ### Out of Scope
 
-- Workshop registration and slot management (deferred to a later phase)
+- Workshop registration, capacity, and slot management (including the BuilderCards activity) remain out of scope
 - Session creation, schedule-time editing, speaker management, and other content-management tooling
 - Scheduled notifications, drafts, resend, external notification links, and multi-admin approval
 - Attendee editing, access suspension, deletion, or pass-type management
@@ -99,3 +102,4 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 4. A user can install the app to a device home screen and launch it as a standalone PWA
 5. A user can browse the full speaker/sponsor directory and open an entry's LinkedIn profile when one is provided
 6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override
+7. Attendees can understand every concurrent live or upcoming program choice and receive a clear warning when saved My Flow sessions overlap

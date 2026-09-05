@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, ProgressBar, ToggleButton, Typography } from "@heroui/react";
+import { Card, Chip, ProgressBar, ToggleButton, Typography } from "@heroui/react";
 import { Bookmark, Clock3, MapPin } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/status-badge";
 interface SessionCardProps {
   session: SessionWithSpeakers;
   bookmarked: boolean;
+  conflict?: boolean;
   now: number;
   onToggleBookmark: (sessionId: string) => void;
   onOpen: (session: SessionWithSpeakers) => void;
@@ -21,6 +22,7 @@ interface SessionCardProps {
 export function SessionCard({
   session,
   bookmarked,
+  conflict = false,
   now,
   onToggleBookmark,
   onOpen,
@@ -73,7 +75,14 @@ export function SessionCard({
           </Typography>
           {/* The time header already flags a live session; showing "Ongoing"
               here as well says the same thing twice. */}
-          {ongoing ? null : <StatusBadge status={status} />}
+          <div className="flex shrink-0 items-center gap-2">
+            {conflict ? (
+              <Chip size="sm" color="warning" variant="soft">
+                Time conflict
+              </Chip>
+            ) : null}
+            {ongoing ? null : <StatusBadge status={status} />}
+          </div>
         </div>
 
         <div className="mt-1.5 flex items-center gap-1.5 text-muted">

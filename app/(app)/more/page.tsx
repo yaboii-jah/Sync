@@ -71,7 +71,7 @@ export default async function MorePage() {
 
         <section className="mt-8 mb-4">
           <Typography.Heading level={2} className="text-base">
-            Speakers and sponsors
+            Event directory
           </Typography.Heading>
           <div className="mt-3">
             <DirectoryClient people={people} />

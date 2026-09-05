@@ -87,6 +87,7 @@ export type Database = {
           name: string
           starts_at: string
           status: string
+          theme: string
           venue: string | null
         }
         Insert: {
@@ -95,6 +96,7 @@ export type Database = {
           name: string
           starts_at: string
           status?: string
+          theme: string
           venue?: string | null
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           name?: string
           starts_at?: string
           status?: string
+          theme?: string
           venue?: string | null
         }
         Relationships: []
@@ -860,6 +863,10 @@ export type Database = {
             Returns: undefined
           }
       sync_program_flow_statuses: { Args: never; Returns: undefined }
+      toggle_my_flow_bookmark: {
+        Args: { target_session_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

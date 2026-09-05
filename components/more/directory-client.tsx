@@ -9,17 +9,24 @@ import type { Person } from "@/lib/supabase/queries/directory";
 import { EmptyState } from "@/components/empty-states";
 import { primaryLinkClass } from "@/components/ui/link-button";
 
-type FilterKey = "all" | "speaker" | "host_panelist" | "sponsor";
+type FilterKey =
+  | "all"
+  | "speaker"
+  | "facilitator"
+  | "host_panelist"
+  | "sponsor";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "speaker", label: "Speakers" },
-  { key: "host_panelist", label: "Hosts" },
+  { key: "facilitator", label: "Facilitators" },
+  { key: "host_panelist", label: "Hosts & panelists" },
   { key: "sponsor", label: "Sponsors" },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
   speaker: "Speaker",
+  facilitator: "Facilitator",
   host: "Host",
   panelist: "Panelist",
   sponsor: "Sponsor",

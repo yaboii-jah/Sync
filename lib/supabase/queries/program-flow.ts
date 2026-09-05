@@ -13,6 +13,7 @@ export interface SpeakerLite {
 export interface EventInfo {
   id: string;
   name: string;
+  theme: string;
   venue: string | null;
   starts_at: string;
   ends_at: string;
@@ -74,7 +75,7 @@ export async function getEvent(
 ): Promise<EventInfo | null> {
   const { data, error } = await client
     .from("events")
-    .select("id, name, venue, starts_at, ends_at, status")
+    .select("id, name, theme, venue, starts_at, ends_at, status")
     .order("starts_at")
     .limit(1)
     .maybeSingle();
@@ -91,7 +92,10 @@ export async function getSessionsWithSpeakers(
     .select(
       "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))",
     )
-    .order("start_time", { ascending: true });
+    .order("start_time", { ascending: true })
+    .order("end_time", { ascending: true })
+    .order("title", { ascending: true })
+    .order("id", { ascending: true });
 
   if (error) throw error;
   if (!data) return [];

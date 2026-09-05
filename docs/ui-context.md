@@ -67,7 +67,9 @@ Live state is the one signal allowed a dot: `live-mini-bar.tsx`, the hero eyebro
 
 - **One dramatic surface.** The hero is a saturated accent gradient (`#00369c → #0072f5`, solid — no translucency) carrying white text, a live dot, a `ProgressBar` and a ticking countdown. Every other card stays a quiet grouped cell. Apple's deference principle: exactly one element may be loud.
 - **Squircles.** `corner-shape: squircle` via the `.squircle` utility on hero, cells, capsule and dialog. Progressive enhancement — browsers without it keep the plain radius.
-- **A progress rail.** The program list runs a 12px rail whose line fills through what is finished, part-fills across the running session, and stays hollow ahead, with a NOW divider at the cut. Start times sit as headers above each cell (Luma's pattern) rather than in a fixed left column, which cost ~90px of a 390px screen.
+- **Grouped time blocks.** The program list uses one time heading per start-time block and stacks concurrent choices beneath it. The old continuous progress rail is omitted because a single day-progress line is misleading when sessions run in parallel.
+- **Parallel hero choices.** Happening Now and Up Next show every live session or every session in the earliest upcoming time block; each choice opens its own detail dialog.
+- **Conflict feedback.** My Flow permits overlapping bookmarks, warns on save, and marks every involved saved card with a HeroUI warning chip.
 - **Press feedback.** `active:scale-[0.98]` on cards and the capsule, `active:scale-95` on tabs, all collapsing under `motion-reduce`.
 - **Safe areas.** The tab bar pads by `env(safe-area-inset-bottom)`.
 - **Dialogs are centred**, capped at `85dvh` with `scroll="inside"` so a long session scrolls internally instead of overflowing.
@@ -101,9 +103,10 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Landing / login**: a single centred `Card` with the wordmark, one line of description and one primary action. The previous starfield, comet shower, gradient lockup, grain overlay and skyline SVG are all removed.
 - **Public networking card**: `/c/[token]` is a focused, noindex card page outside the authenticated navigation shell. It uses HeroUI surfaces and link-button styles, shows the active attendee identity and social destinations, and gives malformed, unknown, linkless, and inactive tokens the same unavailable state. The owner may append `?preview=1` to inspect their own active card without changing its resolution.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
-- **Lists**: stacked `Card`s. Long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
+- **Lists**: stacked `Card`s. Program Flow uses grouped time headings with stacked session cards; long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).
 - **Bottom tabs** (`<1024px`) and a **transparent horizontal top navigation** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
+- **Directory**: the people filters include a dedicated Facilitators category for workshop leaders.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
 - **Loading**: HeroUI `Skeleton` shaped like the content it replaces, per route `loading.tsx`.
 

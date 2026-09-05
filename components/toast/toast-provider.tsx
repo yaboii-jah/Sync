@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { toast as heroToast } from "@heroui/react";
 
-type ToastVariant = "success" | "error";
+type ToastVariant = "success" | "error" | "warning";
 
 /**
  * Thin wrapper over HeroUI's imperative toast so existing call sites keep the
@@ -15,7 +15,12 @@ export function useToast() {
     () => ({
       toast: (message: string, variant: ToastVariant = "success") => {
         heroToast(message, {
-          variant: variant === "error" ? "danger" : "success",
+          variant:
+            variant === "error"
+              ? "danger"
+              : variant === "warning"
+                ? "warning"
+                : "success",
         });
       },
     }),

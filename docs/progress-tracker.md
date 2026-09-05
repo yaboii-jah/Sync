@@ -5,13 +5,19 @@ change.
 
 ## Current Phase
 
-- Admin operations implementation: the attendee app remains complete while a protected `/admin` workspace, recipient-scoped notifications, durable delivery reporting, and persistent live-session overrides are being added.
+- Revised finalized program and parallel schedule UX completed; post-deployment acceptance testing remains for the updated attendee and admin flows.
 
 ## Current Goal
 
-- Deliver the approved event-operations scope without weakening attendee RLS: allowlisted admin access, immediate broadcast/selected notifications, session Start/End/Resume Auto, read-only attendee search, operational dashboard, notification history/results, and mutation audit history. Pass type remains dormant.
+- Complete post-deployment acceptance for the approved 16-row finalized flow, including the revised afternoon timeline, event theme, facilitator directory role, parallel schedule choices, and bookmark conflict behavior while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
 
 ## Completed
+
+- **Finalized event program and parallel schedule:** migration `20260905012723_finalize_event_program.sql` replaced the nine development/test sessions and eight placeholder directory records on the linked project with 13 main-program rows, Workshop Tracks A-C, nine named partial people, the `BUILD. FORGE. REPEAT.` event theme, and confirmed session links. The migration corrected the PDF's lunch-time typo, uses September 11 PHT timestamps, preserves only unrelated notification history, and extends the directory role constraint with `facilitator`. Attendee Home now groups equal-start sessions, shows all live and earliest-next choices, removes the misleading single-track progress rail, and marks overlapping My Flow bookmarks without blocking them. Bookmark saves use an atomic RPC and return overlap details; automatic bookmarked-session alerts and global manual status alerts retain their existing audiences. Migration `20260905015331_restrict_bookmark_rpc_execution.sql` removes anonymous bookmark-RPC execution. Verified with linked migration application, program counts/content, role/link checks, rollback bookmark-conflict RPC checks, privilege checks, database lint/advisors, TypeScript, ESLint, production build, and diff checks. Authenticated browser acceptance of the new parallel presentation remains user-driven.
+
+- **Bookmark result reconciliation:** Home and Alerts now apply the atomic bookmark RPC's authoritative `bookmarked` value after the optimistic update and use that value for success/conflict messaging, while error rollback restores the state that existed when the action began. TypeScript, ESLint, production build, linked database lint, and program/RPC checks pass after the correction.
+
+- **Revised finalized PDF alignment:** migration `20260905022332_align_final_program_pdf.sql` updates the linked event to the revised Final Timeline: Panel Discussion and Workshop C end at 4:00 PM, Plenary Reconvene runs 4:00-4:30 PM, Organizing Committee Acknowledgement runs 4:30-4:50 PM, Awarding runs 4:50-5:30 PM, and Closing runs 5:30-6:00 PM. It also applies the PDF's full Plenary and Organizing Committee titles, exact panel/workshop descriptions and facilitator details, while treating workshop breaks/transitions as operational notes rather than new attendee-selectable rows. Applied and verified remotely; the event remains 16 rows with three parallel start blocks, zero bookmarks, and zero linked notifications. Database lint, advisors, TypeScript, ESLint, production build, and diff checks pass; the existing advisor warnings and build `metadataBase` warning remain non-blocking.
 
 - **Current issues/suggestions batch completed.** Sign-out copy is provider-neutral, Google photos refresh on OAuth sign-in without overwriting attendee-edited names, and installation state is captured by a root-level provider shared by Home and Account Settings. The Home banner uses session-only dismissal, native prompt cancellation remains retryable, standalone mode shows as Installed, and unsupported browsers receive manual guidance. Connect now always renders the stable QR up to 288px, opens setup guidance for empty cards, removes publication controls, keeps Preview for active cards, and disables QR download until a link exists. The new networking migrations activate cards transactionally when links exist, backfill existing linked cards, accept approved direct/share URL variants including Facebook `/share/<token>/`, remove the old publication RPC, and are applied to the linked project. The Web Share Target is POST-only with same-origin/fetch-site checks and a bumped service-worker cache. Verified with URL smoke cases, rollback-only database activation/resolution/deactivation checks, linked database lint, migration dry-run parity, TypeScript, ESLint, production build, and diff checks. Native install and share-sheet behavior remain device-testing items.
 - **React Aria dependency install repaired.** Restored the documented `react-aria@3.51.0`, `react-aria-components@1.20.0`, and `react-stately@3.49.0` pins after a dependency update installed an incompatible package layout. A clean `npm ci` now restores the required ESM entrypoints, and the production build, TypeScript check, and ESLint pass.
@@ -89,7 +95,7 @@ change.
 
 ## Next Up
 
-- Backlog (content, awaiting inputs): real event timeline · real photo-booth URL
+- Backlog (content, awaiting inputs): real photo-booth URL
 - Sign in with the provisioned admin account, exercise `/admin`, send a self-targeted test alert, and execute the admin RLS/idempotency/device tests
 - Deferred UI candidates: pull-to-refresh (Realtime already keeps data fresh)
 - Production testing punch list (user-driven, post-deploy)
@@ -124,4 +130,4 @@ change.
 - Planning docs reflect the implemented attendee app: Google auth, program flow, Realtime, smart notifications, unread Alerts state, the multi-social Connect card, directory, Settings, and the hand-authored PWA service worker. `app-guide.md` remains an informal historical walkthrough and contains stale pre-Google/pre-networking-card passages.
 - The original Home mockup remains a visual reference; the implemented layout now includes the responsive bottom-tabs/desktop-rail shell and dashboard behavior described above.
 - App name is **Sync**; the event identity is **AWS Student Community Day Mega Manila 2026**.
-- Next work should replace placeholder schedule/directory/link/icon content and execute the production-testing punch list.
+- Next work should complete missing profile enrichment, confirm the real photo-booth URL, and execute the production-testing punch list.
