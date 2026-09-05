@@ -1,4 +1,4 @@
-const CACHE_NAME = "sync-static-v4";
+const CACHE_NAME = "sync-static-v5";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/icons/favicon-32.png",
@@ -6,6 +6,8 @@ const STATIC_ASSETS = [
   "/icons/mascot-96.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icons/icon-splash-192.png",
+  "/icons/icon-splash-512.png",
   "/icons/icon-maskable-512.png",
   "/icons/notification-icon-192.png",
   "/icons/notification-badge-96.png",

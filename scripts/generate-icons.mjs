@@ -83,6 +83,8 @@ const notificationBadge = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" w
 await Promise.all([
   save(fullSeal(192), "public/icons/icon-192.png"),
   save(fullSeal(512), "public/icons/icon-512.png"),
+  save(paddedSeal(192), "public/icons/icon-splash-192.png"),
+  save(paddedSeal(512), "public/icons/icon-splash-512.png"),
   save(paddedSeal(512), "public/icons/icon-maskable-512.png"),
   save(mascot(32), "public/icons/favicon-32.png"),
   save(mascot(64), "public/icons/favicon-64.png"),
