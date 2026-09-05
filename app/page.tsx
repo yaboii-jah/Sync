@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { signInWithGoogle } from "./actions";
+import { createClient } from "@/lib/supabase/server";
 
 interface LandingPageProps {
   searchParams: Promise<{
@@ -47,6 +48,12 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
   if (code) {
     redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
   }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/home");
 
   return (
     <main
