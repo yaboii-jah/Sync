@@ -8,7 +8,6 @@ interface LandingPageProps {
   searchParams: Promise<{
     error?: string;
     code?: string;
-    detail?: string;
     next?: string;
   }>;
 }
@@ -43,7 +42,7 @@ function cometStyle(comet: CometConfig): CSSProperties {
 }
 
 export default async function LandingPage({ searchParams }: LandingPageProps) {
-  const { error, code, detail, next } = await searchParams;
+  const { error, code, next } = await searchParams;
 
   if (code) {
     redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
@@ -132,7 +131,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
 
         {error ? (
           <p className="mt-6 w-full rounded-lg bg-state-error/20 px-3 py-2 text-sm break-words text-state-error">
-            Something went wrong signing you in.{detail ? ` (${detail})` : ""}
+            Something went wrong signing you in. Please try again.
           </p>
         ) : null}
 

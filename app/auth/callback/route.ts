@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) return redirectTo(request, destination);
+    if (user) return redirectToComplete(request, destination);
 
     console.error("[auth/callback] exchange failed:", error.message);
     return redirectTo(request, "/?error=oauth");
@@ -68,7 +68,16 @@ export async function GET(request: NextRequest) {
    * the identity provider and back, so it is treated as untrusted input on
    * return.
    */
-  return redirectTo(request, destination);
+  return redirectToComplete(request, destination);
+}
+
+function redirectToComplete(
+  request: NextRequest,
+  destination: string,
+): NextResponse {
+  const completeUrl = new URL("/auth/complete", request.url);
+  completeUrl.searchParams.set("next", destination);
+  return redirectTo(request, completeUrl.pathname + completeUrl.search);
 }
 
 function redirectTo(request: NextRequest, path: string): NextResponse {

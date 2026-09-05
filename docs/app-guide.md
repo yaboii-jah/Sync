@@ -162,7 +162,7 @@ Each section follows the same pattern: **what you see → what happens under the
 
 **Files:** `app/page.tsx` (markup), `app/globals.css` (all animation keyframes), `app/layout.tsx` (loads the Lato + Perandory fonts).
 
-**One lesson baked in:** the sign-in button is a `<form action={signInWithGoogle}>`. That `signInWithGoogle` is a **Server Action** — a function that runs *on the server* even though it's wired to a plain HTML form. No API endpoint needed.
+**One lesson baked in:** OAuth starts in the browser Supabase client so the PKCE verifier is written in the same browser or installed-app context that returns from Google. The button disables immediately to prevent duplicate flows.
 
 ---
 
@@ -191,7 +191,7 @@ You (browser)                Our server/Supabase            Google
 2. **Consent.** Google authenticates you and returns the standard identity claims we need for name, email, and photo.
 3. **Callback to Supabase.** Google hands a one-time code to `https://…supabase.co/auth/v1/callback`, which exchanges it for an application session.
 4. **Supabase creates your account** — an `auth.users` row with your name/photo — and a **database trigger** (`handle_new_user`, see §6) instantly creates your matching `profiles` row.
-5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler exchanges the code using the browser-shared verifier cookie, refreshes the profile photo when Google provides one, then routes to `/home` or the captured internal destination. Duplicate callbacks recover to the established session instead of displaying a PKCE storage error.
+5. **Back to the app.** Supabase redirects your browser to `/auth/callback?code=…`; the route handler exchanges the code using the browser-shared verifier cookie and refreshes the profile photo when Google provides one. Duplicate callbacks recover to the established session instead of displaying a PKCE storage error. A plain-teal `/auth/complete` handoff then performs one clean document navigation to `/home` or the captured internal destination so Android browsers cannot retain Google's wide viewport scale.
 
 **The code that decides where you land** (`app/auth/callback/route.ts`):
 
@@ -208,7 +208,7 @@ const destination =
 
 As a safety net, the landing page still detects a stray `?code=` and forwards it to `/auth/callback` so sign-in completes even if configuration drifts again.
 
-**Files:** `app/actions.ts` (start of flow), `app/auth/callback/route.ts` (end of flow), `proxy.ts` (session refresh + gating), `app/login/page.tsx` (self-heal shim).
+**Files:** `components/auth/sign-in-button.tsx` (start of flow), `app/auth/callback/route.ts` (code exchange), `app/auth/complete/page.tsx` (clean document handoff), `proxy.ts` (session refresh + gating), `app/login/page.tsx` (self-heal shim).
 
 ---
 
