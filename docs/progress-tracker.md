@@ -5,11 +5,11 @@ change.
 
 ## Current Phase
 
-- Revised finalized program and parallel schedule UX completed; current admin/session issue fixes are implemented locally and applied to the linked database. Post-deployment acceptance remains, along with an owner decision about three finalized sessions manually deleted from the linked data before the deletion guard was applied.
+- Revised finalized program and parallel schedule UX completed; the official 16-row program has been restored on the linked database after pre-event operations testing. Post-deployment acceptance for the admin/session issue fixes remains.
 
 ## Current Goal
 
-- Complete post-deployment acceptance for the approved 16-row finalized flow and the admin/session issue fixes: explicit Asia/Manila editing, publication-safe attendee reads, confirmed draft deletion, centered hero theme, and documented push audiences while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
+- Complete post-deployment acceptance for the restored 16-row finalized flow and the admin/session issue fixes: explicit Asia/Manila editing, publication-safe attendee reads, confirmed draft deletion, centered hero theme, and documented push audiences while preserving attendee RLS and the existing admin operations scope. Pass type remains dormant.
 
 ## Completed
 
@@ -18,6 +18,7 @@ change.
 - **Bookmark result reconciliation:** Home and Alerts now apply the atomic bookmark RPC's authoritative `bookmarked` value after the optimistic update and use that value for success/conflict messaging, while error rollback restores the state that existed when the action began. TypeScript, ESLint, production build, linked database lint, and program/RPC checks pass after the correction.
 
 - **Revised finalized PDF alignment:** migration `20260905022332_align_final_program_pdf.sql` updates the linked event to the revised Final Timeline: Panel Discussion and Workshop C end at 4:00 PM, Plenary Reconvene runs 4:00-4:30 PM, Organizing Committee Acknowledgement runs 4:30-4:50 PM, Awarding runs 4:50-5:30 PM, and Closing runs 5:30-6:00 PM. It also applies the PDF's full Plenary and Organizing Committee titles, exact panel/workshop descriptions and facilitator details, while treating workshop breaks/transitions as operational notes rather than new attendee-selectable rows. Applied and verified remotely; the event remains 16 rows with three parallel start blocks, zero bookmarks, and zero linked notifications. Database lint, advisors, TypeScript, ESLint, production build, and diff checks pass; the existing advisor warnings and build `metadataBase` warning remain non-blocking.
+- **Official program data restored after pre-event testing:** migration `20260905105718_restore_official_event_program.sql` restores the linked event to the exact revised 16-session schedule using stable-ID upserts, including deleted IDs ending `0001`, `0002`, and `0004`, and restores all nine authoritative speaker links. It also corrects test edits on IDs `0003`, `0005`, and `0014`, clears all session override, actual-time, and reminder fields, and deletes the five pre-event attendee alerts whose source was `manual_status`; immutable admin audit history remains intact. Surviving bookmarks are preserved by updating rather than replacing rows, though bookmarks previously cascade-deleted with the three missing sessions cannot be reconstructed. A pre-event guard prevents delayed execution from erasing legitimate event-day state. The migration was rollback-tested, dry-run, applied, and verified on the linked database: 16 published `not_started` sessions, nine speaker links, zero manual-status alerts, and zero residual test-state fields. Linked database lint, ESLint, production build, and diff checks pass; existing advisor and `metadataBase` warnings remain non-blocking.
 
 - **Current issues/suggestions batch completed.** Sign-out copy is provider-neutral, Google photos refresh on OAuth sign-in without overwriting attendee-edited names, and installation state is captured by a root-level provider shared by Home and Account Settings. The Home banner uses session-only dismissal, native prompt cancellation remains retryable, standalone mode shows as Installed, and unsupported browsers receive manual guidance. Connect now always renders the stable QR up to 288px, opens setup guidance for empty cards, removes publication controls, keeps Preview for active cards, and disables QR download until a link exists. The new networking migrations activate cards transactionally when links exist, backfill existing linked cards, accept approved direct/share URL variants including Facebook `/share/<token>/`, remove the old publication RPC, and are applied to the linked project. The Web Share Target is POST-only with same-origin/fetch-site checks and a bumped service-worker cache. Verified with URL smoke cases, rollback-only database activation/resolution/deactivation checks, linked database lint, migration dry-run parity, TypeScript, ESLint, production build, and diff checks. Native install and share-sheet behavior remain device-testing items.
 - **Admin/session issue-fix batch completed.** Manila wall-clock editing, published-only attendee reads, unavailable linked drafts in Alerts, centered hero themes, and confirmation-gated draft deletion are implemented. Migration `20260905052509_restrict_draft_session_deletion.sql` is applied remotely; local and remote migration histories match. Rollback-only linked checks verified admin draft visibility, non-admin publication filtering, published/started deletion guards, and eligible draft deletion. TypeScript, ESLint, production build, database lint, migration dry-run/application, and diff checks pass. Authenticated browser acceptance remains user-driven.
@@ -101,12 +102,11 @@ change.
 
 ## In Progress  
 
-- Authenticated browser and real-device acceptance for the admin/session issue-fix batch remain.
+- Authenticated browser and real-device acceptance for the restored program and admin/session issue-fix batch remain.
 
 ## Next Up
 
 - Backlog (content, awaiting inputs): real photo-booth URL
-- Linked data currently has 13 sessions instead of the documented 16: IDs ending `0001`, `0002`, and `0004` were deleted by the provisioned admin and recorded in `admin_audit_log`; restore only after owner confirmation.
 - Sign in with the provisioned admin account, exercise `/admin`, send a self-targeted test alert, and execute the remaining admin idempotency/device tests
 - Deferred UI candidates: pull-to-refresh (Realtime already keeps data fresh)
 - Production testing punch list (user-driven, post-deploy)
