@@ -13,10 +13,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const isAdmin = await currentUserIsAdmin();
 
   return (
-    <div className="bg-background relative flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
+    <div className="bg-background min-h-full">
       <AlertsCountProvider>
         <SideRail isAdmin={isAdmin} />
-        <div className="relative flex min-h-0 flex-1 flex-col pb-24 lg:overflow-y-auto lg:pt-24 lg:pb-0">
+        <div className="relative flex min-h-full flex-col pb-24 lg:ml-[232px] lg:pb-0">
           {children}
         </div>
         <BottomTabs />

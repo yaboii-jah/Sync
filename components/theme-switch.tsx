@@ -13,7 +13,13 @@ const THEME_OPTIONS = [
   { key: "system", label: "System", icon: Monitor },
 ] as const;
 
-export function ThemeSwitch({ showSystem = false }: { showSystem?: boolean }) {
+export function ThemeSwitch({
+  showSystem = false,
+  className,
+}: {
+  showSystem?: boolean;
+  className?: string;
+}) {
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const { theme, resolvedTheme, setTheme } = useTheme();
   const isDark = mounted && (theme === "dark" || resolvedTheme === "dark");
@@ -48,6 +54,7 @@ export function ThemeSwitch({ showSystem = false }: { showSystem?: boolean }) {
     <Button
       size="sm"
       variant="primary"
+      className={className}
       aria-label={`Switch to ${nextLabel} mode`}
       onPress={() => setTheme(isDark ? "light" : "dark")}
     >
