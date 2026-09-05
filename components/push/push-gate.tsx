@@ -130,14 +130,14 @@ export function PushGate() {
   if (stage === "explain" || stage === "busy") {
     return (
       <Modal>
-         <Modal.Backdrop
-           isOpen
-           isDismissable={stage === "explain"}
-           {...{ isKeyboardDismissDisabled: stage === "busy" }}
-          onOpenChange={(open) => {
-            if (!open) dismiss();
-          }}
-        >
+          <Modal.Backdrop
+            isOpen
+            isDismissable={stage === "explain"}
+            {...{ isKeyboardDismissDisabled: stage === "busy" }}
+            onOpenChange={(open) => {
+              if (!open) dismiss();
+            }}
+          >
           <Modal.Container size="sm">
             <Modal.Dialog aria-label="Get session alerts">
               <Modal.CloseTrigger />

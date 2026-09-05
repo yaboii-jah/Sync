@@ -682,7 +682,7 @@ Use the source-controlled finalized-program migration for a complete schedule re
 Insert into `speakers_sponsors`, then link them to sessions via `session_speakers`. The current Next.js image configuration permits LinkedIn CDN photos (`media.licdn.com`); add another explicit `remotePatterns` host before using a different external image provider.
 
 **…replace the placeholder PWA icons?**
-Overwrite `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (or edit `scripts/generate-icons.mjs` and rerun it).
+Replace the source artwork in `public/logo.png`, then run `node scripts/generate-icons.mjs`. The generator emits the transparent browser/mascot assets, full-seal PWA icons, padded maskable and Apple icons, and notification icon/badge; do not edit the generated PNGs individually.
 
 **…test push notifications myself?**
 Set a session's `start_time`/`end_time` to bracket the current moment, wait up to a minute for cron, and watch. (Your OS must allow notifications for the browser!)

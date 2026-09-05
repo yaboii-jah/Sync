@@ -1,15 +1,95 @@
 import sharp from "sharp";
 
-const logo = sharp("public/logo.png");
+const SOURCE = "public/logo.png";
+const BRAND_TEAL = "#024056";
+const SOURCE_SIZE = 447;
+const MASCOT_CROP = { left: 71, top: 71, width: 306, height: 306 };
+
+function circleMask(size) {
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="white"/></svg>`,
+  );
+}
+
+async function rasterizedCircleMask(size) {
+  return sharp(circleMask(size))
+    .resize(size, size, { fit: "fill" })
+    .png()
+    .toBuffer();
+}
+
+async function fullSeal(size) {
+  const mask = await rasterizedCircleMask(SOURCE_SIZE);
+  const masked = await sharp(SOURCE)
+    .ensureAlpha()
+    .composite([{ input: mask, blend: "dest-in" }])
+    .png()
+    .toBuffer();
+
+  return sharp(masked)
+    .resize(size, size, { fit: "fill" })
+    .sharpen({ sigma: 0.8 })
+    .png()
+    .toBuffer();
+}
+
+async function mascot(size) {
+  const cropped = await sharp(SOURCE)
+    .extract(MASCOT_CROP)
+    .ensureAlpha()
+    .toBuffer();
+  const masked = await sharp(cropped)
+    .composite([
+      {
+        input: await rasterizedCircleMask(MASCOT_CROP.width),
+        blend: "dest-in",
+      },
+    ])
+    .png()
+    .toBuffer();
+
+  return sharp(masked)
+    .resize(size, size, { fit: "fill" })
+    .sharpen({ sigma: 0.8 })
+    .png()
+    .toBuffer();
+}
+
+async function paddedSeal(size) {
+  const seal = await fullSeal(Math.round(size * 0.78));
+
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: BRAND_TEAL,
+    },
+  })
+    .composite([{ input: seal, gravity: "center" }])
+    .png()
+    .toBuffer();
+}
+
+async function save(bufferPromise, path) {
+  const buffer = await bufferPromise;
+  await sharp(buffer).png({ compressionLevel: 9 }).toFile(path);
+}
+
+const notificationBadge = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <path fill="#fff" d="M48 6 78 29 68 67 48 90 28 67 18 29 48 6Z"/>
+</svg>`);
 
 await Promise.all([
-  logo.clone().resize(192, 192).png().toFile("public/icons/icon-192.png"),
-  logo.clone().resize(512, 512).png().toFile("public/icons/icon-512.png"),
-  logo
-    .clone()
-    .resize(512, 512)
-    .png()
-    .toFile("public/icons/icon-maskable-512.png"),
+  save(fullSeal(192), "public/icons/icon-192.png"),
+  save(fullSeal(512), "public/icons/icon-512.png"),
+  save(paddedSeal(512), "public/icons/icon-maskable-512.png"),
+  save(mascot(32), "public/icons/favicon-32.png"),
+  save(mascot(64), "public/icons/favicon-64.png"),
+  save(mascot(96), "public/icons/mascot-96.png"),
+  save(mascot(192), "public/icons/notification-icon-192.png"),
+  save(Promise.resolve(notificationBadge), "public/icons/notification-badge-96.png"),
+  save(paddedSeal(180), "public/icons/apple-icon-180.png"),
 ]);
 
 const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">

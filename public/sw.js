@@ -1,10 +1,15 @@
-const CACHE_NAME = "sync-static-v3";
+const CACHE_NAME = "sync-static-v4";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
-  "/logo.png",
+  "/icons/favicon-32.png",
+  "/icons/favicon-64.png",
+  "/icons/mascot-96.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
+  "/icons/notification-icon-192.png",
+  "/icons/notification-badge-96.png",
+  "/icons/apple-icon-180.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -63,8 +68,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title || "Sync", {
       body: payload.body || "",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: "/icons/notification-icon-192.png",
+      badge: "/icons/notification-badge-96.png",
       data: { url: payload.url || "/alerts" },
       tag: payload.id || undefined,
     }),

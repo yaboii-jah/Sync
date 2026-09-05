@@ -259,6 +259,7 @@ export function AdminSessionsClient({
       <AlertDialog>
         <AlertDialog.Backdrop
           isOpen={deletion !== null}
+          isDismissable={!pending}
           onOpenChange={(isOpen) => {
             if (!isOpen && !pending) setDeletion(null);
           }}
@@ -304,6 +305,7 @@ export function AdminSessionsClient({
       <AlertDialog>
         <AlertDialog.Backdrop
           isOpen={selection !== null}
+          isDismissable={!pending}
           onOpenChange={(isOpen) => {
             if (!isOpen && !pending) setSelection(null);
           }}

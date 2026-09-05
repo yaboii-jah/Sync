@@ -104,7 +104,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
         <Image
-          src="/logo.png"
+          src="/icons/icon-512.png"
           alt="AWS Student Community Day Mega Manila 2026 event logo"
           width={128}
           height={128}

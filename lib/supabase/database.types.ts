@@ -658,7 +658,11 @@ export type Database = {
     Views: {
       [_ in never]: never
     }
-    Functions: {
+      Functions: {
+        admin_get_attendee: {
+          Args: { target_attendee_id: string }
+          Returns: Json
+        }
       admin_create_notification: {
         Args: {
           audience: string

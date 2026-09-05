@@ -98,11 +98,13 @@ export function AdminNav() {
             Attendee
           </Link>
         </div>
+      </header>
 
-        <nav
-          aria-label="Admin"
-          className="mt-3 flex gap-1 overflow-x-auto pb-1"
-        >
+      <nav
+        aria-label="Admin"
+        className="border-border bg-surface fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] lg:hidden"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-5 items-stretch">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -112,19 +114,23 @@ export function AdminNav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors ${
-                  active
-                    ? "bg-accent text-accent-foreground font-semibold"
-                    : "text-muted hover:text-foreground"
+                className={`flex min-w-0 flex-col items-center gap-1 px-1 py-2 text-center transition-colors active:scale-95 motion-reduce:transform-none ${
+                  active ? "text-accent" : "text-muted hover:text-foreground"
                 }`}
               >
-                <Icon className="size-4" aria-hidden />
-                {item.label}
+                <Icon className="size-5" aria-hidden />
+                <span
+                  className={`max-w-full truncate text-[10px] leading-tight ${
+                    active ? "font-semibold" : "font-normal"
+                  }`}
+                >
+                  {item.label}
+                </span>
               </Link>
             );
           })}
-        </nav>
-      </header>
+        </div>
+      </nav>
     </>
   );
 }

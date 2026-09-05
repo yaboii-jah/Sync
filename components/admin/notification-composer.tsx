@@ -332,6 +332,7 @@ export function NotificationComposer({
       <AlertDialog>
         <AlertDialog.Backdrop
           isOpen={confirming}
+          isDismissable={!pending}
           onOpenChange={(isOpen) => {
             if (!isOpen && !pending) setConfirming(false);
           }}

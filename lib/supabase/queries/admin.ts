@@ -142,6 +142,12 @@ export async function getAdminDashboard(
   };
 }
 
+export interface AdminAttendeeDetail {
+  attendee: Pick<AdminAttendee, "id" | "name" | "photo_url" | "created_at">;
+  push_devices: Array<{ created_at: string }>;
+  social_profiles: Array<{ network: string; url: string }>;
+}
+
 export async function searchAdminAttendees(
   client: QueryClient,
   query = "",
@@ -152,6 +158,15 @@ export async function searchAdminAttendees(
     search_query: query,
     result_limit: limit,
     result_offset: offset,
+  });
+}
+
+export async function getAdminAttendee(
+  client: QueryClient,
+  attendeeId: string,
+): Promise<AdminAttendeeDetail> {
+  return callRpc<AdminAttendeeDetail>(client, "admin_get_attendee", {
+    target_attendee_id: attendeeId,
   });
 }
 

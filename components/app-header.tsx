@@ -21,7 +21,7 @@ export async function AppHeader() {
       {/* iOS large-title treatment: the brand is the page title. */}
       <Link href="/home" className="flex items-center gap-2">
         <Image
-          src="/logo.png"
+          src="/icons/mascot-96.png"
           alt=""
           width={36}
           height={36}

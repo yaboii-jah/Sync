@@ -106,8 +106,11 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter is HeroUI `Tabs`.
 - **Lists**: stacked `Card`s. Program Flow uses grouped time headings with stacked session cards; long same-shaped lists (audit, attendees, deliveries) use one `Card` with `Separator` between rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send).
+- **Overlay dismissal**: every idle `Modal` and `AlertDialog` closes when the backdrop outside its container is clicked; submission states disable outside dismissal until the action settles.
+- **Sign-out confirmation**: uses the same medium-width AlertDialog treatment as event controls — a plain left-aligned heading/body, neutral `Cancel`, and accent `Confirm` action without a decorative leading icon.
 - **Admin session editing**: schedule fields are labeled `(PHT)` and use the event's Asia/Manila wall-clock timezone. Deleting a draft always opens a destructive confirmation dialog.
-- **Bottom tabs** (`<1024px`) and a **transparent horizontal top navigation** (`≥1024px`) for attendees; **256px rail** plus a scrolling chip row for `/admin`.
+- **Bottom tabs** (`<1024px`) and a **transparent horizontal top navigation** (`≥1024px`) for attendees; `/admin` keeps a compact mobile utility header above a fixed icon-and-label bottom bar and uses a **256px rail** on desktop.
+- **App identity assets**: browser tabs and notification thumbnails use the transparent compact mascot crop; installed app icons use the transparent full seal or a padded teal maskable variant; notification badges use a dedicated monochrome crystal mark.
 - **Directory**: the people filters include a dedicated Facilitators category for workshop leaders.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
 - **Loading**: HeroUI `Skeleton` shaped like the content it replaces, per route `loading.tsx`.

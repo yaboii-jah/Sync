@@ -33,7 +33,11 @@ export function ConnectClient({
 
       {!hasSavedLinks ? (
         <Modal>
-          <Modal.Backdrop isOpen={showSetup} onOpenChange={setShowSetup}>
+          <Modal.Backdrop
+            isOpen={showSetup}
+            isDismissable
+            onOpenChange={setShowSetup}
+          >
             <Modal.Container size="sm">
               <Modal.Dialog aria-label="Set up your networking card">
                 <Modal.CloseTrigger />

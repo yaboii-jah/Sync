@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { AlertDialog, Button } from "@heroui/react";
+import { AlertDialog, Button, Typography } from "@heroui/react";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/app/(app)/home/actions";
 
@@ -34,19 +34,18 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
         </span>
       </AlertDialog.Trigger>
 
-      <AlertDialog.Backdrop>
-        <AlertDialog.Container size="xs">
+      <AlertDialog.Backdrop isDismissable={!pending}>
+        <AlertDialog.Container size="sm">
           <AlertDialog.Dialog>
             {({ close }) => (
               <>
                 <AlertDialog.Header>
-                  <AlertDialog.Icon>
-                    <LogOut className="size-5" aria-hidden />
-                  </AlertDialog.Icon>
                   <AlertDialog.Heading>Sign out?</AlertDialog.Heading>
                 </AlertDialog.Header>
                 <AlertDialog.Body>
-                  You will need to sign in again to return.
+                  <Typography type="body-sm" color="muted">
+                    You will need to sign in again to return.
+                  </Typography>
                 </AlertDialog.Body>
                 <AlertDialog.Footer>
                   <Button
@@ -54,14 +53,13 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
                     isDisabled={pending}
                     onPress={close}
                   >
-                    Stay
+                    Cancel
                   </Button>
                   <Button
-                    variant="danger"
                     isPending={pending}
                     onPress={confirmSignOut}
                   >
-                    Sign out
+                    Confirm
                   </Button>
                 </AlertDialog.Footer>
               </>

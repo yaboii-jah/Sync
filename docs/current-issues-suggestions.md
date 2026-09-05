@@ -8,3 +8,4 @@
 
 ## Questions
 - [x] Push behavior is documented in `docs/app-guide.md` and the formal architecture/project docs. Automatic session alerts target bookmarked-session recipients; manual status alerts and announcements use their configured all/selected snapshot, and push delivery is device/subscription dependent.
+-  

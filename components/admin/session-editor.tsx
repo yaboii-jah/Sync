@@ -88,6 +88,7 @@ export function SessionEditor({
     <Modal>
       <Modal.Backdrop
         isOpen
+        isDismissable={!pending}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}
