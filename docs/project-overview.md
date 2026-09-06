@@ -113,6 +113,6 @@ The application uses the event's dark AWS Student Community Day visual identity 
 2. Session status badges update in real time across all connected clients with no manual re-posting
 3. A user can activate one stable networking QR code that resolves to a noindex card showing their name, photo, and only their configured social links
 4. A user can install the app to a device home screen and launch it as a standalone PWA
-5. A user can browse the speaker lineup and open an entry's LinkedIn profile when one is provided
+5. A user can browse the complete speaker lineup and open an entry's LinkedIn profile when one is provided
 6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override
 7. Attendees can understand every concurrent live or upcoming program choice and receive a clear warning when saved My Flow sessions overlap

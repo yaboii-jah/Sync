@@ -438,7 +438,7 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 **Under the hood:**
 
-- The route filters the read-only directory result to records with the `speaker` role. It does not change the stored program participants or their session links.
+- The route passes every read-only directory record with the `speaker` role to the lineup. New speaker records can appear before their optional portrait, organization, bio, LinkedIn URL, or session links are supplied.
 - The bio modal is the same visual language as the session modal: a focused, tonal, blurred-backdrop overlay using gold only for primary external actions.
 - Quick links come from the `quick_links` table. Root-relative destinations stay inside the PWA through `next/link`; external destinations open separately.
 
