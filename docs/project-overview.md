@@ -51,6 +51,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - One stable personal networking QR code resolving to an app-owned card whenever at least one link is saved
 - Optional LinkedIn, Instagram, Facebook, and GitHub profile links managed together
 - The card activates automatically when links exist; clearing the last link disables existing QR copies without changing the code
+- A private, deduplicated list of attendees whose networking cards an attendee has scanned, with the saved card URL available for reopening
 
 ### Speakers
 - Browsable speaker lineup with portrait when supplied and branded initials otherwise

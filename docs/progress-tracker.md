@@ -13,6 +13,8 @@ change.
 
 ## In Progress
 
+- **Attendee networking scan history:** migration `20260907002135_add_networking_scan_history.sql` adds an RLS-protected, deduplicated owner-scoped ledger keyed by scanner and scanned attendee, with targeted indexes for the owner list and profile deletion cascade. `record_networking_card_scan` derives and stores the canonical `/c/<token>` path only for a signed-in attendee opening someone else's active card; `get_my_networking_scan_history` exposes only that attendee's names, photos, paths, and latest scan times. The linked Supabase project is not configured in this checkout, so the migration remains un-applied here pending normal PR/deployment targeting.
+
 - **Network card theme system implementation:** `docs/template-theme.md` implemented as a reusable `NetworkCard` component (`components/network-card.tsx`) with 4 variants — `solid` (default, template 1), `glass`, `crystal`, and `event` — sharing the same markup, typography, avatar, social actions, and accessible decoration layers (crystal SVG, stars, moon, event branding, pubmat) via variant CSS classes and CSS variables in `app/globals.css`. Migration `20260907000000_add_networking_card_templates.sql` adds `social_profiles.templates` (int 1-4, default 1) with `set_networking_card_template` RPC and extends `get_own/public_networking_card` + `save_social_profiles` to preserve/return the template. `/connect` now shows a template dropdown below Preview social card in `ConnectCard`, persisted via the new RPC; `/c/[token]` renders the public card through `NetworkCard` using the stored template (preview-aware). Build, lint, and typecheck pass; linked DB apply and design QA remain.
 
 ## Completed
