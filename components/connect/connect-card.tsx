@@ -1,41 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import {
-  Button,
-  Card,
-  Chip,
-  Separator,
-  Switch,
-  Typography,
-} from "@heroui/react";
-import { Download, Eye, QrCode } from "lucide-react";
+import { useRef, useState } from "react";
+import { Button, Card, Chip, Label, Separator, Typography } from "@/components/ui";
+import { Download, Eye } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { secondaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
+import { createClient } from "@/lib/supabase/client";
+import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
 
-const QR_FOREGROUND = "#171717";
+const QR_FOREGROUND = "#024056";
 const QR_BACKGROUND = "#FFFFFF";
+
+const TEMPLATE_OPTIONS: { value: NetworkCardTemplate; label: string }[] = [
+  { value: 1, label: "Solid — Default" },
+  { value: 2, label: "Glass — Atmospheric" },
+  { value: 3, label: "Crystal Outline — Artistic" },
+  { value: 4, label: "Event — Featured" },
+];
 
 interface ConnectCardProps {
   configuredNetworks: SocialNetwork[];
-  cardUrl: string | null;
-  isPublic: boolean;
-  publishPending: boolean;
+  cardUrl: string;
   hasSavedLinks: boolean;
-  onPublicationChange: (published: boolean) => void;
+  initialTemplate: NetworkCardTemplate;
 }
 
-export function ConnectCard({
-  configuredNetworks,
-  cardUrl,
-  isPublic,
-  publishPending,
-  hasSavedLinks,
-  onPublicationChange,
-}: ConnectCardProps) {
+export function ConnectCard({ configuredNetworks, cardUrl, hasSavedLinks, initialTemplate }: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const [template, setTemplate] = useState<NetworkCardTemplate>(initialTemplate);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
 
   function saveQr() {
     const canvas = canvasWrapRef.current?.querySelector("canvas");
@@ -59,37 +55,25 @@ export function ConnectCard({
     <Card>
       <Card.Content className="flex flex-col gap-6">
         <div className="flex flex-col items-center text-center">
-          <Chip variant={isPublic ? "primary" : "soft"} size="sm">
-            {isPublic ? "Shared" : "Private"}
-          </Chip>
-
-          {hasSavedLinks && cardUrl ? (
-            <div
-              className="border-border mt-4 w-fit rounded-2xl border p-4"
-              style={{ backgroundColor: QR_BACKGROUND }}
-            >
+          <div
+            className="border-border mt-4 w-full max-w-[272px] rounded-2xl border p-4"
+            style={{ backgroundColor: QR_BACKGROUND }}
+          >
+            <div className="mx-auto aspect-square w-full max-w-[240px]">
               <QRCodeSVG
                 value={cardUrl}
-                size={220}
+                size={240}
+                className="block size-full"
                 fgColor={QR_FOREGROUND}
                 bgColor={QR_BACKGROUND}
               />
             </div>
-          ) : (
-            <div className="border-border mt-4 flex size-[220px] items-center justify-center rounded-2xl border border-dashed">
-              <div className="flex flex-col items-center gap-2 px-6">
-                <QrCode className="size-6" aria-hidden />
-                <Typography type="body-sm" color="muted">
-                  Save a profile to create your networking code.
-                </Typography>
-              </div>
-            </div>
-          )}
+          </div>
 
           <Typography type="body-xs" color="muted" className="mt-3">
-            {isPublic
-              ? "Scan to open all of my shared profiles"
-              : "This code stays the same. Scans are unavailable while private."}
+            {hasSavedLinks
+              ? "Scan to open my networking card"
+              : "Add a social profile to activate this code"}
           </Typography>
         </div>
 
@@ -112,6 +96,49 @@ export function ConnectCard({
           <Eye className="size-4" aria-hidden />
           Preview social card
         </Button>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="network-template">Card template</Label>
+          <select
+            id="network-template"
+            value={template}
+            disabled={!hasSavedLinks || savingTemplate}
+            onChange={async (e) => {
+              const next = Number(e.target.value) as NetworkCardTemplate;
+              setTemplate(next);
+              setTemplateError(null);
+              if (!hasSavedLinks) return;
+              setSavingTemplate(true);
+              const supabase = createClient();
+              const { error } = await supabase.rpc("set_networking_card_template", { p_template: next });
+              if (error) {
+                setTemplateError("Could not save template. Please try again.");
+                setTemplate(initialTemplate);
+              }
+              setSavingTemplate(false);
+            }}
+            className="w-full rounded-lg border border-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none focus:border-focus focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {TEMPLATE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {templateError ? (
+            <Typography type="body-xs" className="text-danger">
+              {templateError}
+            </Typography>
+          ) : savingTemplate ? (
+            <Typography type="body-xs" color="muted">
+              Saving…
+            </Typography>
+          ) : !hasSavedLinks ? (
+            <Typography type="body-xs" color="muted">
+              Add a profile to enable templates.
+            </Typography>
+          ) : null}
+        </div>
 
         <Separator />
 
@@ -143,30 +170,6 @@ export function ConnectCard({
         </div>
 
         <Separator />
-
-        <Switch
-          className="w-full"
-          isSelected={isPublic}
-          isDisabled={!hasSavedLinks || publishPending}
-          aria-label="Share my networking card"
-          onChange={onPublicationChange}
-        >
-          <Switch.Content className="w-full justify-between gap-4">
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-foreground">
-                Share my card
-              </span>
-              <span className="block text-xs font-normal text-muted">
-                {hasSavedLinks
-                  ? "Anyone with your code can open it."
-                  : "Add at least one profile in Settings first."}
-              </span>
-            </span>
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
-          </Switch.Content>
-        </Switch>
       </Card.Content>
 
       <div ref={canvasWrapRef} aria-hidden className="hidden">

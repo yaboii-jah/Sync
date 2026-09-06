@@ -4,54 +4,41 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { StoredPushSubscription } from "@/lib/push";
+import type { BookmarkConflict } from "@/lib/program-flow";
 
 export interface ToggleBookmarkResult {
   error?: string;
+  bookmarked?: boolean;
+  conflicts?: BookmarkConflict[];
 }
 
 export async function toggleBookmark(
   sessionId: string,
 ): Promise<ToggleBookmarkResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (!isUuid(sessionId)) return { error: "Invalid session" };
 
-  if (!user) return { error: "Not signed in" };
+  const { data, error } = await supabase.rpc("toggle_my_flow_bookmark", {
+    target_session_id: sessionId,
+  });
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("status")
-    .eq("id", sessionId)
-    .maybeSingle();
-
-  if (!session) return { error: "Session not found" };
-
-  const { data: existing } = await supabase
-    .from("my_flow_bookmarks")
-    .select("session_id")
-    .eq("user_id", user.id)
-    .eq("session_id", sessionId)
-    .maybeSingle();
-
-  if (!existing && session.status === "finished") {
-    return { error: "Finished sessions cannot be added to My Flow" };
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("not signed in")) return { error: "Not signed in" };
+    if (message.includes("session not found")) {
+      return { error: "Session not found" };
+    }
+    if (message.includes("finished sessions")) {
+      return { error: "Finished sessions cannot be added to My Flow" };
+    }
+    return { error: "Could not update your schedule" };
   }
 
-  const { error } = existing
-    ? await supabase
-        .from("my_flow_bookmarks")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("session_id", sessionId)
-    : await supabase
-        .from("my_flow_bookmarks")
-        .insert({ user_id: user.id, session_id: sessionId });
-
-  if (error) return { error: "Could not update your schedule" };
+  const result = parseBookmarkResult(data);
+  if (!result) return { error: "Could not update your schedule" };
 
   revalidatePath("/home");
-  return {};
+  return result;
 }
 
 export async function savePushSubscription(
@@ -176,6 +163,44 @@ function isValidDeviceId(deviceId: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     deviceId,
   );
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseBookmarkResult(value: unknown): ToggleBookmarkResult | null {
+  if (!isRecord(value) || typeof value.bookmarked !== "boolean") return null;
+  if (!Array.isArray(value.conflicts)) return null;
+
+  const conflicts: BookmarkConflict[] = [];
+  for (const conflict of value.conflicts) {
+    if (!isRecord(conflict)) return null;
+    if (
+      typeof conflict.id !== "string" ||
+      typeof conflict.title !== "string" ||
+      typeof conflict.start_time !== "string" ||
+      typeof conflict.end_time !== "string" ||
+      (conflict.room !== null && typeof conflict.room !== "string")
+    ) {
+      return null;
+    }
+    conflicts.push({
+      id: conflict.id,
+      title: conflict.title,
+      start_time: conflict.start_time,
+      end_time: conflict.end_time,
+      room: conflict.room,
+    });
+  }
+
+  return { bookmarked: value.bookmarked, conflicts };
 }
 
 export async function signOut(): Promise<void> {

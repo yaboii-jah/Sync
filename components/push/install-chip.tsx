@@ -1,61 +1,87 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Button, CloseButton } from "@heroui/react";
-import { Download } from "lucide-react";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-}
+import { Button, Typography } from "@/components/ui";
+import { X } from "lucide-react";
+import {
+  getInstallInstructions,
+  useInstall,
+} from "@/components/push/install-provider";
 
 const STORAGE_KEY = "install-chip-dismissed";
 
 export function InstallChip() {
-  const [promptEvent, setPromptEvent] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [dismissed, setDismissed] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.sessionStorage.getItem(STORAGE_KEY) === "1",
+  );
+  const [pending, setPending] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const { ready, canPrompt, isInstalled, platform, promptInstall } = useInstall();
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
+    if (!ready || isInstalled || dismissed) {
+      const timer = window.setTimeout(() => setVisible(false), 0);
+      return () => window.clearTimeout(timer);
+    }
 
-    const handler = (event: Event) => {
-      event.preventDefault();
-      setPromptEvent(event as BeforeInstallPromptEvent);
-    };
+    const timer = window.setTimeout(() => setVisible(true), 900);
+    return () => window.clearTimeout(timer);
+  }, [dismissed, isInstalled, ready]);
 
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  if (!promptEvent) return null;
+  if (!ready || isInstalled || dismissed || !visible) return null;
 
   async function install() {
-    await promptEvent!.prompt();
-    localStorage.setItem(STORAGE_KEY, "1");
-    setPromptEvent(null);
+    setPending(true);
+    try {
+      await promptInstall();
+    } finally {
+      setPending(false);
+    }
   }
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
-    setPromptEvent(null);
+    sessionStorage.setItem(STORAGE_KEY, "1");
+    setDismissed(true);
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-24 z-30 mx-auto max-w-md lg:inset-x-auto lg:right-6 lg:bottom-6 lg:mx-0 lg:w-96">
-      <Alert>
-        <Alert.Indicator>
-          <Download className="size-5" aria-hidden />
-        </Alert.Indicator>
-        <Alert.Content>
-          <Alert.Title>Install Sync</Alert.Title>
-          <Alert.Description>
-            Add it to your home screen for faster access on event day.
-          </Alert.Description>
-        </Alert.Content>
-        <Button size="sm" onPress={install}>
-          Install
-        </Button>
-        <CloseButton aria-label="Dismiss install prompt" onPress={dismiss} />
-      </Alert>
+    <div className="pointer-events-none fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[45] mx-auto max-w-md lg:inset-x-auto lg:right-6 lg:bottom-6 lg:mx-0 lg:w-96">
+      <section
+        aria-label="Install Sync"
+        className="install-popup pointer-events-auto rounded-2xl border border-border bg-surface p-4 text-foreground shadow-overlay"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <Typography type="body-sm" weight="semibold" className="pt-1">
+            Install Sync
+          </Typography>
+          <Button
+            variant="ghost"
+            isIconOnly
+            aria-label="Dismiss install prompt"
+            onPress={dismiss}
+            className="!size-11 !shrink-0 !border-transparent !bg-transparent !text-accent shadow-none hover:!bg-transparent"
+          >
+            <X className="!size-6" strokeWidth={3} aria-hidden />
+          </Button>
+        </div>
+        <Typography type="body-sm" color="muted" className="mt-1 leading-5">
+          {canPrompt
+            ? "Add it to your home screen for faster access on event day."
+            : getInstallInstructions(platform)}
+        </Typography>
+        {canPrompt ? (
+          <Button
+            size="sm"
+            isPending={pending}
+            onPress={install}
+            className="mt-4 w-full"
+          >
+            Install
+          </Button>
+        ) : null}
+      </section>
     </div>
   );
 }

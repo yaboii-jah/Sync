@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Card, Tabs, Typography } from "@heroui/react";
+import { Card, Chip, Separator, Tabs, Typography } from "@/components/ui";
 import type { Key } from "react-aria-components/Tabs";
 import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -12,7 +12,7 @@ import type {
 import {
   getBookmarkedSessionIds,
   getEvent,
-  getSessionsWithSpeakers,
+  getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { formatManilaDate, formatManilaTime } from "@/lib/format";
 import {
@@ -29,23 +29,14 @@ import { SessionCard } from "./session-card";
 import { SessionModal } from "@/components/sessions/session-modal";
 import { ScrollToNow } from "./scroll-to-now";
 import { LiveMiniBar } from "./live-mini-bar";
+import { InstallChip } from "@/components/push/install-chip";
+import {
+  getConflictingSessionIds,
+  getLiveSessions,
+  groupSessionsByStartTime,
+} from "@/lib/program-flow";
 
 type View = "all" | "flow";
-
-/** Where the day currently sits on the rail. */
-function NowMarker() {
-  return (
-    <div aria-hidden className="flex items-center gap-2.5 pb-3">
-      <span className="flex w-3 shrink-0 justify-center">
-        <span className="bg-accent size-2.5 rounded-full ring-4 ring-(--accent)/25" />
-      </span>
-      <span className="text-accent text-[10px] font-bold tracking-[0.12em]">
-        NOW
-      </span>
-      <span className="bg-accent/25 h-px flex-1" />
-    </div>
-  );
-}
 
 interface HomeClientProps {
   initialEvent: EventInfo;
@@ -74,16 +65,14 @@ export function HomeClient({
   const activeSession =
     sessions.find((session) => session.id === activeSessionId) ?? null;
 
-  const liveSession =
-    sessions.find(
-      (session) => effectiveSessionStatus(session, now) === "ongoing",
-    ) ?? null;
+  const liveSessions = getLiveSessions(sessions, now);
+  const conflictIds = getConflictingSessionIds(sessions, bookmarks, now);
 
   async function refetchProgramFlow() {
     const client = createClient();
     const [nextEvent, nextSessions, nextBookmarks] = await Promise.all([
       getEvent(client),
-      getSessionsWithSpeakers(client),
+      getPublishedSessionsWithSpeakers(client),
       getBookmarkedSessionIds(client),
     ]);
 
@@ -117,15 +106,28 @@ export function HomeClient({
         toast("Could not update your flow", "error");
         setBookmarks((previous) => {
           const reverted = new Set(previous);
-          if (reverted.has(sessionId)) {
-            reverted.delete(sessionId);
-          } else {
-            reverted.add(sessionId);
-          }
+          if (wasBookmarked) reverted.add(sessionId);
+          else reverted.delete(sessionId);
           return reverted;
         });
       } else {
-        toast(wasBookmarked ? "Removed from My Flow" : "Added to My Flow");
+        const isBookmarked = result.bookmarked ?? !wasBookmarked;
+        setBookmarks((previous) => {
+          const next = new Set(previous);
+          if (isBookmarked) next.add(sessionId);
+          else next.delete(sessionId);
+          return next;
+        });
+
+        if (isBookmarked && (result.conflicts?.length ?? 0) > 0) {
+          const count = result.conflicts?.length ?? 0;
+          toast(
+            `Added to My Flow. Overlaps with ${count} saved ${count === 1 ? "session" : "sessions"}.`,
+            "warning",
+          );
+        } else {
+          toast(isBookmarked ? "Added to My Flow" : "Removed from My Flow");
+        }
       }
     });
   }
@@ -154,110 +156,59 @@ export function HomeClient({
       );
     }
 
-    /*
-     * A slim progress rail beside the cells. The line itself is the timeline:
-     * filled through everything already past, part-filled across the session
-     * running right now, hollow for what is still to come — so the day's
-     * progress is legible at a glance without reading a single time.
-     *
-     * Only 12px wide with no time column; that column cost ~90px of a 390px
-     * screen and pushed titles to four lines, so the times live in the cells.
-     */
-    const nowIndex = items.findIndex(
-      (session) => new Date(session.start_time).getTime() > now,
-    );
+    const groups = groupSessionsByStartTime(items);
 
     return (
-      <ol className="flex flex-col">
-        {items.map((session, index) => {
-          const status = effectiveSessionStatus(session, now);
-          const startedAt = new Date(session.start_time).getTime();
-          const endsAt = new Date(session.end_time).getTime();
-
-          /*
-           * How much of this row's rail segment is behind us. Quantised to the
-           * minute so the server and client renders agree.
-           */
-          const nowMinute = Math.floor(now / 60_000) * 60_000;
-          const fillPct =
-            status === "finished"
-              ? 100
-              : status === "ongoing"
-                ? Math.min(
-                    100,
-                    Math.max(
-                      0,
-                      ((nowMinute - startedAt) / (endsAt - startedAt)) * 100,
-                    ),
-                  )
-                : 0;
+      <ol className="flex flex-col gap-6">
+        {groups.map((group) => {
+          const live = group.sessions.some(
+            (session) => effectiveSessionStatus(session, now) === "ongoing",
+          );
 
           return (
-            <li key={session.id}>
-              {index === nowIndex ? <NowMarker /> : null}
-
-              {/*
-                * The start time reads as a header above its cell rather than in
-                * a fixed left column. Same information, none of the ~90px that
-                * column cost on a 390px screen, and the day still scans
-                * top-to-bottom as a sequence of times.
-                */}
-              <div className="flex items-baseline justify-between gap-3 pb-1.5">
+            <li key={group.key}>
+              <div className="flex items-center justify-between gap-3 pb-2">
                 <span
                   className={`text-[13px] font-semibold tabular-nums ${
-                    status === "ongoing"
-                      ? "text-accent"
-                      : status === "finished"
-                        ? "text-muted"
-                        : "text-foreground"
+                    live ? "text-success" : "text-foreground"
                   }`}
                 >
-                  {formatManilaTime(session.start_time)}
+                  {formatManilaTime(group.startTime)}
                 </span>
-                {status === "ongoing" ? (
-                  <span className="text-accent flex items-center gap-1.5 text-[10px] font-bold tracking-[0.12em]">
-                    <span aria-hidden className="relative flex size-1.5">
-                      <span className="bg-accent absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:animate-none" />
-                      <span className="bg-accent relative inline-flex size-1.5 rounded-full" />
+                <div className="flex items-center gap-2">
+                  {group.sessions.length > 1 ? (
+                    <Chip size="sm" variant="tertiary">
+                      Parallel
+                    </Chip>
+                  ) : null}
+                  {live ? (
+                    <span className="text-success flex items-center gap-1.5 text-[10px] font-bold tracking-[0.12em]">
+                      <span aria-hidden className="relative flex size-1.5">
+                        <span className="bg-success absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:animate-none" />
+                        <span className="bg-success relative inline-flex size-1.5 rounded-full" />
+                      </span>
+                      LIVE
                     </span>
-                    LIVE
-                  </span>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
 
-              <div className="flex gap-2.5 pb-3">
-                <div
-                  aria-hidden
-                  className="relative flex w-3 shrink-0 justify-center"
-                >
-                  <span
-                    className="absolute inset-y-0 w-[3px] rounded-full"
-                    style={{
-                      background: `linear-gradient(to bottom, var(--accent) ${fillPct}%, var(--separator) ${fillPct}%)`,
-                    }}
-                    suppressHydrationWarning
-                  />
-                  <span
-                    className={`relative mt-3.5 size-2.5 rounded-full ${
-                      status === "ongoing"
-                        ? "bg-accent ring-accent/25 ring-4"
-                        : status === "finished"
-                          ? "bg-accent"
-                          : "bg-separator"
-                    }`}
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-3">
+                {group.sessions.map((session) => (
                   <SessionCard
+                    key={session.id}
                     session={session}
                     bookmarked={bookmarks.has(session.id)}
+                    conflict={view === "flow" && conflictIds.has(session.id)}
                     now={now}
                     onToggleBookmark={handleToggleBookmark}
                     onOpen={(target) => setActiveSessionId(target.id)}
                   />
-                </div>
+                ))}
               </div>
+              {groups.length > 1 && group.key !== groups[groups.length - 1].key ? (
+                <Separator className="mt-6" />
+              ) : null}
             </li>
           );
         })}
@@ -267,10 +218,14 @@ export function HomeClient({
 
   return (
     <>
-      {liveSession ? (
+      {liveSessions[0] ? (
         <LiveMiniBar
-          targetId={`session-${liveSession.id}`}
-          title={liveSession.title}
+          targetId={`session-${liveSessions[0].id}`}
+          title={
+            liveSessions.length === 1
+              ? liveSessions[0].title
+              : `${liveSessions.length} sessions live`
+          }
         />
       ) : null}
 
@@ -282,6 +237,9 @@ export function HomeClient({
             now={now}
             onOpenSession={(target) => setActiveSessionId(target.id)}
           />
+          <div className="mt-4">
+            <InstallChip />
+          </div>
           <Typography type="body-sm" color="muted" className="mt-4 hidden lg:block">
             {formatManilaDate(event.starts_at)}
             {", "}
@@ -302,7 +260,6 @@ export function HomeClient({
           <Typography type="body-sm" color="muted" className="mt-1">
             {formatManilaDate(event.starts_at)}
           </Typography>
-
           <Tabs
             className="mt-4"
             selectedKey={view}
@@ -310,13 +267,19 @@ export function HomeClient({
           >
             <Tabs.List
               aria-label="Session filter"
-              className="w-full gap-0 rounded-[calc(var(--radius)*2.5)] bg-default p-1"
+              className="w-full gap-1 rounded-2xl bg-surface-secondary p-1.5 shadow-sm"
             >
-              <Tabs.Tab id="all" className="min-w-0 basis-0 flex-1">
+              <Tabs.Tab
+                id="all"
+                className="min-w-0 basis-0 flex-1 font-medium data-[selected]:bg-accent data-[selected]:text-accent-foreground"
+              >
                 All
                 <Tabs.Indicator />
               </Tabs.Tab>
-              <Tabs.Tab id="flow" className="min-w-0 basis-0 flex-1">
+              <Tabs.Tab
+                id="flow"
+                className="min-w-0 basis-0 flex-1 font-medium data-[selected]:bg-accent data-[selected]:text-accent-foreground"
+              >
                 My Flow
                 <Tabs.Indicator />
               </Tabs.Tab>
@@ -341,7 +304,9 @@ export function HomeClient({
         />
       ) : null}
 
-      <ScrollToNow targetId={liveSession ? `session-${liveSession.id}` : null} />
+      <ScrollToNow
+        targetId={liveSessions[0] ? `session-${liveSessions[0].id}` : null}
+      />
     </>
   );
 }

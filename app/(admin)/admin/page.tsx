@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Alert, Card, Chip, Separator, Typography } from "@heroui/react";
+import { Alert, Card, Chip, Separator, Typography } from "@/components/ui/static";
 import { BellRing, Radio, Send, Users, Wifi } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -90,26 +90,34 @@ export default async function AdminDashboardPage() {
           <Card.Header>
             <Card.Description>Happening now</Card.Description>
             <Card.Title>
-              {dashboard.current_session?.title ?? "Nothing is live"}
+              {dashboard.current_sessions.length > 0
+                ? `${dashboard.current_sessions.length} session${dashboard.current_sessions.length === 1 ? "" : "s"} live`
+                : "Nothing is live"}
             </Card.Title>
           </Card.Header>
           <Card.Content className="flex flex-col gap-2">
-            {dashboard.current_session ? (
-              <>
-                <Typography type="body-sm" color="muted">
-                  {dashboard.current_session.room ?? "TBA"}
-                  {dashboard.current_session.actual_started_at
-                    ? `, started ${formatRelativeTime(dashboard.current_session.actual_started_at)}`
-                    : `, ${formatManilaTime(dashboard.current_session.start_time)}`}
-                </Typography>
-                {dashboard.current_session.status_override ? (
-                  <div>
-                    <Chip size="sm" variant="tertiary">
-                      Manual override
-                    </Chip>
-                  </div>
-                ) : null}
-              </>
+            {dashboard.current_sessions.length > 0 ? (
+              dashboard.current_sessions.map((session, index) => (
+                <div key={session.id}>
+                  {index > 0 ? <Separator className="my-2" /> : null}
+                  <Typography type="body-sm" weight="medium">
+                    {session.title}
+                  </Typography>
+                  <Typography type="body-sm" color="muted" className="mt-1">
+                    {session.room ?? "TBA"}
+                    {session.actual_started_at
+                      ? `, started ${formatRelativeTime(session.actual_started_at)}`
+                      : `, ${formatManilaTime(session.start_time)}`}
+                  </Typography>
+                  {session.status_override ? (
+                    <div className="mt-2">
+                      <Chip size="sm" variant="tertiary">
+                        Manual override
+                      </Chip>
+                    </div>
+                  ) : null}
+                </div>
+              ))
             ) : (
               <Typography type="body-sm" color="muted">
                 No session is currently marked ongoing.
@@ -122,15 +130,29 @@ export default async function AdminDashboardPage() {
           <Card.Header>
             <Card.Description>Up next</Card.Description>
             <Card.Title>
-              {dashboard.next_session?.title ?? "Nothing upcoming"}
+              {dashboard.next_sessions.length > 0
+                ? `${dashboard.next_sessions.length} session${dashboard.next_sessions.length === 1 ? "" : "s"} next`
+                : "Nothing upcoming"}
             </Card.Title>
           </Card.Header>
-          <Card.Content>
-            <Typography type="body-sm" color="muted">
-              {dashboard.next_session
-                ? `${formatManilaTime(dashboard.next_session.start_time)}, ${dashboard.next_session.room ?? "TBA"}`
-                : "No upcoming session remains."}
-            </Typography>
+          <Card.Content className="flex flex-col gap-2">
+            {dashboard.next_sessions.length > 0 ? (
+              dashboard.next_sessions.map((session, index) => (
+                <div key={session.id}>
+                  {index > 0 ? <Separator className="my-2" /> : null}
+                  <Typography type="body-sm" weight="medium">
+                    {session.title}
+                  </Typography>
+                  <Typography type="body-sm" color="muted" className="mt-1">
+                    {formatManilaTime(session.start_time)}, {session.room ?? "TBA"}
+                  </Typography>
+                </div>
+              ))
+            ) : (
+              <Typography type="body-sm" color="muted">
+                No upcoming session remains.
+              </Typography>
+            )}
           </Card.Content>
         </Card>
       </section>

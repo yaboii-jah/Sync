@@ -1,12 +1,10 @@
 /**
  * Canonical forms for the networking destinations an attendee may publish.
  *
- * The database holds the real rule: `social_profiles.social_profiles_canonical_url_check`
- * accepts only one exact URL shape per network. These patterns mirror that
- * check so a mistyped link is rejected in the form rather than as a constraint
- * violation, and so pasted links — mobile hosts, tracking query strings,
- * trailing punctuation — are reduced to the one shape the column accepts. The
- * database stays the authority: anything that slips past here still fails there.
+ * Direct profile links are reduced to one stable URL per network. Facebook's
+ * mobile share sheet can instead produce an opaque `/share/<token>/` link, so
+ * that approved platform route is preserved rather than guessed or followed.
+ * The database constraint mirrors these forms as a final backstop.
  */
 export const SOCIAL_NETWORKS = [
   "linkedin",
@@ -23,10 +21,6 @@ export type SocialLinks = Partial<Record<SocialNetwork, string>>;
 interface NetworkSpec {
   label: string;
   placeholder: string;
-  /** A full profile URL for this network, capturing the identifying part. */
-  url: RegExp;
-  /** The same identifying part typed on its own, without a URL around it. */
-  handle: RegExp;
   /** Builds the single URL shape the column's check constraint accepts. */
   canonical: (handle: string) => string;
   /** Root paths belonging to the platform rather than to a profile. */
@@ -37,15 +31,11 @@ export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
   linkedin: {
     label: "LinkedIn",
     placeholder: "https://linkedin.com/in/your-name",
-    url: /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?linkedin\.com\/in\/([a-z0-9\-_%]{1,100})\/?$/i,
-    handle: /^([a-z0-9\-_%]{1,100})$/i,
     canonical: (handle) => `https://www.linkedin.com/in/${handle}`,
   },
   instagram: {
     label: "Instagram",
     placeholder: "https://instagram.com/yourhandle",
-    url: /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?instagram\.com\/([a-z0-9._]{1,30})\/?$/i,
-    handle: /^@?([a-z0-9._]{1,30})$/i,
     canonical: (handle) => `https://www.instagram.com/${handle}/`,
     reserved: new Set([
       "about",
@@ -61,8 +51,6 @@ export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
   facebook: {
     label: "Facebook",
     placeholder: "https://facebook.com/yourhandle",
-    url: /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?facebook\.com\/(profile\.php\?id=[0-9]{1,200}|[a-z0-9.]{1,50})\/?$/i,
-    handle: /^@?([a-z0-9.]{1,50})$/i,
     canonical: (handle) => `https://www.facebook.com/${handle}`,
     reserved: new Set([
       "about",
@@ -81,8 +69,6 @@ export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
   github: {
     label: "GitHub",
     placeholder: "https://github.com/your-name",
-    url: /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?)\/?$/i,
-    handle: /^@?([a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?)$/i,
     canonical: (handle) => `https://github.com/${handle}`,
     reserved: new Set([
       "about",
@@ -111,42 +97,142 @@ export const SOCIAL_SPECS: Record<SocialNetwork, NetworkSpec> = {
   },
 };
 
+const SOCIAL_ROOTS: Record<SocialNetwork, string> = {
+  linkedin: "linkedin.com",
+  instagram: "instagram.com",
+  facebook: "facebook.com",
+  github: "github.com",
+};
+const MAX_SOCIAL_URL_LENGTH = 256;
+
+const DIRECT_PROFILE_PATTERNS: Record<SocialNetwork, RegExp> = {
+  linkedin: /^\/in\/([a-z0-9_%\-]{1,100})(?:\/[a-z0-9._~%\-]+)*\/?$/i,
+  instagram: /^\/?@?([a-z0-9._]{1,30})\/?$/i,
+  facebook: /^\/([a-z0-9.]{1,50})\/?$/i,
+  github: /^\/([a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?)\/?$/i,
+};
+
+function isTrustedHostname(network: SocialNetwork, hostname: string): boolean {
+  const root = SOCIAL_ROOTS[network];
+  return hostname === root || hostname.endsWith(`.${root}`);
+}
+
+function isPlatformAddress(value: string, network: SocialNetwork): boolean {
+  const root = SOCIAL_ROOTS[network];
+  return new RegExp(`^(?:[a-z0-9-]+\\.)?${root.replace(".", "\\.")}(?:/|$)`, "i").test(
+    value,
+  );
+}
+
+function parseUrl(value: string, network: SocialNetwork): URL | null {
+  const looksLikeUrl =
+    /^[a-z][a-z\d+.-]*:\/\//i.test(value) ||
+    value.includes("/") ||
+    isPlatformAddress(value, network);
+  if (!looksLikeUrl) return null;
+
+  const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(value)
+    ? value
+    : `https://${value}`;
+
+  try {
+    const url = new URL(candidate);
+    if (!/^https?:$/.test(url.protocol)) return null;
+    if (
+      url.username ||
+      url.password ||
+      url.port ||
+      !isTrustedHostname(network, url.hostname.toLowerCase())
+    ) {
+      return null;
+    }
+
+    url.protocol = "https:";
+    url.hostname = `www.${SOCIAL_ROOTS[network]}`;
+    url.hash = "";
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeFacebookShareUrl(url: URL): string | null {
+  if (!/^\/share\/[A-Za-z0-9_-]{1,200}\/?$/.test(url.pathname)) {
+    return null;
+  }
+
+  return url.toString();
+}
+
+function normalizeDirectProfileUrl(
+  network: SocialNetwork,
+  url: URL,
+): string | null {
+  if (network === "facebook" && url.pathname === "/profile.php") {
+    if (!/^\?id=[0-9]{1,200}$/.test(url.search)) return null;
+    return `https://www.facebook.com/profile.php${url.search}`;
+  }
+
+  const match = url.pathname.match(DIRECT_PROFILE_PATTERNS[network]);
+  if (!match) return null;
+
+  const handle = match[1].toLowerCase();
+  if (SOCIAL_SPECS[network].reserved?.has(handle)) return null;
+
+  return SOCIAL_SPECS[network].canonical(handle);
+}
+
 /**
- * Reduces one pasted value to the canonical URL, or null when it is not a
- * profile link for that network. An empty value returns null, which the callers
- * read as "no link for this network" rather than as an error.
+ * Reduces one pasted value to a canonical URL, or null when it is not an
+ * approved destination for that network. An empty value returns null, which the
+ * callers read as "no link for this network" rather than as an error.
  *
- * Anything shaped like a URL must match that network's profile URL exactly, so
- * a post, a company page or a group — `linkedin.com/company/aws`,
- * `instagram.com/p/abc` — is rejected rather than mistaken for the handle in
- * its last path segment. A value with no host is treated as a typed handle.
+ * Direct URLs remain profile-shaped, so a post, company page, group, repository
+ * or other platform page is rejected rather than mistaken for a handle. The
+ * one deliberate opaque-link exception is Facebook's native share route.
+ * A value with no host is treated as a typed handle.
  */
 export function normalizeSocialUrl(
   network: SocialNetwork,
   value: string,
 ): string | null {
   const spec = SOCIAL_SPECS[network];
-  const withoutFragment = value.trim().replace(/#.*$/, "").replace(/[.,;)]+$/, "");
-  /*
-   * A query string is tracking noise everywhere except one place: Facebook's
-   * numeric profile form carries its identity in `?id=`, and the column's check
-   * constraint accepts that exact shape.
-   */
-  const trimmed = /[?&]id=[0-9]/.test(withoutFragment)
-    ? withoutFragment
-    : withoutFragment.replace(/\?.*$/, "");
+  const trimmed = value.trim().replace(/[.,;)]+$/, "");
 
   if (!trimmed) return null;
 
-  const looksLikeUrl = /^[a-z]+:\/\//i.test(trimmed) || trimmed.includes("/");
-  const match = trimmed.match(looksLikeUrl ? spec.url : spec.handle);
+  const url = parseUrl(trimmed, network);
+  if (url) {
+    if (network === "facebook" && url.pathname.startsWith("/share/")) {
+      const normalized = normalizeFacebookShareUrl(url);
+      return normalized && normalized.length <= MAX_SOCIAL_URL_LENGTH
+        ? normalized
+        : null;
+    }
+
+    const normalized = normalizeDirectProfileUrl(network, url);
+    return normalized && normalized.length <= MAX_SOCIAL_URL_LENGTH
+      ? normalized
+      : null;
+  }
+
+  const handlePattern =
+    network === "linkedin"
+      ? /^([a-z0-9\-_%]{1,100})$/i
+      : network === "instagram"
+        ? /^@?([a-z0-9._]{1,30})$/i
+        : network === "facebook"
+          ? /^@?([a-z0-9.]{1,50})$/i
+          : /^@?([a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?)$/i;
+  const match = trimmed.match(handlePattern);
 
   if (!match) return null;
 
   const handle = match[1].toLowerCase();
   if (spec.reserved?.has(handle)) return null;
 
-  return spec.canonical(handle);
+  const normalized = spec.canonical(handle);
+  return normalized.length <= MAX_SOCIAL_URL_LENGTH ? normalized : null;
 }
 
 /**
@@ -163,14 +249,12 @@ export function extractLinkedInProfileUrl(
   ...candidates: (string | null | undefined)[]
 ): string | null {
   const pattern =
-    /https?:\/\/(?:[a-z0-9-]+\.)?linkedin\.com\/in\/[a-z0-9\-_%]+/i;
+    /https?:\/\/(?:[a-z0-9-]+\.)?linkedin\.com\/in\/[^\s<>"']+/gi;
 
   for (const candidate of candidates) {
     if (!candidate) continue;
 
-    const match = candidate.match(pattern);
-
-    if (match) {
+    for (const match of candidate.matchAll(pattern)) {
       const normalized = normalizeSocialUrl("linkedin", match[0]);
       if (normalized) return normalized;
     }

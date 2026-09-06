@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Typography } from "@heroui/react";
+import { Typography } from "@/components/ui/static";
 
 interface EmptyStateProps {
   /** A stroke icon, sized by the caller-agnostic wrapper below. */

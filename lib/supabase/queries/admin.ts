@@ -20,8 +20,8 @@ export interface AdminDashboardData {
   push_device_count: number;
   override_count: number;
   failed_dispatch_count: number;
-  current_session: AdminDashboardSession | null;
-  next_session: AdminDashboardSession | null;
+  current_sessions: AdminDashboardSession[];
+  next_sessions: AdminDashboardSession[];
 }
 
 export interface AdminDashboardSession {
@@ -132,7 +132,20 @@ export async function isAdmin(client: QueryClient): Promise<boolean> {
 export async function getAdminDashboard(
   client: QueryClient,
 ): Promise<AdminDashboardData> {
-  return callRpc<AdminDashboardData>(client, "admin_get_dashboard");
+  const data = await callRpc<AdminDashboardData>(client, "admin_get_dashboard");
+  return {
+    ...data,
+    current_sessions: Array.isArray(data.current_sessions)
+      ? data.current_sessions
+      : [],
+    next_sessions: Array.isArray(data.next_sessions) ? data.next_sessions : [],
+  };
+}
+
+export interface AdminAttendeeDetail {
+  attendee: Pick<AdminAttendee, "id" | "name" | "photo_url" | "created_at">;
+  push_devices: Array<{ created_at: string }>;
+  social_profiles: Array<{ network: string; url: string }>;
 }
 
 export async function searchAdminAttendees(
@@ -145,6 +158,15 @@ export async function searchAdminAttendees(
     search_query: query,
     result_limit: limit,
     result_offset: offset,
+  });
+}
+
+export async function getAdminAttendee(
+  client: QueryClient,
+  attendeeId: string,
+): Promise<AdminAttendeeDetail> {
+  return callRpc<AdminAttendeeDetail>(client, "admin_get_attendee", {
+    target_attendee_id: attendeeId,
   });
 }
 

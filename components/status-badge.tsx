@@ -1,14 +1,13 @@
-import { Chip } from "@heroui/react";
+import { Chip } from "@/components/ui";
 import type { DisplayStatus } from "@/lib/format";
 
-/**
- * Status is monochrome. It reads through fill weight, not hue:
- * ongoing is a solid ink chip, not started is a neutral chip, finished fades.
- */
-const VARIANTS: Record<DisplayStatus, "primary" | "secondary" | "soft"> = {
-  not_started: "secondary",
-  ongoing: "primary",
-  finished: "soft",
+const STATUS_STYLES: Record<
+  DisplayStatus,
+  { color: "success" | "warning" | "default"; variant: "primary" | "soft" }
+> = {
+  not_started: { color: "warning", variant: "primary" },
+  ongoing: { color: "success", variant: "primary" },
+  finished: { color: "default", variant: "soft" },
 };
 
 const LABELS: Record<DisplayStatus, string> = {
@@ -21,10 +20,8 @@ export function StatusBadge({ status }: { status: DisplayStatus }) {
   return (
     <Chip
       size="sm"
-      variant={VARIANTS[status]}
-      className={
-        status === "ongoing" ? "bg-accent text-accent-foreground" : undefined
-      }
+      color={STATUS_STYLES[status].color}
+      variant={STATUS_STYLES[status].variant}
     >
       {LABELS[status]}
     </Chip>

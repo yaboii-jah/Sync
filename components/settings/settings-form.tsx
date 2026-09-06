@@ -10,7 +10,7 @@ import {
   Label,
   TextField,
   Typography,
-} from "@heroui/react";
+} from "@/components/ui";
 import {
   updateProfile,
   type UpdateProfileState,
@@ -70,7 +70,6 @@ export function SettingsForm({
               key={network}
               fullWidth
               name={network}
-              type="url"
               defaultValue={initialLinks[network] ?? ""}
               isInvalid={Boolean(state.error)}
             >

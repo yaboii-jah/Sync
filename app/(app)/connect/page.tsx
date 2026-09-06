@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Alert } from "@heroui/react";
+import { Alert } from "@/components/ui/static";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
@@ -32,8 +32,7 @@ export default async function ConnectPage({
 
   /*
    * Read through the card RPC rather than selecting `social_profiles`
-   * directly, so one query answers both what is saved and whether the card is
-   * published.
+   * directly, so one query answers what is saved for the stable card.
    */
   const card = await getOwnNetworkingCard();
   if (!card) throw new Error("Networking card recovery failed");
@@ -75,11 +74,7 @@ export default async function ConnectPage({
         ) : null}
 
         <div className="mt-6">
-          <ConnectClient
-            cardUrl={cardUrl}
-            initialIsPublic={card.isPublic}
-            initialLinks={card.links}
-          />
+          <ConnectClient cardUrl={cardUrl} initialLinks={card.links} initialTemplate={card.template} />
         </div>
       </div>
     </main>

@@ -1,4 +1,4 @@
-import { Skeleton as HeroSkeleton } from "@heroui/react";
+import { Skeleton as HeroSkeleton } from "@/components/ui/static";
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return <HeroSkeleton className={className} />;

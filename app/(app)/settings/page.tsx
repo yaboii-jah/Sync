@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { Card } from "@heroui/react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
-import { ThemeSwitch } from "@/components/theme-switch";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { SettingsBackButton } from "@/components/settings/settings-back-button";
 import { NotificationSettings } from "@/components/settings/notification-settings";
+import { InstallSettings } from "@/components/push/install-settings";
 
 export const metadata: Metadata = {
   title: "Account Settings — Sync",
@@ -32,18 +31,7 @@ export default async function SettingsPage() {
           initialLinks={card?.links ?? {}}
         />
 
-        <Card className="mt-4">
-          <Card.Header>
-            <Card.Title>Appearance</Card.Title>
-            <Card.Description>
-              Follow your device, or pick a mode.
-            </Card.Description>
-          </Card.Header>
-          <Card.Content>
-            <ThemeSwitch showSystem />
-          </Card.Content>
-        </Card>
-
+        <InstallSettings />
         <NotificationSettings />
       </div>
     </main>

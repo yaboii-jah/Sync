@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Card, Typography } from "@heroui/react";
+import Link from "next/link";
+import { Card, Typography } from "@/components/ui/static";
 import { Camera, Globe, type LucideIcon } from "lucide-react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +19,10 @@ const ICONS: Record<string, LucideIcon> = {
   camera: Camera,
 };
 
+function isInternalQuickLink(url: string) {
+  return url.startsWith("/") && !url.startsWith("//");
+}
+
 export default async function MorePage() {
   await requireCompleteProfile();
 
@@ -26,10 +31,11 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
+  const speakers = people.filter((person) => person.role === "speaker");
 
   return (
     <main className="w-full">
-      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-3xl lg:px-10 lg:pt-10">
+      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-5xl lg:px-10 lg:pt-10">
         <AppHeader />
         <PageHeader title="More" />
 
@@ -41,6 +47,30 @@ export default async function MorePage() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               {quickLinks.map((link) => {
                 const Icon = (link.icon && ICONS[link.icon]) || Globe;
+                const content = (
+                  <Card className="hover:bg-default h-full transition-colors">
+                    <Card.Content className="flex items-center gap-3 py-4">
+                      <span
+                        aria-hidden
+                        className="bg-surface-secondary flex size-10 shrink-0 items-center justify-center rounded-full"
+                      >
+                        <Icon className="size-5" />
+                      </span>
+                      <Typography type="body-sm" weight="medium">
+                        {link.label}
+                      </Typography>
+                    </Card.Content>
+                  </Card>
+                );
+
+                if (isInternalQuickLink(link.url)) {
+                  return (
+                    <Link key={link.id} href={link.url} className="rounded-xl">
+                      {content}
+                    </Link>
+                  );
+                }
+
                 return (
                   <a
                     key={link.id}
@@ -49,19 +79,7 @@ export default async function MorePage() {
                     rel="noopener noreferrer"
                     className="rounded-xl"
                   >
-                    <Card className="hover:bg-default h-full transition-colors">
-                      <Card.Content className="flex items-center gap-3 py-4">
-                        <span
-                          aria-hidden
-                          className="bg-surface-secondary flex size-10 shrink-0 items-center justify-center rounded-full"
-                        >
-                          <Icon className="size-5" />
-                        </span>
-                        <Typography type="body-sm" weight="medium">
-                          {link.label}
-                        </Typography>
-                      </Card.Content>
-                    </Card>
+                    {content}
                   </a>
                 );
               })}
@@ -71,10 +89,13 @@ export default async function MorePage() {
 
         <section className="mt-8 mb-4">
           <Typography.Heading level={2} className="text-base">
-            Speakers and sponsors
+            Speakers
           </Typography.Heading>
+          <Typography type="body-sm" color="muted" className="mt-1">
+            Meet the people sharing their work and perspective on event day.
+          </Typography>
           <div className="mt-3">
-            <DirectoryClient people={people} />
+            <DirectoryClient people={speakers} />
           </div>
         </section>
       </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Alert, Card, Chip, Separator, Typography } from "@heroui/react";
+import { Alert, Card, Chip, Separator, Typography } from "@/components/ui/static";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -12,6 +12,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminNotification } from "@/lib/supabase/queries/admin";
 import { formatRelativeTime } from "@/lib/format";
 import { DispatchRefresh } from "@/components/admin/dispatch-refresh";
+
+function dispatchTone(status: string | null) {
+  if (status === "failed") return "danger" as const;
+  if (status === "completed") return "success" as const;
+  if (status === "pending" || status === "claimed") return "warning" as const;
+  return "default" as const;
+}
 
 export default async function AdminNotificationDetailPage({
   params,
@@ -55,7 +62,7 @@ export default async function AdminNotificationDetailPage({
         Notification history
       </Link>
 
-      <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <Chip size="sm" variant="tertiary">
@@ -77,7 +84,9 @@ export default async function AdminNotificationDetailPage({
           ) : null}
         </div>
 
-        <Chip variant="secondary">{dispatch?.status ?? "pending"}</Chip>
+        <Chip color={dispatchTone(dispatch?.status ?? null)} variant="soft">
+          {dispatch?.status ?? "pending"}
+        </Chip>
       </div>
 
       {dispatch?.last_error ? (
@@ -125,8 +134,8 @@ export default async function AdminNotificationDetailPage({
             {detail.recipients.map((recipient, index) => (
               <div key={recipient.id}>
                 {index > 0 ? <Separator /> : null}
-                <div className="flex items-center justify-between gap-3 px-5 py-3">
-                  <Typography type="body-sm" weight="medium">
+                <div className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
+                  <Typography type="body-sm" weight="medium" className="min-w-0 break-words">
                     {recipient.name || "Unnamed attendee"}
                   </Typography>
                   <Typography type="body-xs" color="muted">
@@ -146,22 +155,21 @@ export default async function AdminNotificationDetailPage({
             {detail.deliveries.map((delivery, index) => (
               <div key={`${delivery.user_id}-${delivery.device_id}`}>
                 {index > 0 ? <Separator /> : null}
-                <div className="px-5 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <Typography type="body-sm" weight="medium">
+                <div className="px-4 py-3 sm:px-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Typography type="body-sm" weight="medium" className="min-w-0 break-words">
                       {delivery.name ?? "Unknown attendee"}
                     </Typography>
-                    <Chip
-                      size="sm"
-                      variant={
-                        delivery.status === "accepted" ? "secondary" : "primary"
-                      }
-                    >
+                    <Chip size="sm" color={delivery.status === "accepted" ? "success" : "danger"} variant="soft">
                       {delivery.status}
                     </Chip>
                   </div>
+                  <Typography type="body-xs" color="muted" className="mt-1">
+                    {formatRelativeTime(delivery.attempted_at)}
+                    {delivery.status_code ? ` · HTTP ${delivery.status_code}` : ""}
+                  </Typography>
                   {delivery.error ? (
-                    <Typography type="body-xs" color="muted" className="mt-1">
+                    <Typography type="body-xs" color="muted" className="mt-1 break-words">
                       {delivery.error}
                     </Typography>
                   ) : null}

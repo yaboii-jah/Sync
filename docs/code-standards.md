@@ -6,6 +6,8 @@
 - Fix root causes, don't layer workarounds — if Realtime data arrives in the wrong shape, fix the query or the schema, don't patch it in the UI layer
 - Don't mix unrelated concerns in one component or route — auth logic, data fetching, and presentation stay separated
 - Don't build toward deferred scope such as workshop registration or general content management; admin work remains limited to the approved event-operations surface
+- Treat `datetime-local` values as Asia/Manila wall-clock input at the boundary; never let the browser or server default timezone reinterpret an event time
+- Keep attendee queries explicitly publication-filtered even when RLS also permits allowlisted admins to read drafts
 
 ## TypeScript
 
@@ -21,17 +23,22 @@
 
 ## Styling
 
-- Use CSS custom property tokens for color and spacing — no hardcoded hex values
-- Follow the light/dark theme defined in `ui-context.md` with neutral HeroUI surfaces, one accent tint, and the card-based, bottom-tab-navigation layout; keep both modes readable and consistent
+- Use CSS custom property tokens for color and spacing — no hardcoded hex values except functional canvas/SVG media APIs that require an explicit color string
+- Follow the fixed dark AWS Student Community Day theme in `ui-context.md`; do not add a light, system, or per-user appearance mode. Standard surfaces are tonal and borderless; gold is reserved for focal, live, selected, and primary emphasis.
+- Use local primitives from `components/ui/`; use React Aria Components directly only when the local primitive does not cover an accessible interaction
 - Status badges (Not Started / Ongoing / Finished) use a consistent color mapping wherever they appear — schedule, notifications, session detail
+- Browser media work must invalidate stale async requests and stop tracks on hidden-page and unmount paths; never leave camera ownership to a route transition
+- Shared attendee actions such as profile options and history-aware Back behavior belong in reusable components rather than route-specific copies
 
 ## API Routes / Edge Functions
 
 - Validate and parse request input before any logic runs
 - Enforce auth before any mutation — no route trusts a client-supplied user ID
 - Every admin mutation must verify the database allowlist, use a request UUID for idempotency, and append its audit record transactionally
+- Destructive admin actions require a local `AlertDialog`, and database functions must enforce the same eligibility rule independently of the UI
 - Return consistent, predictable response shapes across all routes
-- Reserve custom routes and Supabase Edge Functions for what RLS and the Supabase client can't handle directly — primarily, sending a Web Push notification when a session's status changes
+- Schedule synchronization must not create attendee notifications; only audited organizer announcements and explicitly confirmed manual status actions may enter the notification pipeline
+- Reserve custom routes and Supabase Edge Functions for what RLS and the Supabase client can't handle directly — primarily, sending Web Push for an already-created organizer notification
 
 ## Data and Storage
 

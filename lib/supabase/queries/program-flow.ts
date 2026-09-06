@@ -13,6 +13,7 @@ export interface SpeakerLite {
 export interface EventInfo {
   id: string;
   name: string;
+  theme: string;
   venue: string | null;
   starts_at: string;
   ends_at: string;
@@ -51,6 +52,9 @@ interface SessionRow {
   session_speakers: { speakers_sponsors: SpeakerLite }[];
 }
 
+const SESSION_SELECT =
+  "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))";
+
 function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
   return {
     id: row.id,
@@ -74,7 +78,7 @@ export async function getEvent(
 ): Promise<EventInfo | null> {
   const { data, error } = await client
     .from("events")
-    .select("id, name, venue, starts_at, ends_at, status")
+    .select("id, name, theme, venue, starts_at, ends_at, status")
     .order("starts_at")
     .limit(1)
     .maybeSingle();
@@ -83,15 +87,19 @@ export async function getEvent(
   return data ?? null;
 }
 
-export async function getSessionsWithSpeakers(
+async function getSessionsWithSpeakersInternal(
   client: QueryClient,
+  publishedOnly: boolean,
 ): Promise<SessionWithSpeakers[]> {
-  const { data, error } = await client
-    .from("sessions")
-    .select(
-      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))",
-    )
-    .order("start_time", { ascending: true });
+  const baseQuery = client.from("sessions").select(SESSION_SELECT);
+  const query = publishedOnly
+    ? baseQuery.eq("published", true)
+    : baseQuery;
+  const { data, error } = await query
+    .order("start_time", { ascending: true })
+    .order("end_time", { ascending: true })
+    .order("title", { ascending: true })
+    .order("id", { ascending: true });
 
   if (error) throw error;
   if (!data) return [];
@@ -99,21 +107,50 @@ export async function getSessionsWithSpeakers(
   return (data as unknown as SessionRow[]).map(toSessionWithSpeakers);
 }
 
-export async function getSessionById(
+/** Admin-only callers use this to retain visibility of unpublished drafts. */
+export async function getSessionsWithSpeakers(
+  client: QueryClient,
+): Promise<SessionWithSpeakers[]> {
+  return getSessionsWithSpeakersInternal(client, false);
+}
+
+/** Attendee surfaces must filter explicitly because admins can read drafts. */
+export async function getPublishedSessionsWithSpeakers(
+  client: QueryClient,
+): Promise<SessionWithSpeakers[]> {
+  return getSessionsWithSpeakersInternal(client, true);
+}
+
+async function getSessionByIdInternal(
   client: QueryClient,
   sessionId: string,
+  publishedOnly: boolean,
 ): Promise<SessionWithSpeakers | null> {
-  const { data, error } = await client
-    .from("sessions")
-    .select(
-      "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))",
-    )
+  const baseQuery = client.from("sessions").select(SESSION_SELECT);
+  const query = publishedOnly
+    ? baseQuery.eq("published", true)
+    : baseQuery;
+  const { data, error } = await query
     .eq("id", sessionId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
   return toSessionWithSpeakers(data as unknown as SessionRow);
+}
+
+export async function getSessionById(
+  client: QueryClient,
+  sessionId: string,
+): Promise<SessionWithSpeakers | null> {
+  return getSessionByIdInternal(client, sessionId, false);
+}
+
+export async function getPublishedSessionById(
+  client: QueryClient,
+  sessionId: string,
+): Promise<SessionWithSpeakers | null> {
+  return getSessionByIdInternal(client, sessionId, true);
 }
 
 export async function getBookmarkedSessionIds(

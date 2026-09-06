@@ -1,17 +1,17 @@
 "use client";
 
-import { Card, Link, ProgressBar, Typography } from "@heroui/react";
+import { Card, Link, ProgressBar, Separator, Typography } from "@/components/ui";
 import { ExternalLink, MapPin } from "lucide-react";
 import type {
   EventInfo,
   SessionWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import {
-  effectiveSessionStatus,
   formatManilaDate,
   formatManilaTime,
   formatTimeRange,
 } from "@/lib/format";
+import { getLiveSessions, getNextSessions } from "@/lib/program-flow";
 
 interface HeroCardProps {
   event: EventInfo;
@@ -21,19 +21,20 @@ interface HeroCardProps {
   onOpenSession?: (session: SessionWithSpeakers) => void;
 }
 
-/*
- * The hero is the one dramatic surface on the screen — a saturated accent
- * gradient the way iOS feature cards work (Music's now-playing, Fitness,
- * App Store "Today"), while every other card stays a quiet grouped cell.
- * Solid gradient, no translucency; text is white with opacity steps rather
- * than the theme's muted token, which would vanish on the blue.
- */
 const heroSurface =
-  "squircle rounded-[24px] border-none bg-linear-to-br from-[#00369c] via-[#0053d6] to-[#0072f5] shadow-xl shadow-[#0053d6]/25";
-const heroTitle = "text-white";
-const heroMuted = "text-white/75";
+  "event-hero squircle relative overflow-hidden rounded-[28px] p-5 sm:p-6";
+const heroTitle = "text-foreground text-2xl font-semibold tracking-tight";
+const heroMuted = "text-muted";
 const venueMapUrl =
   "https://www.google.com/maps/search/?api=1&query=Asia+Pacific+College";
+
+function HeroTheme({ theme }: { theme: string }) {
+  return (
+      <Card.Description className="w-full text-center text-xs font-semibold tracking-[0.14em] text-accent uppercase">
+      {theme}
+    </Card.Description>
+  );
+}
 
 /**
  * Time left in a running session, live-activity style: a ticking `mm:ss` in the
@@ -60,30 +61,90 @@ function countdownParts(msRemaining: number) {
   };
 }
 
-/**
- * Wraps the hero in a button when it represents a real session, so the card
- * opens the same detail sheet its list cell does. The states that describe the
- * event rather than a session (countdown, wrap, no-session) stay static.
- */
-function Pressable({
+function HeroSessionItem({
   session,
+  now,
+  live,
   onOpenSession,
-  children,
 }: {
   session: SessionWithSpeakers;
+  now: number;
+  live: boolean;
   onOpenSession?: (session: SessionWithSpeakers) => void;
-  children: React.ReactNode;
 }) {
-  if (!onOpenSession) return <>{children}</>;
+  const sessionStart = new Date(session.start_time).getTime();
+  const sessionEnd = new Date(session.end_time).getTime();
+  const nowMinute = Math.floor(now / 60_000) * 60_000;
+  const elapsedPct = Math.min(
+    100,
+    Math.max(
+      0,
+      ((nowMinute - sessionStart) / (sessionEnd - sessionStart)) * 100,
+    ),
+  );
+
+  const content = (
+    <div className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-background/45 p-3.5 backdrop-blur-sm">
+      <Typography type="body" weight="semibold" className="leading-snug text-foreground">
+        {session.title}
+      </Typography>
+      <Typography type="body-xs" className={`tabular-nums ${heroMuted}`}>
+        {formatTimeRange(session.start_time, session.end_time)}
+        {" · "}
+        {session.room ?? "TBA"}
+      </Typography>
+
+      {live ? (
+        <>
+          <ProgressBar
+            value={elapsedPct}
+            aria-label={`${session.title} progress`}
+            className="mt-1"
+          >
+            <ProgressBar.Track className="h-1.5 rounded-full bg-background/65">
+              <ProgressBar.Fill
+                className="bg-success rounded-full"
+                suppressHydrationWarning
+              />
+            </ProgressBar.Track>
+          </ProgressBar>
+          <div className="flex items-baseline justify-between gap-3">
+            <span
+              className="text-foreground text-sm font-semibold tabular-nums"
+              suppressHydrationWarning
+            >
+              {remainingLabel(sessionEnd - now)}
+            </span>
+            <span className={`text-xs ${heroMuted}`}>
+              ends {formatManilaTime(session.end_time)}
+            </span>
+          </div>
+          {session.status_override && session.actual_started_at ? (
+            <Typography type="body-xs" className={heroMuted}>
+              Started live at{" "}
+              {new Intl.DateTimeFormat("en-PH", {
+                hour: "numeric",
+                minute: "2-digit",
+                timeZone: "Asia/Manila",
+              }).format(new Date(session.actual_started_at))}
+            </Typography>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+
+  if (!onOpenSession) return content;
 
   return (
     <button
       type="button"
       onClick={() => onOpenSession(session)}
       aria-haspopup="dialog"
-      className="squircle w-full rounded-[24px] text-left transition-transform active:scale-[0.98] motion-reduce:transform-none"
+      aria-label={`Open ${session.title}`}
+      className="w-full text-left transition-transform active:scale-[0.98] motion-reduce:transform-none"
     >
-      {children}
+      {content}
     </button>
   );
 }
@@ -97,20 +158,16 @@ export function HeroCard({
   const startsAt = new Date(event.starts_at).getTime();
   const endsAt = new Date(event.ends_at).getTime();
 
-  const current = sessions.find(
-    (session) => effectiveSessionStatus(session, now) === "ongoing",
-  );
+  const current = getLiveSessions(sessions, now);
 
-  if (!current && now >= endsAt) {
+  if (current.length === 0 && now >= endsAt) {
     return (
       <Card className={heroSurface}>
-        <Card.Header>
-          <Card.Description className={heroMuted}>
-            {event.name}
-          </Card.Description>
-          <Card.Title className={heroTitle}>That is a wrap</Card.Title>
+        <Card.Header className="relative z-10">
+          <HeroTheme theme={event.theme} />
+        <Card.Title className={heroTitle}>That is a wrap</Card.Title>
         </Card.Header>
-        <Card.Content>
+        <Card.Content className="relative z-10 pt-4">
           <Typography type="body-sm" className={heroMuted}>
             Thanks for coming. See you at the next one.
           </Typography>
@@ -119,135 +176,73 @@ export function HeroCard({
     );
   }
 
-  if (current) {
-    const sessionStart = new Date(current.start_time).getTime();
-    const sessionEnd = new Date(current.end_time).getTime();
-    /*
-     * Quantised to the minute so the server render and client hydration agree
-     * (`now` is Date.now() on each side); a talk's progress doesn't need
-     * per-second resolution anyway.
-     */
-    const nowMinute = Math.floor(now / 60_000) * 60_000;
-    const remaining = remainingLabel(sessionEnd - now);
-    const elapsedPct = Math.min(
-      100,
-      Math.max(
-        0,
-        ((nowMinute - sessionStart) / (sessionEnd - sessionStart)) * 100,
-      ),
-    );
-
+  if (current.length > 0) {
     return (
-      <Pressable session={current} onOpenSession={onOpenSession}>
-        <Card className={heroSurface}>
-          <Card.Header>
-            {/*
-             * Eyebrow + live dot instead of a solid chip: the dot is real state
-             * (a session is running), and the quiet label lets the title carry
-             * the card.
-             */}
-            <div className="flex items-center gap-2">
-              <span aria-hidden className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-60 motion-reduce:animate-none" />
-                <span className="relative inline-flex size-2 rounded-full bg-white" />
-              </span>
-              <span className="text-[11px] font-semibold tracking-[0.08em] text-white/85 uppercase">
-                Happening now
-              </span>
+      <Card className={heroSurface}>
+        <Card.Header className="relative z-10">
+          <HeroTheme theme={event.theme} />
+          <div className="mt-2 flex items-center gap-2">
+            <span aria-hidden className="relative flex size-2 shrink-0">
+              <span className="bg-success absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:animate-none" />
+              <span className="bg-success relative inline-flex size-2 rounded-full" />
+            </span>
+            <span className="text-success text-[11px] font-semibold tracking-[0.08em] uppercase">
+              Happening now
+              {current.length > 1 ? ` · ${current.length} sessions` : ""}
+            </span>
+          </div>
+        </Card.Header>
+        <Card.Content className="relative z-10 flex flex-col gap-3 pt-4">
+          {current.map((session, index) => (
+            <div key={session.id} className="flex flex-col gap-3">
+              {index > 0 ? <Separator className="bg-border/45" /> : null}
+              <HeroSessionItem
+                session={session}
+                now={now}
+                live
+                onOpenSession={onOpenSession}
+              />
             </div>
-            <Card.Title className={`mt-2 text-xl leading-snug ${heroTitle}`}>
-              {current.title}
-            </Card.Title>
-          </Card.Header>
-          <Card.Content className="flex flex-col gap-1">
-            <Typography type="body-sm" className={`tabular-nums ${heroMuted}`}>
-              {formatTimeRange(current.start_time, current.end_time)}
-              {" · "}
-              {current.room ?? "TBA"}
-            </Typography>
-            {/* Session progress, live-activity style: how far along the talk is. */}
-            <ProgressBar
-              value={elapsedPct}
-              aria-label="Session progress"
-              className="mt-2"
-            >
-              <ProgressBar.Track className="h-1 rounded-full bg-white/25">
-                {/* `now` ticks client-side, so the fill width differs from the
-                  server render by design — same suppression as the time text. */}
-                <ProgressBar.Fill
-                  className="rounded-full bg-white"
-                  suppressHydrationWarning
-                />
-              </ProgressBar.Track>
-            </ProgressBar>
-            {/* The bar shows how far along; the countdown says how long left. */}
-            <div className="mt-1.5 flex items-baseline justify-between gap-3">
-              <span
-                className="text-sm font-semibold text-white tabular-nums"
-                suppressHydrationWarning
-              >
-                {remaining}
-              </span>
-              <span className={`text-xs ${heroMuted}`}>
-                ends {formatManilaTime(current.end_time)}
-              </span>
-            </div>
-            {current.status_override && current.actual_started_at ? (
-              <Typography type="body-xs" className={`mt-1 ${heroMuted}`}>
-                Started live at{" "}
-                {new Intl.DateTimeFormat("en-PH", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  timeZone: "Asia/Manila",
-                }).format(new Date(current.actual_started_at))}
-              </Typography>
-            ) : null}
-          </Card.Content>
-        </Card>
-      </Pressable>
+          ))}
+        </Card.Content>
+      </Card>
     );
   }
 
-  const next = sessions.find(
-    (session) => effectiveSessionStatus(session, now) === "not_started",
-  );
+  const next = getNextSessions(sessions, now);
 
-  if (next && now >= startsAt) {
+  if (next.length > 0 && now >= startsAt) {
     return (
-      <Pressable session={next} onOpenSession={onOpenSession}>
-        <Card className={heroSurface}>
-          <Card.Header>
-            <Card.Description
-              className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${heroMuted}`}
-            >
-              Up next
-            </Card.Description>
-            <Card.Title className={`mt-1 text-xl leading-snug ${heroTitle}`}>
-              {next.title}
-            </Card.Title>
-          </Card.Header>
-          <Card.Content className="flex flex-col gap-1">
-            <Typography type="body-sm" className={`tabular-nums ${heroMuted}`}>
-              {formatTimeRange(next.start_time, next.end_time)}
-              {" · "}
-              {next.room ?? "TBA"}
-            </Typography>
-          </Card.Content>
-        </Card>
-      </Pressable>
+      <Card className={heroSurface}>
+        <Card.Header className="relative z-10">
+          <HeroTheme theme={event.theme} />
+          <Card.Title className={`mt-1 ${heroTitle}`}>Up next</Card.Title>
+        </Card.Header>
+        <Card.Content className="relative z-10 flex flex-col gap-3 pt-4">
+          {next.map((session, index) => (
+            <div key={session.id} className="flex flex-col gap-3">
+              {index > 0 ? <Separator className="bg-border/45" /> : null}
+              <HeroSessionItem
+                session={session}
+                now={now}
+                live={false}
+                onOpenSession={onOpenSession}
+              />
+            </div>
+          ))}
+        </Card.Content>
+      </Card>
     );
   }
 
   if (now >= startsAt) {
     return (
       <Card className={heroSurface}>
-        <Card.Header>
-          <Card.Description className={heroMuted}>
-            Program update
-          </Card.Description>
+        <Card.Header className="relative z-10">
+          <HeroTheme theme={event.theme} />
           <Card.Title className={heroTitle}>No session is live</Card.Title>
         </Card.Header>
-        <Card.Content>
+        <Card.Content className="relative z-10 pt-4">
           <Typography type="body-sm" className={heroMuted}>
             Check the program flow for the latest event status.
           </Typography>
@@ -267,15 +262,14 @@ export function HeroCard({
 
   return (
     <Card className={heroSurface}>
-      <Card.Header>
-        <Card.Description
-          className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${heroMuted}`}
-        >
-          {formatManilaDate(event.starts_at)}
-        </Card.Description>
+        <Card.Header className="relative z-10">
+        <HeroTheme theme={event.theme} />
         <Card.Title className={`mt-1 ${heroTitle}`}>Starts in</Card.Title>
       </Card.Header>
-      <Card.Content>
+        <Card.Content className="relative z-10 pt-4">
+        <Typography type="body-xs" className={heroMuted}>
+          {formatManilaDate(event.starts_at)}
+        </Typography>
         <div
           className="grid grid-cols-4 gap-2"
           suppressHydrationWarning
@@ -285,9 +279,9 @@ export function HeroCard({
           {units.map(([label, value]) => (
             <div
               key={label}
-              className="flex flex-col items-center rounded-xl bg-white/15 px-2 py-3"
+              className="flex min-w-0 flex-col items-center rounded-2xl border border-foreground/10 bg-background/45 px-2 py-3 backdrop-blur-sm"
             >
-              <span className="text-2xl font-semibold text-white tabular-nums">
+              <span className="text-foreground text-2xl font-semibold tabular-nums">
                 {pad(value)}
               </span>
               <Typography type="body-xs" className={`mt-1 ${heroMuted}`}>
@@ -297,7 +291,7 @@ export function HeroCard({
           ))}
         </div>
       </Card.Content>
-      <Card.Footer>
+       <Card.Footer className="relative z-10 pt-5">
         <Typography type="body-sm" className={`lg:hidden ${heroMuted}`}>
           {event.venue ?? "Asia Pacific College"}
         </Typography>

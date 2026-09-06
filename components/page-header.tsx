@@ -1,4 +1,4 @@
-import { Typography } from "@heroui/react";
+import { Typography } from "@/components/ui/static";
 
 interface PageHeaderProps {
   title: string;
@@ -9,7 +9,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, description }: PageHeaderProps) {
   return (
     <div className="mt-6">
-      <Typography.Heading level={1} className="text-2xl">
+      <Typography.Heading level={1} className="font-display text-3xl tracking-wide">
         {title}
       </Typography.Heading>
       {description ? (

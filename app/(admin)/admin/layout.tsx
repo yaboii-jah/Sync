@@ -6,9 +6,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   await requireAdmin();
 
   return (
-    <div className="bg-background min-h-full">
+    <div className="app-field min-h-full">
       <AdminNav />
-      <main className="min-h-full lg:ml-64">{children}</main>
+      <main className="min-h-full pb-24 lg:ml-64 lg:pb-0">{children}</main>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Button, Modal } from "@heroui/react";
+import { Alert, Button, Modal } from "@/components/ui";
 import { Bell } from "lucide-react";
 import {
   ensurePushSubscription,
@@ -130,14 +130,14 @@ export function PushGate() {
   if (stage === "explain" || stage === "busy") {
     return (
       <Modal>
-         <Modal.Backdrop
-           isOpen
-           isDismissable={stage === "explain"}
-           {...{ isKeyboardDismissDisabled: stage === "busy" }}
-          onOpenChange={(open) => {
-            if (!open) dismiss();
-          }}
-        >
+          <Modal.Backdrop
+            isOpen
+            isDismissable={stage === "explain"}
+            {...{ isKeyboardDismissDisabled: stage === "busy" }}
+            onOpenChange={(open) => {
+              if (!open) dismiss();
+            }}
+          >
           <Modal.Container size="sm">
             <Modal.Dialog aria-label="Get session alerts">
               <Modal.CloseTrigger />
@@ -148,8 +148,8 @@ export function PushGate() {
                 <Modal.Heading>Get session alerts</Modal.Heading>
               </Modal.Header>
               <Modal.Body>
-                We will send reminders, session-start alerts, and wrapped
-                updates even when the app is closed.
+                We will send organizer announcements and deliberate session
+                status alerts even when the app is closed.
                 {blockedNote ? (
                   <Alert status="danger" className="mt-4">
                     <Alert.Indicator />

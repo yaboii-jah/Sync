@@ -16,7 +16,7 @@ import {
   TextArea,
   TextField,
   Typography,
-} from "@heroui/react";
+} from "@/components/ui";
 import { Search, Send, Users } from "lucide-react";
 import type { Key } from "react-aria-components/Tabs";
 import {
@@ -159,7 +159,7 @@ export function NotificationComposer({
   const deviceCount = audience === "all" ? totalPushDevices : selectedDevices;
 
   return (
-    <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.85fr]">
+    <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.85fr)] lg:gap-6">
       <Card>
         <Card.Header>
           <Card.Title>Message</Card.Title>
@@ -190,8 +190,7 @@ export function NotificationComposer({
             />
           </TextField>
 
-          <Card variant="secondary">
-            <Card.Content className="py-4">
+          <div className="rounded-xl bg-surface-secondary px-4 py-4">
               <Typography type="body-xs" color="muted">
                 Push preview
               </Typography>
@@ -201,8 +200,7 @@ export function NotificationComposer({
               <Typography type="body-sm" color="muted" className="mt-1">
                 {body.trim() || "Notification body"}
               </Typography>
-            </Card.Content>
-          </Card>
+          </div>
         </Card.Content>
       </Card>
 
@@ -233,8 +231,7 @@ export function NotificationComposer({
             </Tabs.ListContainer>
 
             <Tabs.Panel {...{ id: "all" }} className="mt-4">
-              <Card variant="secondary">
-                <Card.Content className="py-4">
+              <div className="rounded-xl bg-surface-secondary px-4 py-4">
                   <div className="flex items-center gap-2">
                     <Users className="size-5" aria-hidden />
                     <Typography type="body-sm" weight="semibold">
@@ -245,13 +242,12 @@ export function NotificationComposer({
                     {totalPushDevices} registered push devices. Everyone still
                     receives the in-app alert.
                   </Typography>
-                </Card.Content>
-              </Card>
+              </div>
             </Tabs.Panel>
 
             <Tabs.Panel {...{ id: "selected" }} className="mt-4">
               <Form
-                className="flex items-end gap-2"
+                className="flex flex-col gap-2 sm:flex-row sm:items-end"
                 onSubmit={(event) => {
                   event.preventDefault();
                   search();
@@ -267,12 +263,13 @@ export function NotificationComposer({
                   isIconOnly
                   isDisabled={pending}
                   aria-label="Search attendees"
+                  className="w-full sm:w-auto"
                 >
                   <Search className="size-4" aria-hidden />
                 </Button>
               </Form>
 
-              <Card className="mt-3 max-h-72 overflow-y-auto">
+              <div className="mt-3 max-h-72 overflow-y-auto rounded-xl bg-surface-secondary">
                 {attendees.map((attendee, index) => (
                   <div key={attendee.id}>
                     {index > 0 ? <Separator /> : null}
@@ -306,7 +303,7 @@ export function NotificationComposer({
                     </Typography>
                   </div>
                 ) : null}
-              </Card>
+              </div>
 
               <Typography type="body-xs" color="muted" className="mt-3">
                 {selected.size} selected, {selectedDevices} push devices
@@ -332,6 +329,7 @@ export function NotificationComposer({
       <AlertDialog>
         <AlertDialog.Backdrop
           isOpen={confirming}
+          isDismissable={!pending}
           onOpenChange={(isOpen) => {
             if (!isOpen && !pending) setConfirming(false);
           }}
@@ -343,8 +341,7 @@ export function NotificationComposer({
               </AlertDialog.Header>
 
               <AlertDialog.Body className="flex flex-col gap-4">
-                <Card variant="secondary">
-                  <Card.Content className="py-4">
+                <div className="rounded-xl bg-surface-secondary px-4 py-4">
                     <Typography type="body-sm" weight="semibold">
                       {title.trim()}
                     </Typography>
@@ -356,8 +353,7 @@ export function NotificationComposer({
                     <Typography type="body-xs" className="mt-3" weight="medium">
                       {recipientCount} recipients, {deviceCount} push devices
                     </Typography>
-                  </Card.Content>
-                </Card>
+                </div>
 
                 <Typography type="body-sm" color="muted">
                   This dispatch cannot be recalled or edited after confirmation.

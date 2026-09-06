@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -112,6 +87,7 @@ export type Database = {
           name: string
           starts_at: string
           status: string
+          theme: string
           venue: string | null
         }
         Insert: {
@@ -120,6 +96,7 @@ export type Database = {
           name: string
           starts_at: string
           status?: string
+          theme: string
           venue?: string | null
         }
         Update: {
@@ -128,6 +105,7 @@ export type Database = {
           name?: string
           starts_at?: string
           status?: string
+          theme?: string
           venue?: string | null
         }
         Relationships: []
@@ -173,6 +151,7 @@ export type Database = {
           at: string
           attendee_id: string | null
           attendee_name: string | null
+          detail: string | null
           device: string
           outcome: string
           raw: string | null
@@ -183,6 +162,7 @@ export type Database = {
           at: string
           attendee_id?: string | null
           attendee_name?: string | null
+          detail?: string | null
           device: string
           outcome: string
           raw?: string | null
@@ -193,6 +173,7 @@ export type Database = {
           at?: string
           attendee_id?: string | null
           attendee_name?: string | null
+          detail?: string | null
           device?: string
           outcome?: string
           raw?: string | null
@@ -615,6 +596,7 @@ export type Database = {
         Row: {
           created_at: string
           network: string
+          templates: number
           updated_at: string
           url: string
           user_id: string
@@ -622,6 +604,7 @@ export type Database = {
         Insert: {
           created_at?: string
           network: string
+          templates?: number
           updated_at?: string
           url: string
           user_id: string
@@ -629,6 +612,7 @@ export type Database = {
         Update: {
           created_at?: string
           network?: string
+          templates?: number
           updated_at?: string
           url?: string
           user_id?: string
@@ -677,7 +661,11 @@ export type Database = {
     Views: {
       [_ in never]: never
     }
-    Functions: {
+      Functions: {
+        admin_get_attendee: {
+          Args: { target_attendee_id: string }
+          Returns: Json
+        }
       admin_create_notification: {
         Args: {
           audience: string
@@ -803,6 +791,7 @@ export type Database = {
           is_public: boolean
           network: string
           public_token: string
+          templates: number
           url: string
         }[]
       }
@@ -812,8 +801,13 @@ export type Database = {
           name: string
           network: string
           photo_url: string
+          templates: number
           url: string
         }[]
+      }
+      set_networking_card_template: {
+        Args: { p_template: number }
+        Returns: undefined
       }
       mark_alerts_read: { Args: never; Returns: undefined }
       merch_claim_attendee: {
@@ -881,11 +875,11 @@ export type Database = {
             }
             Returns: undefined
           }
-      set_networking_card_public: {
-        Args: { published: boolean }
-        Returns: boolean
-      }
       sync_program_flow_statuses: { Args: never; Returns: undefined }
+      toggle_my_flow_bookmark: {
+        Args: { target_session_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
@@ -1014,9 +1008,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

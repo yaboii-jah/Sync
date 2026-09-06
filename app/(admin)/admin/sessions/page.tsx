@@ -1,4 +1,4 @@
-import { Typography } from "@heroui/react";
+import { Typography } from "@/components/ui/static";
 import { createClient } from "@/lib/supabase/server";
 import {
   getEvent,

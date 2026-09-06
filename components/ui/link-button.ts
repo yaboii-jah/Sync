@@ -1,9 +1,9 @@
 /**
  * Class strings for the handful of places that must stay a real anchor
  * (external links, target="_blank", Next.js <Link> navigation) but should read
- * as a HeroUI Button. Everything else uses <Button> directly.
+ * as a local AWS SCD Button. Everything else uses <Button> directly.
  *
- * These mirror HeroUI's button tokens rather than inventing colours: the
+ * These mirror local button tokens rather than inventing colours: the
  * accent pair for primary, the border/foreground pair for secondary.
  * Add `w-full` at the call site when the anchor should fill its container.
  */
