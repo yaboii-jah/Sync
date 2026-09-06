@@ -128,24 +128,79 @@ export function effectiveSessionStatus(
   return displayStatus(session.start_time, session.end_time, now);
 }
 
-export function relativeStartLabel(
-  startIso: string,
+/**
+ * The session card's one time vocabulary: the abbreviations `min`, `hr` and
+ * `d`. Both the duration and the relative clause below spell magnitudes this
+ * way so a card never mixes `9 hours ago` with `in 4 d`.
+ */
+
+const MINUTES_PER_HOUR = 60;
+const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
+
+/**
+ * A session's length, readable at any length: `45 min`, `2 hr 30 min`,
+ * `4 d 23 hr`. Below two hours it stays in minutes, because that is how a
+ * programme is read; past that a bare minute count stops being a quantity a
+ * reader can picture.
+ *
+ * A negative or non-finite span comes from bad data, not from a session, so it
+ * renders as `0 min` rather than throwing inside a card.
+ */
+export function formatDurationMinutes(minutes: number): string {
+  const total = Number.isFinite(minutes) ? Math.max(0, Math.round(minutes)) : 0;
+
+  if (total < 2 * MINUTES_PER_HOUR) return `${total} min`;
+
+  if (total < MINUTES_PER_DAY) {
+    const hours = Math.floor(total / MINUTES_PER_HOUR);
+    const rest = total % MINUTES_PER_HOUR;
+    return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+  }
+
+  const days = Math.floor(total / MINUTES_PER_DAY);
+  const rest = Math.floor((total % MINUTES_PER_DAY) / MINUTES_PER_HOUR);
+  return rest === 0 ? `${days} d` : `${days} d ${rest} hr`;
+}
+
+/**
+ * Which milestone a relative clause is about. The card reads an operator's
+ * `actual_ended_at` as an end and everything else as a start.
+ */
+export type SessionTimeAnchor = "start" | "end";
+
+/** Single-unit magnitude for a relative clause: `2 min`, `5 hr`, `3 d`. */
+function relativeMagnitude(absMinutes: number): string {
+  if (absMinutes < MINUTES_PER_HOUR) return `${absMinutes} min`;
+  const hours = Math.floor(absMinutes / MINUTES_PER_HOUR);
+  if (hours < 24) return `${hours} hr`;
+  return `${Math.floor(hours / 24)} d`;
+}
+
+/**
+ * The card's one relative-time formatter, for past and future alike. It always
+ * returns a clause: an instant more than a day old used to return `null`, which
+ * left a card showing a bare duration with nothing to anchor it.
+ *
+ * `formatRelativeTime` stays as it is for the admin console and `/alerts`,
+ * which speak the longer `9 hours ago` vocabulary.
+ */
+export function relativeSessionLabel(
+  iso: string,
+  anchor: SessionTimeAnchor = "start",
   now: number = Date.now(),
-): string | null {
-  const diffMs = new Date(startIso).getTime() - now;
+): string {
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return anchor === "end" ? "ended" : "scheduled";
+
+  const diffMs = target - now;
   const absMinutes = Math.abs(Math.round(diffMs / 60000));
 
   if (diffMs > 0) {
-    if (absMinutes < 1) return "starting now";
-    if (absMinutes < 60) return `in ${absMinutes} min`;
-    const hours = Math.floor(absMinutes / 60);
-    if (hours < 24) return `in ${hours} hr`;
-    return `in ${Math.floor(hours / 24)} d`;
+    if (absMinutes < 1) return anchor === "end" ? "ending now" : "starting now";
+    return `in ${relativeMagnitude(absMinutes)}`;
   }
 
-  if (absMinutes < 1) return "just started";
-  if (absMinutes < 60) return `started ${absMinutes} min ago`;
-  const hours = Math.floor(absMinutes / 60);
-  if (hours < 24) return `started ${hours} hr ago`;
-  return null;
+  if (absMinutes < 1) return anchor === "end" ? "just ended" : "just started";
+  const verb = anchor === "end" ? "ended" : "started";
+  return `${verb} ${relativeMagnitude(absMinutes)} ago`;
 }
