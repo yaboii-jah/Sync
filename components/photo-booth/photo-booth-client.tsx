@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Browser object URLs and live booth imagery cannot use Next's image optimizer. */
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { Alert, Button, Card, Chip, Typography } from "@/components/ui";
 import {
   Camera,
@@ -109,9 +109,22 @@ function getCameraError(error: unknown): string {
 interface PhotoStripProps {
   slots: SlotPhotos;
   activeSlot?: number;
+  cameraFacing?: CameraFacing;
+  countdown?: number | null;
+  isComposing?: boolean;
+  showCamera?: boolean;
+  videoRef?: RefObject<HTMLVideoElement | null>;
 }
 
-function PhotoStrip({ slots, activeSlot }: PhotoStripProps) {
+function PhotoStrip({
+  slots,
+  activeSlot,
+  cameraFacing,
+  countdown,
+  isComposing,
+  showCamera,
+  videoRef,
+}: PhotoStripProps) {
   return (
     <div className="relative aspect-[9/16] w-full overflow-hidden rounded-xl bg-surface-secondary">
       <img src={FRAME_URL} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
@@ -128,7 +141,15 @@ function PhotoStrip({ slots, activeSlot }: PhotoStripProps) {
             height: `${(SLOT_HEIGHT / OUTPUT_HEIGHT) * 100}%`,
           }}
         >
-          {slot ? (
+          {activeSlot === index && showCamera && videoRef ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className={`size-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+            />
+          ) : slot ? (
             <img
               src={slot}
               alt={`Photo ${index + 1}`}
@@ -139,6 +160,16 @@ function PhotoStrip({ slots, activeSlot }: PhotoStripProps) {
               Photo {index + 1}
             </span>
           )}
+          {activeSlot === index && countdown ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+              <span className="text-7xl font-bold tabular-nums text-white">{countdown}</span>
+            </div>
+          ) : null}
+          {activeSlot === index && isComposing ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/35 px-3 text-center">
+              <span className="text-sm font-medium text-white">Preparing your photo</span>
+            </div>
+          ) : null}
         </div>
       ))}
     </div>
@@ -154,6 +185,7 @@ export function PhotoBoothClient() {
   const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [streamVersion, setStreamVersion] = useState(0);
+  const [cameraReady, setCameraReady] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -210,6 +242,7 @@ export function PhotoBoothClient() {
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    setCameraReady(false);
 
     if (videoRef.current) videoRef.current.srcObject = null;
   }
@@ -314,6 +347,7 @@ export function PhotoBoothClient() {
       }
 
       streamRef.current = stream;
+      setCameraReady(true);
       const videoTrack = stream.getVideoTracks()[0];
       const settings = videoTrack?.getSettings();
       const actualFacing = settings?.facingMode;
@@ -521,7 +555,8 @@ export function PhotoBoothClient() {
   }, []);
 
   const completedCount = slots.filter((slot) => slot !== null).length;
-  const activeCamera = stage === "capture" || stage === "countdown" || stage === "composing";
+  const cameraStage = stage === "capture" || stage === "countdown" || stage === "composing";
+  const showCamera = cameraStage && cameraReady;
 
   return (
     <div className="flex flex-col gap-4">
@@ -558,40 +593,40 @@ export function PhotoBoothClient() {
             </div>
           </Card.Content>
         </Card>
-      ) : activeCamera ? (
+      ) : (
         <Card>
           <Card.Content className="flex flex-col gap-4 p-3">
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-surface-secondary">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className={`size-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
-              />
-              {stage === "countdown" && countdown ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-                  <span className="text-7xl font-bold tabular-nums text-white">{countdown}</span>
-                </div>
-              ) : null}
-              {stage === "composing" ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-                  <Typography type="body-sm" className="text-white">
-                    Preparing your strip
-                  </Typography>
-                </div>
-              ) : null}
-            </div>
+            <PhotoStrip
+              slots={slots}
+              activeSlot={selectedSlot}
+              cameraFacing={cameraFacing}
+              countdown={countdown}
+              isComposing={stage === "composing"}
+              showCamera={showCamera}
+              videoRef={videoRef}
+            />
             <div className="flex items-center justify-between gap-3 px-1">
               <div>
                 <Typography type="body-sm" weight="medium">
-                  Photo {selectedSlot + 1} of 3
+                  {stage === "starting"
+                    ? "Opening your camera."
+                    : stage === "composing"
+                      ? "Preparing your photo."
+                      : cameraStage
+                        ? `Photo ${selectedSlot + 1} of 3`
+                        : "Three moments, one story."}
                 </Typography>
                 <Typography type="body-xs" color="muted">
-                  Three-second countdown
+                  {stage === "starting"
+                    ? "Approve the browser prompt to continue, or choose a photo if camera access is unavailable."
+                    : stage === "composing"
+                      ? "Keeping your event frame in place while this photo is prepared."
+                      : cameraStage
+                        ? "Three-second countdown"
+                        : "Your camera frames and finished strip stay on this device."}
                 </Typography>
               </div>
-              {cameraDevices.length > 1 ? (
+              {cameraStage && cameraDevices.length > 1 ? (
                 <Button
                   isIconOnly
                   variant="secondary"
@@ -610,22 +645,6 @@ export function PhotoBoothClient() {
                   <SwitchCamera className="size-5" aria-hidden />
                 </Button>
               ) : null}
-            </div>
-          </Card.Content>
-        </Card>
-      ) : (
-        <Card>
-          <Card.Content className="flex flex-col gap-5 p-4">
-            <PhotoStrip slots={slots} activeSlot={selectedSlot} />
-            <div>
-              <Typography type="body-sm" weight="medium">
-                {stage === "starting" ? "Opening your camera." : "Three moments, one story."}
-              </Typography>
-              <Typography type="body-xs" color="muted" className="mt-1">
-                {stage === "starting"
-                  ? "Approve the browser prompt to continue, or choose a photo if camera access is unavailable."
-                  : "Your camera frames and finished strip stay on this device."}
-              </Typography>
             </div>
           </Card.Content>
         </Card>

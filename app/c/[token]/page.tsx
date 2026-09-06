@@ -12,6 +12,10 @@ import {
   getPublicNetworkingCard,
   type PublicNetworkingCard,
 } from "@/lib/supabase/queries/networking";
+import {
+  isMissingNetworkingScanHistoryRpc,
+  recordNetworkingCardScan,
+} from "@/lib/supabase/queries/scan-history";
 import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 
 export const metadata: Metadata = {
@@ -31,6 +35,17 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
       ? await getOwnerPreview(token)
       : null;
   const resolvedCard = ownerPreview ?? (await getPublicNetworkingCard(token));
+  if (resolvedCard && !ownerPreview) {
+    try {
+      await recordNetworkingCardScan(token);
+    } catch (error) {
+      // A scan-history migration rollout must not prevent a public card from
+      // opening. Other recording failures remain visible in server logs.
+      if (!isMissingNetworkingScanHistoryRpc(error)) {
+        console.error("Could not record networking card scan", error);
+      }
+    }
+  }
   const links = resolvedCard
     ? SOCIAL_NETWORKS.filter((network) => resolvedCard.links[network])
     : [];

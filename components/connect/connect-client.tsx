@@ -8,6 +8,7 @@ import { primaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_NETWORKS, type SocialLinks } from "@/lib/social";
 import { ConnectCard } from "./connect-card";
 import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
+import { QrScanner } from "./qr-scanner";
 
 interface ConnectClientProps {
   cardUrl: string;
@@ -22,6 +23,10 @@ export function ConnectClient({ cardUrl, initialLinks, initialTemplate }: Connec
 
   return (
     <>
+      <div className="mb-4">
+        <QrScanner />
+      </div>
+
       <ConnectCard
         configuredNetworks={configuredNetworks}
         cardUrl={cardUrl}
