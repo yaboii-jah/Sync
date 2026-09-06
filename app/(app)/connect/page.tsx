@@ -74,10 +74,7 @@ export default async function ConnectPage({
         ) : null}
 
         <div className="mt-6">
-          <ConnectClient
-            cardUrl={cardUrl}
-            initialLinks={card.links}
-          />
+          <ConnectClient cardUrl={cardUrl} initialLinks={card.links} initialTemplate={card.template} />
         </div>
       </div>
     </main>

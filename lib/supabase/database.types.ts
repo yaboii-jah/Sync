@@ -596,6 +596,7 @@ export type Database = {
         Row: {
           created_at: string
           network: string
+          templates: number
           updated_at: string
           url: string
           user_id: string
@@ -603,6 +604,7 @@ export type Database = {
         Insert: {
           created_at?: string
           network: string
+          templates?: number
           updated_at?: string
           url: string
           user_id: string
@@ -610,6 +612,7 @@ export type Database = {
         Update: {
           created_at?: string
           network?: string
+          templates?: number
           updated_at?: string
           url?: string
           user_id?: string
@@ -788,6 +791,7 @@ export type Database = {
           is_public: boolean
           network: string
           public_token: string
+          templates: number
           url: string
         }[]
       }
@@ -797,8 +801,13 @@ export type Database = {
           name: string
           network: string
           photo_url: string
+          templates: number
           url: string
         }[]
+      }
+      set_networking_card_template: {
+        Args: { p_template: number }
+        Returns: undefined
       }
       mark_alerts_read: { Args: never; Returns: undefined }
       merch_claim_attendee: {

@@ -7,19 +7,16 @@ import { QrCode, Settings } from "lucide-react";
 import { primaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_NETWORKS, type SocialLinks } from "@/lib/social";
 import { ConnectCard } from "./connect-card";
+import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
 
 interface ConnectClientProps {
   cardUrl: string;
   initialLinks: SocialLinks;
+  initialTemplate: NetworkCardTemplate;
 }
 
-export function ConnectClient({
-  cardUrl,
-  initialLinks,
-}: ConnectClientProps) {
-  const configuredNetworks = SOCIAL_NETWORKS.filter(
-    (network) => initialLinks[network],
-  );
+export function ConnectClient({ cardUrl, initialLinks, initialTemplate }: ConnectClientProps) {
+  const configuredNetworks = SOCIAL_NETWORKS.filter((network) => initialLinks[network]);
   const hasSavedLinks = configuredNetworks.length > 0;
   const [showSetup, setShowSetup] = useState(!hasSavedLinks);
 
@@ -29,6 +26,7 @@ export function ConnectClient({
         configuredNetworks={configuredNetworks}
         cardUrl={cardUrl}
         hasSavedLinks={hasSavedLinks}
+        initialTemplate={initialTemplate}
       />
 
       {!hasSavedLinks ? (
