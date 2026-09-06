@@ -27,7 +27,7 @@ const SHARED_MESSAGES: Record<string, { status: "success" | "danger"; text: stri
 export default async function ConnectPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shared?: string }>;
+  searchParams: Promise<{ shared?: string; scan?: string }>;
 }) {
   const { shared } = await searchParams;
   await requireCompleteProfile();

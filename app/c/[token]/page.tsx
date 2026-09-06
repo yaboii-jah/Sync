@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Card, Typography } from "@/components/ui/static";
 import { UserX } from "lucide-react";
 
+import { AppNavigationShell } from "@/components/app-navigation-shell";
+import { BackToMyQrButton } from "@/components/connect/back-to-my-qr-button";
 import { EmptyState } from "@/components/empty-states";
-import { HistoryBackButton } from "@/components/history-back-button";
 import { NetworkCard } from "@/components/network-card";
 import { SOCIAL_NETWORKS } from "@/lib/social";
 import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
+import { currentUserIsAdmin } from "@/lib/supabase/admin-auth";
 import {
   getOwnNetworkingCard,
   getPublicNetworkingCard,
@@ -30,9 +33,11 @@ export const metadata: Metadata = {
 export default async function CardPage(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
   const searchParams = await props.searchParams;
+  const authenticated = await getAuthenticatedProfile();
+  const isAdmin = authenticated ? await currentUserIsAdmin() : false;
   const ownerPreview =
     searchParams.preview === "1"
-      ? await getOwnerPreview(token)
+      ? await getOwnerPreview(token, authenticated)
       : null;
   const resolvedCard = ownerPreview ?? (await getPublicNetworkingCard(token));
   if (resolvedCard && !ownerPreview) {
@@ -58,9 +63,26 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
         : resolvedCard?.template === 4
           ? "event"
           : "solid";
+  const returnControl = authenticated?.profile ? (
+    <div className="mb-4">
+      <BackToMyQrButton
+        label={ownerPreview ? "Back to Connect" : "Back to my QR"}
+      />
+    </div>
+  ) : null;
+
+  function withAuthenticatedNavigation(content: ReactNode) {
+    if (!authenticated?.profile) return content;
+
+    return (
+      <AppNavigationShell isAdmin={isAdmin} profile={authenticated.profile}>
+        {content}
+      </AppNavigationShell>
+    );
+  }
 
   if (variant === "glass" && resolvedCard) {
-    return (
+    return withAuthenticatedNavigation(
       <main className="c-page c-page--glass">
         <div className="c-page__bg" aria-hidden="true">
           <span className="c-page__glow c-page__glow--glass-a" />
@@ -71,11 +93,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
           <img src="/assets/scd%20pubmats%20(4).svg" alt="" aria-hidden="true" className="c-page__pubmat" loading="lazy" />
         </div>
         <div className="c-page__inner">
-          {ownerPreview ? (
-            <div className="mb-4">
-              <HistoryBackButton fallback="/connect" label="Back to Connect" />
-            </div>
-          ) : null}
+          {returnControl}
           <p className="c-page__eyebrow c-page__eyebrow--glass">You met</p>
           <div className="mt-3">
             <NetworkCard
@@ -92,7 +110,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
   }
 
   if (variant === "crystal" && resolvedCard) {
-    return (
+    return withAuthenticatedNavigation(
       <main className="c-page c-page--crystal">
         <div className="c-page__bg" aria-hidden="true">
           <svg className="c-page__crystal" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -109,11 +127,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
           <img src="/assets/scd%20pubmats%20(3).svg" alt="" aria-hidden="true" className="c-page__pubmat" loading="lazy" />
         </div>
         <div className="c-page__inner">
-          {ownerPreview ? (
-            <div className="mb-4">
-              <HistoryBackButton fallback="/connect" label="Back to Connect" />
-            </div>
-          ) : null}
+          {returnControl}
           <p className="c-page__eyebrow">You met</p>
           <div className="mt-3">
             <NetworkCard
@@ -130,7 +144,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
   }
 
   if (variant === "event" && resolvedCard) {
-    return (
+    return withAuthenticatedNavigation(
       <main className="c-page c-page--event">
         <div className="c-page__bg" aria-hidden="true">
           <span className="c-page__glow c-page__glow--gold" />
@@ -142,11 +156,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
           <img src="/assets/scd%20pubmats%20clena.svg" alt="" aria-hidden="true" className="c-page__pubmat" loading="lazy" />
         </div>
         <div className="c-page__inner">
-          {ownerPreview ? (
-            <div className="mb-4">
-              <HistoryBackButton fallback="/connect" label="Back to Connect" />
-            </div>
-          ) : null}
+          {returnControl}
           <p className="c-page__eyebrow c-page__eyebrow--event">You met</p>
           <div className="mt-3">
             <NetworkCard
@@ -162,16 +172,12 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
     );
   }
 
-  return (
+  return withAuthenticatedNavigation(
     <main className={`c-page c-page--${variant} flex min-h-full w-full items-center justify-center px-4 py-10`}>
       <div className="w-full max-w-md">
         {resolvedCard ? (
           <>
-            {ownerPreview ? (
-              <div className="mb-4">
-                <HistoryBackButton fallback="/connect" label="Back to Connect" />
-              </div>
-            ) : null}
+            {returnControl}
             <Typography type="body-sm" color="muted">
               You met
             </Typography>
@@ -199,8 +205,10 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
   );
 }
 
-async function getOwnerPreview(token: string): Promise<PublicNetworkingCard | null> {
-  const authenticated = await getAuthenticatedProfile();
+async function getOwnerPreview(
+  token: string,
+  authenticated: Awaited<ReturnType<typeof getAuthenticatedProfile>>,
+): Promise<PublicNetworkingCard | null> {
   if (!authenticated?.profile) return null;
 
   const ownCard = await getOwnNetworkingCard();
