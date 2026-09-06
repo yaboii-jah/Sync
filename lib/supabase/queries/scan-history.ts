@@ -38,7 +38,12 @@ export async function getMyNetworkingScanHistory(): Promise<NetworkingScanHistor
   const { data, error } = await scanHistoryRpc(supabase).rpc(
     "get_my_networking_scan_history",
   );
-  if (error) throw error;
+  if (error) {
+    // Deployments can roll out the app before this migration. Keep Connect
+    // usable while the database catches up, without hiding other failures.
+    if (isMissingNetworkingScanHistoryRpc(error)) return [];
+    throw error;
+  }
 
   return (data ?? []).map((scan) => ({
     name: scan.name,
@@ -46,6 +51,15 @@ export async function getMyNetworkingScanHistory(): Promise<NetworkingScanHistor
     cardPath: scan.card_path,
     scannedAt: scan.scanned_at,
   }));
+}
+
+export function isMissingNetworkingScanHistoryRpc(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "PGRST202"
+  );
 }
 
 export async function recordNetworkingCardScan(cardToken: string): Promise<void> {
