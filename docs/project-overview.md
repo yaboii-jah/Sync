@@ -22,7 +22,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 4. User lands on the Home dashboard showing the current session and what's next
 5. User taps into a session to view its description, room, and speaker
 6. User receives audited organizer alerts and deliberate manual status alerts; schedule timing itself does not generate attendee notifications
-7. User opens Connect to show their QR code; scanning it opens an active card containing only the social links they chose to save
+7. User opens Connect to show their QR code or scan another attendee's Sync QR; scanning opens an active card containing only the social links that attendee chose to save
 8. User opens the Photo Booth from More, captures three event-framed photos, and downloads a shareable keepsake that never leaves their device
 9. User browses the More page for the speaker lineup and event website link
 
@@ -49,6 +49,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 
 ### Networking (Connect)
 - One stable personal networking QR code resolving to an app-owned card whenever at least one link is saved
+- Built-in QR scanner with rear-camera capture and image-picker fallback for saved QR screenshots; it accepts only Sync networking-card paths
 - Optional LinkedIn, Instagram, Facebook, and GitHub profile links managed together
 - The card activates automatically when links exist; clearing the last link disables existing QR copies without changing the code
 - A private, deduplicated list of attendees whose networking cards an attendee has scanned, with the saved card URL available for reopening
@@ -113,6 +114,6 @@ The application uses the event's dark AWS Student Community Day visual identity 
 2. Session status badges update in real time across all connected clients with no manual re-posting
 3. A user can activate one stable networking QR code that resolves to a noindex card showing their name, photo, and only their configured social links
 4. A user can install the app to a device home screen and launch it as a standalone PWA
-5. A user can browse the speaker lineup and open an entry's LinkedIn profile when one is provided
+5. A user can browse the complete speaker lineup and open an entry's LinkedIn profile when one is provided
 6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override
 7. Attendees can understand every concurrent live or upcoming program choice and receive a clear warning when saved My Flow sessions overlap

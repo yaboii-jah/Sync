@@ -92,7 +92,7 @@ export default async function MorePage() {
             Speakers
           </Typography.Heading>
           <Typography type="body-sm" color="muted" className="mt-1">
-            Meet the people sharing their work and perspective on event day.
+            Meet the speakers sharing their work and perspective on event day.
           </Typography>
           <div className="mt-3">
             <DirectoryClient people={speakers} />
