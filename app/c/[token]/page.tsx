@@ -12,6 +12,7 @@ import {
   getPublicNetworkingCard,
   type PublicNetworkingCard,
 } from "@/lib/supabase/queries/networking";
+import { recordNetworkingCardScan } from "@/lib/supabase/queries/scan-history";
 import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 
 export const metadata: Metadata = {
@@ -31,6 +32,15 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
       ? await getOwnerPreview(token)
       : null;
   const resolvedCard = ownerPreview ?? (await getPublicNetworkingCard(token));
+  if (resolvedCard && !ownerPreview) {
+    try {
+      await recordNetworkingCardScan(token);
+    } catch (error) {
+      // An unavailable scan-history write must not prevent the public card
+      // from opening; the migration and function are deployed together.
+      console.error("Could not record networking card scan", error);
+    }
+  }
   const links = resolvedCard
     ? SOCIAL_NETWORKS.filter((network) => resolvedCard.links[network])
     : [];
