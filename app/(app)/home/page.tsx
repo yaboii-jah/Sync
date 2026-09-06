@@ -1,4 +1,4 @@
-import { Card } from "@heroui/react";
+import { Card } from "@/components/ui/static";
 import { CalendarClock } from "lucide-react";
 import { EmptyState } from "@/components/empty-states";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
@@ -10,7 +10,6 @@ import {
 } from "@/lib/supabase/queries/program-flow";
 import { AppHeader } from "@/components/app-header";
 import { HomeClient } from "@/components/home/home-client";
-import { InstallChip } from "@/components/push/install-chip";
 import { PushGate } from "@/components/push/push-gate";
 
 function getServerNow(): number {
@@ -55,7 +54,6 @@ export default async function HomePage() {
           </div>
         )}
       </div>
-      <InstallChip />
     </main>
   );
 }

@@ -1,10 +1,10 @@
-import { Card } from "@heroui/react";
+import { Card } from "@/components/ui/static";
 import { Skeleton, SkeletonText } from "@/components/skeleton";
 
 export default function MoreLoading() {
   return (
     <main className="w-full">
-      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-3xl lg:px-10 lg:pt-10">
+      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-5xl lg:px-10 lg:pt-10">
         <Skeleton className="h-8 w-28 rounded-md" />
 
         <SkeletonText className="mt-8 w-24" />
@@ -18,18 +18,14 @@ export default function MoreLoading() {
         </div>
 
         <SkeletonText className="mt-8 w-44" />
-        <div className="mt-3 flex gap-2">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-8 w-24 rounded-full" />
-          ))}
-        </div>
-        <div className="mt-4 flex flex-col gap-3">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Card key={i} className="flex flex-row items-center gap-4 px-5 py-4">
-              <Skeleton className="size-12 rounded-full" />
-              <div className="flex-1">
+        <SkeletonText className="mt-2 w-72" />
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="flex items-center gap-4 overflow-hidden p-0 sm:block">
+              <Skeleton className="size-20 shrink-0 rounded-none sm:h-auto sm:w-auto sm:aspect-[4/5]" />
+              <div className="min-w-0 flex-1 px-4 py-3.5 sm:py-4">
                 <SkeletonText className="w-36" />
-                <SkeletonText className="mt-2 w-52" />
+                <SkeletonText className="mt-2 w-28" />
               </div>
             </Card>
           ))}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Alert, Card, Chip, Separator, Typography } from "@heroui/react";
+import { Alert, Card, Chip, Separator, Typography } from "@/components/ui/static";
 import { BellRing, Radio, Send, Users, Wifi } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {

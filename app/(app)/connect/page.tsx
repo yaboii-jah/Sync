@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Alert } from "@heroui/react";
+import { Alert } from "@/components/ui/static";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";

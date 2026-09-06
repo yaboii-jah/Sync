@@ -4,6 +4,8 @@
 
 Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based social networking, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
 
+The application uses the event's dark AWS Student Community Day visual identity across every rendered interface route. This is a presentation-only decision: it does not change product flows, permissions, data, or route behavior.
+
 ## Goals
 
 1. Let an attendee go from landing page to a fully usable account via Google sign-in, with no manual registration form and nothing typed
@@ -19,10 +21,10 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 3. User optionally adds one or more social profile URLs; saving at least one link automatically activates one stable networking QR code
 4. User lands on the Home dashboard showing the current session and what's next
 5. User taps into a session to view its description, room, and speaker
-6. User receives schedule-driven session reminders and start/end notifications for sessions saved to My Flow
+6. User receives audited organizer alerts and deliberate manual status alerts; schedule timing itself does not generate attendee notifications
 7. User opens Connect to show their QR code; scanning it opens an active card containing only the social links they chose to save
 8. User opens the Photo Booth from More, captures three event-framed photos, and downloads a shareable keepsake that never leaves their device
-9. User browses the More page for the speaker/sponsor directory and event website link
+9. User browses the More page for the speaker lineup and event website link
 
 ## Features
 
@@ -40,8 +42,8 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Published sessions are attendee-visible; unpublished drafts remain available only to event operators
 
 ### Real-Time Notifications
-- Session reminder and start/end alerts generated automatically from schedule data
-- Bookmark-targeted Web Push for session-linked notifications
+- Organizer announcements and explicitly confirmed manual Start/End alerts
+- Bookmark-targeted Web Push for eligible manually-triggered session-linked notifications
 - Organizer announcements created through the protected admin composer and broadcast to snapshotted recipients
 - Real-time Alerts feed with persisted unread state; session-linked alerts open the session detail modal
 
@@ -50,10 +52,10 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 - Optional LinkedIn, Instagram, Facebook, and GitHub profile links managed together
 - The card activates automatically when links exist; clearing the last link disables existing QR copies without changing the code
 
-### Speakers & Sponsors
-- Browsable directory with photo, name, role, and organization
-- Facilitators have their own directory category alongside speakers, hosts, panelists, and sponsors
-- Detail view with bio and LinkedIn link
+### Speakers
+- Browsable speaker lineup with portrait when supplied and branded initials otherwise
+- Responsive speaker grid with name and optional organization
+- Detail view with optional bio and LinkedIn link
 
 ### Quick Links
 - Link to the main event website
@@ -88,11 +90,11 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 
 - Google OAuth sign-in
 - Real-time program flow with automatic session status
-- Automatic, schedule-driven session reminders and start/end notifications
+- Audited organizer announcements and explicitly confirmed manual status notifications
 - Organizer announcements managed through the protected admin composer and audited database RPC
 - Persisted unread alert count and session-linked alert detail access
 - QR-based social networking (LinkedIn, Instagram, Facebook, GitHub)
-- Speaker/sponsor directory
+- Speaker lineup
 - Event website quick link and local Photo Booth
 - PWA installability
 - Protected event-operations admin workspace
@@ -110,6 +112,6 @@ Sync (Student Edition) is a companion PWA for attendees of AWS Student Community
 2. Session status badges update in real time across all connected clients with no manual re-posting
 3. A user can activate one stable networking QR code that resolves to a noindex card showing their name, photo, and only their configured social links
 4. A user can install the app to a device home screen and launch it as a standalone PWA
-5. A user can browse the full speaker/sponsor directory and open an entry's LinkedIn profile when one is provided
+5. A user can browse the speaker lineup and open an entry's LinkedIn profile when one is provided
 6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override
 7. Attendees can understand every concurrent live or upcoming program choice and receive a clear warning when saved My Flow sessions overlap

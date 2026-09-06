@@ -10,7 +10,7 @@ import {
   Label,
   TextField,
   Typography,
-} from "@heroui/react";
+} from "@/components/ui";
 import {
   updateProfile,
   type UpdateProfileState,

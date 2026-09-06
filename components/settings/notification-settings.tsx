@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Card, Switch, Typography } from "@heroui/react";
+import { Alert, Card, Switch, Typography } from "@/components/ui";
 import {
   ensurePushSubscription,
   getPushDeviceId,

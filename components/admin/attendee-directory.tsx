@@ -13,7 +13,7 @@ import {
   Separator,
   Skeleton,
   Typography,
-} from "@heroui/react";
+} from "@/components/ui";
 import {
   ChevronRight,
   ExternalLink,
@@ -117,7 +117,7 @@ export function AttendeeDirectory({ initialAttendees, initialQuery = "" }: { ini
         {attendees.map((attendee, index) => (
           <div key={attendee.id}>
             {index > 0 ? <Separator /> : null}
-            <button type="button" onClick={() => void openDetails(attendee)} aria-haspopup="dialog" className="flex w-full items-center gap-4 px-5 py-4 text-left transition active:scale-[0.99] hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <button type="button" onClick={() => void openDetails(attendee)} aria-haspopup="dialog" className="flex w-full items-center gap-4 px-5 py-4 text-left transition active:scale-[0.99] hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
               <AttendeeAvatar attendee={attendee} />
               <span className="min-w-0 flex-1">
                 <Typography type="body-sm" weight="semibold" truncate>{attendee.name || "Unnamed attendee"}</Typography>

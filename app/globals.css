@@ -1,142 +1,122 @@
 @import "tailwindcss";
-/*
- * The `/css` subpath, not the bare package name. `@heroui/styles`'s root
- * export only reaches the stylesheet through a `style` condition, which
- * Turbopack's CSS resolver does not apply, so a bare import resolves to
- * dist/index.js and fails. `./css` maps to dist/index.css unconditionally.
- */
-@import "@heroui/styles/css";
 
 /*
- * Monochrome theme override.
- *
- * Every token below is one of HeroUI's own theme variables, re-pointed at a
- * zero-chroma value. Nothing here invents a new design system: components keep
- * using HeroUI's variants, radii, shadows and motion, they just resolve to
- * greys. Light and dark are the two built-in HeroUI themes, switched by
- * next-themes via the `dark` class on <html>.
- *
- * These blocks sit outside @layer on purpose. Unlayered rules win over the
- * layered defaults that @heroui/styles ships, which is the override path the
- * HeroUI theming guide documents.
+ * AWS Student Community Day theme tokens. Local primitives consume these
+ * values directly; the application is intentionally dark-only.
  */
-
 :root,
-.light,
-[data-theme="light"] {
-  color-scheme: light;
-
-  /* Primitives */
-  --white: oklch(1 0 0);
-  --black: oklch(0 0 0);
-  --snow: oklch(0.99 0 0);
-  --eclipse: oklch(0.21 0 0);
-
-  /* Base. iOS's grouped light ground (#F2F2F7) — the faint blue undertone
-     that separates white cells from the page the way native apps do. */
-  --background: #f2f2f7;
-  --foreground: var(--eclipse);
-
-  /* Surfaces */
-  --surface: oklch(1 0 0);
-  --surface-secondary: oklch(0.952 0 0);
-  --surface-tertiary: oklch(0.925 0 0);
-  --overlay: oklch(1 0 0);
-
-  --muted: oklch(0.552 0 0);
-  --default: oklch(0.94 0 0);
-  --default-foreground: var(--eclipse);
-  --segment: oklch(1 0 0);
-
-  /*
-   * The tint is HeroUI's own default primary blue — the colour that makes the
-   * stock HeroUI look read as an iOS app. One tint, everything else neutral.
-   */
-  --accent: #006fee;
-  --accent-foreground: var(--snow);
-
-  /* Form fields */
-  --field-background: oklch(1 0 0);
-  --field-foreground: var(--eclipse);
-
-  /* HeroUI's stock status palette — real hues, as the design system ships. */
-  --success: #17c964;
-  --success-foreground: var(--eclipse);
-  --warning: #f5a524;
-  --warning-foreground: var(--eclipse);
-  --danger: #f31260;
-  --danger-foreground: var(--snow);
-
-  /* Lines and focus */
-  --border: oklch(0.9 0 0);
-  --separator: oklch(0.925 0 0);
-  --focus: var(--accent);
-  --link: var(--foreground);
-
-  --backdrop: rgba(0, 0, 0, 0.45);
-}
-
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-
-  /*
-   * Base. Dark follows iOS's grouped dark palette: a true-black ground with
-   * cells at systemGray6 (#1C1C1E) and systemGray5 (#2C2C2E) equivalents. The
-   * wider ground-to-surface gap is what makes cards read as cells rather than
-   * smudges — still zero chroma throughout.
-   */
-  --background: oklch(0 0 0);
-  --foreground: var(--snow);
-
-  /* Surfaces */
-  --surface: oklch(0.235 0 0);
-  --surface-secondary: oklch(0.295 0 0);
-  --surface-tertiary: oklch(0.345 0 0);
-  --overlay: oklch(0.235 0 0);
-
-  --muted: oklch(0.705 0 0);
-  --default: oklch(0.295 0 0);
-  --default-foreground: var(--snow);
-  --segment: oklch(0.44 0 0);
-
-  /*
-   * The tint is HeroUI's default primary blue, unchanged in dark — the stock
-   * HeroUI dark look. It marks live state, primary chips, the active tab and
-   * the bookmark; everything else stays zero-chroma.
-   */
-  --accent: #006fee;
-  --accent-foreground: var(--snow);
-
-  /* Form fields */
-  --field-background: oklch(0.21 0 0);
-  --field-foreground: var(--snow);
-
-  /* HeroUI's stock status palette, same as light. */
-  --success: #17c964;
-  --success-foreground: var(--eclipse);
-  --warning: #f5a524;
-  --warning-foreground: var(--eclipse);
-  --danger: #f31260;
-  --danger-foreground: var(--snow);
-
-  /* Lines and focus */
-  --border: oklch(0.3 0 0);
-  --separator: oklch(0.28 0 0);
-  --focus: var(--accent);
+  --white: #f2f7ed;
+  --black: #021f2a;
+  --snow: #f2f7ed;
+  --eclipse: #021f2a;
+  --font-sans: var(--font-geist);
+  --font-identity: var(--font-perandory);
+  --background: #052f3c;
+  --foreground: #f2f7ed;
+  --surface: #0a3b47;
+  --surface-foreground: var(--foreground);
+  --surface-secondary: #0e4b52;
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: #15604f;
+  --surface-tertiary-foreground: var(--foreground);
+  --hero-deep: #0a2230;
+  --overlay: #063d4b;
+  --overlay-foreground: var(--foreground);
+  --muted: #b5cbc7;
+  --default: #124753;
+  --default-foreground: var(--foreground);
+  --segment: #0b5d50;
+  --segment-foreground: var(--foreground);
+  --accent: #fcdb64;
+  --accent-foreground: #1a1a1a;
+  --field-background: #093943;
+  --field-foreground: var(--foreground);
+  --field-placeholder: #9db6b2;
+  --field-border: #28606a;
+  --success: #58de69;
+  --success-foreground: #012d3d;
+  --warning: #fcdb64;
+  --warning-foreground: #1a1a1a;
+  --danger: #d9614f;
+  --danger-foreground: #e6ffc9;
+  --border: #28606a;
+  --separator: color-mix(in srgb, #6c9a9d 30%, transparent);
+  --focus: #7cd0f7;
   --link: var(--foreground);
+  --backdrop: rgba(2, 31, 42, 0.78);
+  --surface-shadow: 0 14px 36px rgba(0, 20, 29, 0.18);
+  --overlay-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent), 0 18px 50px rgba(0, 20, 29, 0.62);
+  --field-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 60%, transparent);
+}
 
-  --backdrop: rgba(0, 0, 0, 0.6);
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Quiet surfaces gain depth through tone rather than repeated card borders. */
+.card:not(.card--transparent) {
+  box-shadow: var(--surface-shadow);
+}
+
+.identity-font {
+  font-family: var(--font-identity), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.event-hero {
+  background:
+    radial-gradient(90% 90% at 100% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 62%),
+    radial-gradient(90% 100% at 0% 100%, color-mix(in srgb, var(--success) 26%, transparent), transparent 68%),
+    linear-gradient(145deg, color-mix(in srgb, var(--surface-secondary) 94%, var(--hero-deep)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent), 0 22px 48px rgba(0, 17, 25, 0.42);
+}
+
+.app-field {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(80% 70% at 100% 0%, color-mix(in srgb, var(--surface-secondary) 34%, transparent), transparent 72%),
+    radial-gradient(75% 65% at 0% 100%, color-mix(in srgb, var(--surface-tertiary) 18%, transparent), transparent 74%),
+    var(--background);
+}
+
+.app-field::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.install-popup {
+  animation: install-popup-in 180ms ease-out;
+}
+
+@keyframes install-popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /*
  * Ceremonial portal (app/page.tsx) only.
  *
- * The signed-out landing keeps its original teal/gold night-sky treatment; the
- * HeroUI monochrome system above owns every authenticated screen. Nothing here
- * touches `body` or a HeroUI token — the brand colours are exposed as their own
- * `--color-*` utilities and are referenced only from the portal markup, so the
- * two systems never collide.
+ * The signed-out landing keeps its original teal/gold night-sky treatment.
+ * These portal-only utilities are referenced only from its markup, so the
+ * ceremonial atmosphere does not spill into the authenticated interface.
  */
 :root {
   --bg-base: #024056;
@@ -149,6 +129,26 @@
 }
 
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-overlay: var(--overlay);
+  --color-muted: var(--muted);
+  --color-default: var(--default);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-field-background: var(--field-background);
+  --color-field-foreground: var(--field-foreground);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
   --color-bg-base: var(--bg-base);
   --color-text-primary: var(--text-primary);
   --color-text-muted: var(--text-muted);
@@ -156,7 +156,8 @@
   --color-pastel-yellow: var(--pastel-yellow);
   --color-charcoal: var(--charcoal);
   --color-light-green: #58de69;
-  --font-display: var(--font-perandory);
+  --font-display: var(--font-geist);
+  --font-identity: var(--font-perandory);
 }
 
 .hero-field {
@@ -172,49 +173,6 @@
       rgba(2, 64, 86, 0.62) 70%,
       rgba(12, 39, 44, 0.82)
     );
-}
-
-.hero-field::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 68% 12%, #fff 40%, transparent 41%),
-    radial-gradient(1.5px 1.5px at 32% 62%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 84% 46%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 47% 28%, #fff 40%, transparent 41%),
-    radial-gradient(1.5px 1.5px at 8% 78%, #fff 40%, transparent 41%),
-    radial-gradient(1px 1px at 92% 72%, #fff 40%, transparent 41%);
-}
-
-.stars-layer-a,
-.stars-layer-b {
-  background-repeat: no-repeat;
-}
-
-.stars-layer-a {
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(230, 255, 201, 1), transparent),
-    radial-gradient(1.5px 1.5px at 68% 12%, rgba(230, 255, 201, 0.85), transparent),
-    radial-gradient(2px 2px at 84% 34%, rgba(230, 255, 201, 0.95), transparent),
-    radial-gradient(1.5px 1.5px at 32% 8%, rgba(230, 255, 201, 0.75), transparent),
-    radial-gradient(1.5px 1.5px at 52% 28%, rgba(230, 255, 201, 0.9), transparent),
-    radial-gradient(2px 2px at 8% 48%, rgba(230, 255, 201, 0.85), transparent),
-    radial-gradient(1.5px 1.5px at 92% 56%, rgba(230, 255, 201, 0.75), transparent);
-  animation: stars-twinkle 7s ease-in-out infinite;
-}
-
-.stars-layer-b {
-  background-image:
-    radial-gradient(1.5px 1.5px at 24% 38%, rgba(166, 217, 95, 0.7), transparent),
-    radial-gradient(2px 2px at 44% 16%, rgba(230, 255, 201, 0.65), transparent),
-    radial-gradient(1.5px 1.5px at 76% 42%, rgba(166, 217, 95, 0.75), transparent),
-    radial-gradient(1.5px 1.5px at 58% 50%, rgba(230, 255, 201, 0.6), transparent),
-    radial-gradient(2px 2px at 18% 60%, rgba(230, 255, 201, 0.65), transparent),
-    radial-gradient(1.5px 1.5px at 88% 20%, rgba(166, 217, 95, 0.7), transparent);
-  animation: stars-twinkle 9s ease-in-out infinite reverse;
 }
 
 .lockup-sheen {
@@ -282,16 +240,6 @@
   animation-delay: var(--delay, 0s);
 }
 
-@keyframes stars-twinkle {
-  0%,
-  100% {
-    opacity: 0.65;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 @keyframes lockup-sheen {
   0% {
     background-position: -60%;
@@ -331,10 +279,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stars-layer-a,
-  .stars-layer-b,
   .lockup-sheen,
   .comet {
+    animation: none;
+  }
+
+  .install-popup {
     animation: none;
   }
 

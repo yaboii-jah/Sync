@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Avatar, Card, Typography } from "@heroui/react";
+import { Avatar, Card, Typography } from "@/components/ui/static";
 import { UserX } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-states";
+import { HistoryBackButton } from "@/components/history-back-button";
 import { SocialIcon } from "@/components/social-icon";
 import { secondaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_NETWORKS, SOCIAL_SPECS } from "@/lib/social";
@@ -26,11 +27,11 @@ export const metadata: Metadata = {
 export default async function CardPage(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
   const searchParams = await props.searchParams;
-  const card =
+  const ownerPreview =
     searchParams.preview === "1"
       ? await getOwnerPreview(token)
       : null;
-  const resolvedCard = card ?? (await getPublicNetworkingCard(token));
+  const resolvedCard = ownerPreview ?? (await getPublicNetworkingCard(token));
   const links = resolvedCard
     ? SOCIAL_NETWORKS.filter((network) => resolvedCard.links[network])
     : [];
@@ -40,6 +41,11 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
       <div className="w-full max-w-md">
         {resolvedCard ? (
           <>
+            {ownerPreview ? (
+              <div className="mb-4">
+                <HistoryBackButton fallback="/connect" label="Back to Connect" />
+              </div>
+            ) : null}
             <Typography type="body-sm" color="muted">
               You met
             </Typography>
@@ -63,7 +69,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
                   </Avatar.Fallback>
                 </Avatar>
 
-                <Typography.Heading level={1} className="text-xl">
+                <Typography.Heading level={1} className="font-display text-2xl tracking-wide">
                   {resolvedCard.name || "Attendee"}
                 </Typography.Heading>
                 <Typography type="body-sm" color="muted">
@@ -71,16 +77,16 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
                 </Typography>
               </Card.Content>
 
-              <Card.Footer className="flex flex-col gap-3">
+              <Card.Footer className="!grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {links.map((network) => (
                   <a
                     key={network}
                     href={resolvedCard.links[network]}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${secondaryLinkClass} w-full`}
+                    className={`${secondaryLinkClass} h-full min-w-0 w-full px-3 py-3`}
                   >
-                    <span className="mx-auto grid w-fit grid-cols-[1.25rem_10.5rem] items-center gap-2 text-left">
+                    <span className="mx-auto grid w-full max-w-[15rem] grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-2 text-left leading-5">
                       <SocialIcon network={network} />
                       <span>Connect on {SOCIAL_SPECS[network].label}</span>
                     </span>

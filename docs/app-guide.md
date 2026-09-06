@@ -47,7 +47,7 @@ Attendees install Sync on their phone like a native app. During the event it ans
 
 It is **not** a social network or ticketing system. General directory content still lives directly in Supabase, while the narrow allowlisted `/admin` control room handles event-day alerts, schedule corrections, delivery monitoring, attendee lookup, and mutation auditing. Operators use the protected composer for announcements rather than inserting them directly.
 
-The name of the game remains automation-first: session statuses, reminders, and live/wrapped notifications derive from schedule timestamps. Published sessions are visible to attendees; unpublished drafts stay in the admin workspace and are ignored by schedule automation. When the real event drifts, an admin Start or End override remains authoritative until Resume Auto, and approved operators can send immediate audited alerts from the app.
+The name of the game remains automation-first for program state: session statuses derive from schedule timestamps, while attendee notifications are created only by audited organizer actions. Published sessions are visible to attendees; unpublished drafts stay in the admin workspace and are ignored by schedule automation. When the real event drifts, an admin Start or End override remains authoritative until Resume Auto, and approved operators can send immediate audited alerts from the app.
 
 ---
 
@@ -61,13 +61,13 @@ Here is what a real attendee experiences, from start to finish:
 3. Lands on Home             → Countdown or "Happening Now" card + published schedule
 4. Taps a session            → Modal with description, room, speaker, bookmark button
 5. Bookmarks sessions        → "My Flow" — their personal schedule; finished sessions leave the flow automatically
-6. Gets an alert             → bookmarked sessions send reminders plus live/wrapped updates
+6. Gets an alert             → organizers send audited announcements or deliberate manual status updates
 7. Meets someone             → Opens Connect, shows the stable multi-social QR card
 8. Curious about a speaker   → More, taps a face, reads their bio
 9. End of day                → "That's a wrap" card; Alerts retains the recipient's feed
 ```
 
-**Visually**, the landing page gets the full ceremonial treatment. Everything after sign-in uses the neutral HeroUI light/dark system, with one accent tint and a single saturated hero surface. The event theme is centered at the top of every hero state and is not repeated below the program date.
+**Visually**, the landing page gets the full ceremonial treatment. Everything after sign-in uses the fixed dark AWS SCD local component system: tonal deep-teal panels, warm off-white text, selective gold emphasis, semantic green/yellow/ember states, and one luminous atmospheric Home hero. The event theme is centered at the top of every hero state and is not repeated below the program date.
 
 **On desktop** (≥1024px), the bottom tab bar is replaced by a left sidebar ("rail"), and Home splits into two panes: the Happening Now card pins on the left while the schedule scrolls on the right.
 
@@ -152,16 +152,16 @@ Each section follows the same pattern: **what you see → what happens under the
 
 ### 5.1 Landing Page — "The Poster"
 
-**What you see:** a dark-teal sky with twinkling stars, a comet streaking by every ~20 seconds, a glowing city skyline at the bottom, the word **SYNC** with a light-band sweeping across it, and a yellow "Sign in with Google" button.
+**What you see:** a portrait teal story-sky with restrained comet motion, the word **SYNC** with a light-band sweeping across it, and a yellow "Sign in with Google" button.
 
 **Under the hood:** there's no video and no image files. Everything is **pure CSS and one inline SVG**:
 
-- Stars = two `<div>` layers whose backgrounds are stacks of `radial-gradient` dots. Each layer's `opacity` animates up and down on a loop (7s and 9s, deliberately different so the pattern feels random).
+- The sky = `public/assets/story-sky.webp`, layered with a restrained readability treatment and grain.
 - Comet = one thin gradient line with `animation: comet-fall …` that translates diagonally across the screen. Six comets exist, each with its own start position, speed, and delay — the delays are **negative**, meaning the shower is already mid-flight the instant the page loads.
 - The sheen on SYNC = the text is actually transparent; a moving gradient shows *through* the letters using `background-clip: text`.
 - Accessibility: everything animated is switched off for people whose OS requests `prefers-reduced-motion`, and the comets fall back to static faint streaks.
 
-**Files:** `app/page.tsx` (markup), `app/globals.css` (all animation keyframes), `app/layout.tsx` (loads the Lato + Perandory fonts).
+**Files:** `app/page.tsx` (markup), `app/globals.css` (portal artwork and animation keyframes), `public/assets/story-sky.webp`, `app/layout.tsx` (loads Geist + Perandory).
 
 **One lesson baked in:** OAuth starts in the browser Supabase client so the PKCE verifier is written in the same browser or installed-app context that returns from Google. The button disables immediately to prevent duplicate flows.
 
@@ -231,7 +231,7 @@ The QR encodes the app-owned `/c/<public_token>` card URL, not a mutable externa
 
 ### 5.4 Home Dashboard — The "Happening Now" Machine
 
-**What you see (mobile):** your clean header, the hero card, a segmented **All | My Flow** toggle, and stacked published-session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right.
+**What you see (mobile):** your clean header and profile menu, the hero card, a segmented **All | My Flow** toggle, and stacked published-session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right.
 
 **The hero card's four brains** (`components/home/hero-card.tsx`). It re-renders every second with the device clock and picks a state:
 
@@ -336,20 +336,20 @@ function handleToggleBookmark(sessionId: string) {
 }
 ```
 
-The server action (`app/(app)/home/actions.ts`) checks who you are and rejects new bookmarks for finished sessions, then inserts or deletes **your own** row in `my_flow_bookmarks` — the database's RLS (§7) would reject anything else even if the code tried. The scheduled status job removes finished-session bookmark rows after creating the ended notification.
+The server action (`app/(app)/home/actions.ts`) checks who you are and rejects new bookmarks for finished sessions, then inserts or deletes **your own** row in `my_flow_bookmarks` — the database's RLS (§7) would reject anything else even if the code tried. The scheduled status job removes finished-session bookmark rows independently of notification delivery.
 
 ---
 
 ### 5.7 Push Notifications — The Full Pipeline
 
-**What you see:** your phone buzzes: *"Opening Keynote is live — Head over to Main Hall."* or reminds you that a bookmarked session starts soon. The app wasn't even open.
+**What you see:** your phone buzzes when an organizer sends an announcement or deliberately confirms a manual status update. The app wasn't even open.
 
 This is the most connected feature in the app — five systems passing a baton:
 
 ```
- ┌──────────┐  1. schedule event  ┌───────────────┐  2. INSERT row   ┌───────────────┐
+  ┌──────────┐  1. status sync     ┌───────────────┐  2. organizer row ┌───────────────┐
  │ pg_cron  │ ──────────────────▶ │ sessions      │ ───────────────▶ │ notifications │
- │ (minute) │  flip or reminder   │ status/time   │  cron/organizer │    table      │
+  │ (minute) │  status/cleanup     │ status/time   │  organizer only │    table      │
  └──────────┘                     └───────────────┘                  └───────┬───────┘
                                                                       3. pg_net webhook
                                                                       POST /functions/v1/
@@ -370,8 +370,8 @@ This is the most connected feature in the app — five systems passing a baton:
 
 **Hop by hop:**
 
-1. **pg_cron** (§8) flips only non-overridden sessions and creates deduplicated reminders. Admin Start/End actions use the same transactional notification path when the operator confirms a send.
-2. Every notification snapshots its recipients. Automatic session alerts snapshot bookmarkers; admin alerts snapshot everyone or explicit attendee IDs. Only those recipients can read the row in Alerts.
+1. **pg_cron** (§8) flips only non-overridden sessions and performs finished-bookmark cleanup. Admin Start/End actions use the transactional notification path only when the operator confirms a send.
+2. Every notification snapshots its recipients. Organizer alerts snapshot everyone or explicit attendee IDs. Only those recipients can read the row in Alerts; historical automatic rows remain immutable history.
 3. An AFTER-INSERT trigger creates a durable dispatch and calls `send-push` with only the notification ID and a shared secret.
 4. The Edge Function claims that dispatch once, loads canonical recipients/subscriptions, sends in bounded batches, records accepted/failed/pruned device outcomes, counts recipients without push, and prunes 404/410 endpoints.
 5. The service worker displays the push and opens `/alerts`. Admin “accepted” results mean the push service accepted the message, not that the device visibly displayed it.
@@ -380,7 +380,7 @@ This is the most connected feature in the app — five systems passing a baton:
 
 | Scenario | In-app Alerts | Push target |
 |---|---|---|
-| Automatic reminder, live, or wrapped session alert | Snapshotted bookmarkers only | Devices belonging to those bookmarkers |
+| Scheduled status transition | No new notification | None |
 | Manual Start or End with **Notify every attendee** checked | Snapshotted profiles for everyone | Every available device for those profiles |
 | Manual Start or End with notification unchecked | No new notification | None |
 | Resume Auto | No new notification | None |
@@ -399,7 +399,7 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 ### 5.8 Alerts Feed
 
-**What you see:** the **Alerts** tab — a reverse-chronological list of cards. Live alerts get a pulsing green **Live** badge, reminders get **Soon**, announcements get a gold badge, and ended sessions get a dimmed **Wrapped** badge. Timestamps read like "2 minutes ago." The navigation icon shows a persisted unread count and opening Alerts marks the current feed as read.
+**What you see:** the **Alerts** tab — a compact reverse-chronological activity feed. Semantic icons and readable labels distinguish live, reminder, announcement, and wrapped updates. Timestamps read like "2 minutes ago." The navigation icon shows a persisted unread count and opening Alerts marks the current feed as read.
 
 **Under the hood:** one recipient-filtered query, newest-first, limited to 50; RLS requires a matching immutable `notification_recipients` row. Realtime makes new permitted alerts appear without refreshing. Session-linked cards open the shared modal only while the session is published; otherwise the card reports **Session details unavailable**. Announcements remain static. `alert_read_state` uses database time so device-clock skew cannot incorrectly mark future alerts as read.
 
@@ -414,9 +414,9 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 **Under the hood:**
 
 - The QR encodes the app-owned `/c/<public_token>` URL. The token stays stable while the attendee changes their social links.
-- Rendered by `qrcode.react` as an **SVG** (`QRCodeSVG`) with a fixed light ground and near-black modules so scanners get reliable contrast in both app themes.
+- Rendered by `qrcode.react` as an **SVG** (`QRCodeSVG`) with a neutral-white ground, near-black modules, and a 240px visible cap so scanners get reliable contrast in both app themes.
 - **Save QR** works via a hidden **canvas** twin (`QRCodeCanvas`, 512px): clicking grabs `canvas.toDataURL("image/png")` and triggers a download. SVG for crisp screens, canvas for exportable pixels.
-- The public card reveals the attendee's Google identity plus only their saved social destinations. With no saved links, the QR remains visible but the card is unavailable until a link is added.
+- The public card reveals the attendee's Google identity plus only their saved social destinations. With no saved links, the QR remains visible but the card is unavailable until a link is added. Only a verified owner preview gets Back to Connect.
 
 **Files:** `app/(app)/connect/page.tsx`, `components/connect/connect-card.tsx`, `next.config.ts`.
 
@@ -434,27 +434,12 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 ### 5.11 More Page — Directory and Quick Links
 
-**What you see:** two stacked sections — **Quick Links** (an external event-website card and an in-app Photo Booth card) and **Speakers & Sponsors**: filter chips (All · Speakers · Hosts & Panelists · Sponsors) over person cards. Tap a person → their **bio modal** (role tag, photo, organization, bio, LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
+**What you see:** two stacked sections — **Quick Links** (an external event-website card and an in-app Photo Booth card) and **Speakers**: an image-led responsive lineup that uses a branded initial when no portrait is supplied. Tap a speaker → their **bio modal** (role, portrait or initial, optional organization, bio, and LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
 
 **Under the hood:**
 
-- Filtering is pure client-side array filtering with `useMemo` — instant, no server round-trips:
-
-```ts
-const visible = useMemo(
-  () => people.filter(p => matchesFilter(p, filter)),
-  [people, filter],
-);
-
-function matchesFilter(person: Person, filter: FilterKey): boolean {
-  if (filter === "all") return true;
-  if (filter === "host_panelist")
-    return person.role === "host" || person.role === "panelist";
-  return person.role === filter;
-}
-```
-
-- The bio modal is the same visual language as the session modal (rounded-3xl, blurred backdrop, gold glow) — one design system, reused.
+- The route filters the read-only directory result to records with the `speaker` role. It does not change the stored program participants or their session links.
+- The bio modal is the same visual language as the session modal: a focused, tonal, blurred-backdrop overlay using gold only for primary external actions.
 - Quick links come from the `quick_links` table. Root-relative destinations stay inside the PWA through `next/link`; external destinations open separately.
 
 **Files:** `app/(app)/more/page.tsx`, `components/more/directory-client.tsx`, `lib/supabase/queries/directory.ts`, `…/quick-links.ts`.
@@ -465,7 +450,7 @@ function matchesFilter(person: Person, filter: FilterKey): boolean {
 
 **What you see:** a form with your name and optional social links prefilled. Save → "Profile saved." and every screen reflects the change.
 
-**Under the hood:** the `updateProfile` server action validates the name and complete social-link set through the shared normalizers, updates **your own** profile rows, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data. The page also shows current-device push status: enabling requests permission and stores the browser subscription, while disabling unsubscribes the browser and removes its own subscription row. Unsupported or denied browsers show guidance instead of an actionable toggle. A Back button returns through in-app history and falls back to `/home`.
+**Under the hood:** the `updateProfile` server action validates the name and complete social-link set through the shared normalizers, updates **your own** profile rows, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data. The page also shows current-device push status: enabling requests permission and stores the browser subscription, while disabling unsubscribes the browser and removes its own subscription row. Unsupported or denied browsers show guidance instead of an actionable toggle. A shared history-aware Back button returns through in-app history and falls back to `/home`.
 
 **Files:** `app/(app)/settings/page.tsx`, `app/(app)/settings/actions.ts`, `components/settings/settings-form.tsx`, `components/settings/notification-settings.tsx`, `components/settings/settings-back-button.tsx`, `app/(app)/home/actions.ts`.
 
@@ -560,7 +545,7 @@ erDiagram
 | `speakers_sponsors` | People: name, photo, role (speaker/host/panelist/sponsor), org, bio, LinkedIn | Organizers via SQL |
 | `session_speakers` | Join table: which person appears in which session | Organizers via SQL |
 | `my_flow_bookmarks` | Your saved sessions (user_id + session_id) | **You**, via the bookmark button |
-| `notifications` | Alert content, source, audience metadata, and dispatch trigger | Schedule automation or audited admin functions |
+| `notifications` | Alert content, source, audience metadata, and dispatch trigger | Audited admin functions; historical schedule rows remain retained |
 | `push_subscriptions` | Your device ID, push endpoint, and encryption keys | **You**, when enabling alerts; one device can replace its endpoint without affecting other devices |
 | `alert_read_state` | Your latest Alerts-feed read timestamp, used for the unread badge | **You**, when opening Alerts |
 | `quick_links` | The More page link cards | Organizers via SQL |
@@ -606,7 +591,7 @@ create policy "Users can delete own bookmarks"
 
 ## 8. The Automation — The Minute Job That Runs the Event
 
-The single most important piece of "zero manual posting" is one function on a timer:
+The single most important piece of automatic program state is one function on a timer:
 
 ```sql
 -- supabase/migrations/…130000 (simplified)
@@ -625,19 +610,12 @@ begin
     -- …flip it…
     update public.sessions set status = flipped.new_status where id = flipped.id;
 
-    -- …and if it just went live or just ended, write an alert.
-    if flipped.new_status = 'ongoing' then
-      insert into public.notifications (type, title, body, related_session_id)
-      values ('session_live', flipped.title || ' is live',
-              'Head over to ' || coalesce(flipped.room, 'the venue') || '.', flipped.id);
-    elsif flipped.new_status = 'finished' then
-      insert into public.notifications (type, title, body, related_session_id)
-      values ('session_ended', flipped.title || ' just wrapped up', null, flipped.id);
+    -- Finished-session bookmarks are cleaned up independently.
+    if flipped.new_status = 'finished' then
+      delete from public.my_flow_bookmarks where session_id = flipped.id;
     end if;
   end loop;
-  -- Finished-session bookmark rows are removed after their ended notification
-  -- is inserted; the trigger snapshots recipients before this cleanup.
-  -- A second pass writes one reminder around 10 minutes before each session.
+  -- No schedule-generated reminder, live, or ended notification is written.
   -- (events.status gets the same treatment)
 end; $$;
 
@@ -651,7 +629,7 @@ Read the `where s.status is distinct from (...)` clause carefully — it's the q
 - A write is exactly what Realtime (§5.5) and the notification trigger (§5.7) are waiting for → the whole machine advances itself.
 - Status can never drift more than ~60 seconds from the truth, because the job runs every minute.
 
-This is why scheduled event-day behavior needs no organizer at the controls: reminders and status transitions write themselves, targeted phones receive pushes, and open clients update through Realtime. Operators use the protected admin composer for announcements; direct SQL remains for directory/quick-link maintenance and source-controlled schedule replacements.
+This is why scheduled event-day behavior needs no organizer at the controls for program state: statuses and finished-bookmark cleanup write themselves, while open clients update through Realtime. Operators use the protected admin composer or deliberate manual status confirmation for attendee alerts; direct SQL remains for directory/quick-link maintenance and source-controlled schedule replacements.
 
 ---
 

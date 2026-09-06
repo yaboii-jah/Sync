@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Chip, Typography } from "@heroui/react";
-import { BellOff } from "lucide-react";
+import { Card, Separator, Typography } from "@/components/ui";
+import {
+  BellOff,
+  CheckCircle2,
+  Clock3,
+  Megaphone,
+  Radio,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { NotificationRow } from "@/lib/supabase/queries/notifications";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
@@ -24,26 +31,26 @@ interface AlertsClientProps {
   initialBookmarkedIds: string[];
 }
 
-/**
- * Alert kind is monochrome: emphasis runs from a solid chip (live, most
- * urgent) down to a soft chip (wrapped, archival).
- */
-const TYPE_CHIPS: Record<
+const TYPE_META: Record<
   string,
-  { label: string; variant: "primary" | "secondary" | "tertiary" | "soft" }
+  {
+    label: string;
+    icon: LucideIcon;
+    iconClass: string;
+  }
 > = {
-  session_live: { label: "Live", variant: "primary" },
-  session_reminder: { label: "Soon", variant: "secondary" },
-  announcement: { label: "Announcement", variant: "tertiary" },
+  session_live: { label: "Live now", icon: Radio, iconClass: "bg-success/15 text-success" },
+  session_reminder: { label: "Starting soon", icon: Clock3, iconClass: "bg-warning/15 text-warning" },
+  announcement: { label: "Announcement", icon: Megaphone, iconClass: "bg-accent/15 text-accent" },
+  session_ended: { label: "Session ended", icon: CheckCircle2, iconClass: "bg-default text-muted" },
 };
 
-function TypeChip({ type }: { type: string }) {
-  const chip = TYPE_CHIPS[type] ?? { label: "Wrapped", variant: "soft" as const };
-  return (
-    <Chip size="sm" variant={chip.variant}>
-      {chip.label}
-    </Chip>
-  );
+function typeMeta(type: string) {
+  return TYPE_META[type] ?? {
+    label: "Event update",
+    icon: Radio,
+    iconClass: "bg-default text-muted",
+  };
 }
 
 export function AlertsClient({
@@ -143,49 +150,63 @@ export function AlertsClient({
 
   return (
     <>
-      <div className="mt-6 flex flex-col gap-3">
-        {notifications.map((notification) => {
+      {notifications.length > 0 ? (
+        <Card className="mt-6 overflow-hidden p-0">
+          {notifications.map((notification, index) => {
           const sessionUnavailable =
             notification.related_session_id !== null &&
             unavailableSessionIds.has(notification.related_session_id);
           const tappable =
             notification.related_session_id !== null && !sessionUnavailable;
+          const meta = typeMeta(notification.type);
+          const Icon = meta.icon;
 
           const body = (
-            <>
-              <div className="flex items-center justify-between gap-2">
-                <TypeChip type={notification.type} />
-                <Typography type="body-xs" color="muted">
-                  <time dateTime={notification.created_at}>
-                    {formatRelativeTime(notification.created_at)}
-                  </time>
+            <div className="flex min-w-0 gap-3.5">
+              <span
+                aria-hidden
+                className={`mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl ${meta.iconClass}`}
+              >
+                <Icon className="size-4.5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <Typography type="body-xs" weight="semibold" className="text-foreground">
+                    {meta.label}
+                  </Typography>
+                  <Typography type="body-xs" color="muted">
+                    <time dateTime={notification.created_at}>
+                      {formatRelativeTime(notification.created_at)}
+                    </time>
+                  </Typography>
+                </div>
+
+                <Typography type="body" weight="semibold" className="mt-1 leading-snug">
+                  {notification.title}
                 </Typography>
+
+                {notification.body ? (
+                  <Typography type="body-sm" color="muted" className="mt-1.5 leading-5">
+                    {notification.body}
+                  </Typography>
+                ) : null}
+
+                {tappable ? (
+                  <Typography type="body-xs" weight="medium" className="mt-2.5 text-accent">
+                    Open session
+                  </Typography>
+                ) : sessionUnavailable ? (
+                  <Typography type="body-xs" color="muted" className="mt-2.5">
+                    Session details unavailable
+                  </Typography>
+                ) : null}
               </div>
-
-              <Typography type="body" weight="semibold" className="mt-2">
-                {notification.title}
-              </Typography>
-
-              {notification.body ? (
-                <Typography type="body-sm" color="muted" className="mt-1">
-                  {notification.body}
-                </Typography>
-              ) : null}
-
-              {tappable ? (
-                <Typography type="body-xs" weight="medium" className="mt-3">
-                  View session
-                </Typography>
-              ) : sessionUnavailable ? (
-                <Typography type="body-xs" color="muted" className="mt-3">
-                  Session details unavailable
-                </Typography>
-              ) : null}
-            </>
+            </div>
           );
 
           return (
-            <Card key={notification.id}>
+            <div key={notification.id}>
+              {index > 0 ? <Separator /> : null}
               {tappable ? (
                 <button
                   type="button"
@@ -193,27 +214,26 @@ export function AlertsClient({
                     void openLinkedSession(notification.related_session_id!)
                   }
                   aria-haspopup="dialog"
-                  className="w-full px-5 py-4 text-left"
+                  className="hover:bg-default/70 w-full px-4 py-4 text-left transition-colors sm:px-5"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="px-5 py-4">{body}</div>
+                <div className="px-4 py-4 sm:px-5">{body}</div>
               )}
-            </Card>
+            </div>
           );
-        })}
-
-        {notifications.length === 0 ? (
-          <Card variant="transparent" className="border-border border border-dashed">
-            <EmptyState
-              icon={<BellOff />}
-              title="No alerts yet"
-              description="Session updates and announcements appear here during the event."
-            />
-          </Card>
-        ) : null}
-      </div>
+          })}
+        </Card>
+      ) : (
+        <Card variant="transparent" className="mt-6 border border-dashed border-border">
+          <EmptyState
+            icon={<BellOff />}
+            title="No alerts yet"
+            description="Session updates and announcements appear here during the event."
+          />
+        </Card>
+      )}
 
       {activeSession ? (
         <SessionModal

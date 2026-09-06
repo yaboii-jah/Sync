@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Modal, Typography } from "@heroui/react";
+import { Modal, Typography } from "@/components/ui";
 import { QrCode, Settings } from "lucide-react";
 import { primaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_NETWORKS, type SocialLinks } from "@/lib/social";

@@ -1,4 +1,4 @@
-import { Card } from "@heroui/react";
+import { Card } from "@/components/ui/static";
 import { Skeleton, SkeletonText } from "@/components/skeleton";
 
 export function HomeLoading() {

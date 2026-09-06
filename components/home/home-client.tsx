@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Card, Chip, Separator, Tabs, Typography } from "@heroui/react";
+import { Card, Chip, Separator, Tabs, Typography } from "@/components/ui";
 import type { Key } from "react-aria-components/Tabs";
 import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,6 +29,7 @@ import { SessionCard } from "./session-card";
 import { SessionModal } from "@/components/sessions/session-modal";
 import { ScrollToNow } from "./scroll-to-now";
 import { LiveMiniBar } from "./live-mini-bar";
+import { InstallChip } from "@/components/push/install-chip";
 import {
   getConflictingSessionIds,
   getLiveSessions,
@@ -169,7 +170,7 @@ export function HomeClient({
               <div className="flex items-center justify-between gap-3 pb-2">
                 <span
                   className={`text-[13px] font-semibold tabular-nums ${
-                    live ? "text-accent" : "text-foreground"
+                    live ? "text-success" : "text-foreground"
                   }`}
                 >
                   {formatManilaTime(group.startTime)}
@@ -181,10 +182,10 @@ export function HomeClient({
                     </Chip>
                   ) : null}
                   {live ? (
-                    <span className="text-accent flex items-center gap-1.5 text-[10px] font-bold tracking-[0.12em]">
+                    <span className="text-success flex items-center gap-1.5 text-[10px] font-bold tracking-[0.12em]">
                       <span aria-hidden className="relative flex size-1.5">
-                        <span className="bg-accent absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:animate-none" />
-                        <span className="bg-accent relative inline-flex size-1.5 rounded-full" />
+                        <span className="bg-success absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:animate-none" />
+                        <span className="bg-success relative inline-flex size-1.5 rounded-full" />
                       </span>
                       LIVE
                     </span>
@@ -236,6 +237,9 @@ export function HomeClient({
             now={now}
             onOpenSession={(target) => setActiveSessionId(target.id)}
           />
+          <div className="mt-4">
+            <InstallChip />
+          </div>
           <Typography type="body-sm" color="muted" className="mt-4 hidden lg:block">
             {formatManilaDate(event.starts_at)}
             {", "}
@@ -263,13 +267,19 @@ export function HomeClient({
           >
             <Tabs.List
               aria-label="Session filter"
-              className="w-full gap-0 rounded-[calc(var(--radius)*2.5)] bg-default p-1"
+              className="w-full gap-1 rounded-2xl bg-surface-secondary p-1.5 shadow-sm"
             >
-              <Tabs.Tab id="all" className="min-w-0 basis-0 flex-1">
+              <Tabs.Tab
+                id="all"
+                className="min-w-0 basis-0 flex-1 font-medium data-[selected]:bg-accent data-[selected]:text-accent-foreground"
+              >
                 All
                 <Tabs.Indicator />
               </Tabs.Tab>
-              <Tabs.Tab id="flow" className="min-w-0 basis-0 flex-1">
+              <Tabs.Tab
+                id="flow"
+                className="min-w-0 basis-0 flex-1 font-medium data-[selected]:bg-accent data-[selected]:text-accent-foreground"
+              >
                 My Flow
                 <Tabs.Indicator />
               </Tabs.Tab>

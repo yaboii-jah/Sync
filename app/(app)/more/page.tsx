@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, Typography } from "@heroui/react";
+import { Card, Typography } from "@/components/ui/static";
 import { Camera, Globe, type LucideIcon } from "lucide-react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -31,10 +31,11 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
+  const speakers = people.filter((person) => person.role === "speaker");
 
   return (
     <main className="w-full">
-      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-3xl lg:px-10 lg:pt-10">
+      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:max-w-5xl lg:px-10 lg:pt-10">
         <AppHeader />
         <PageHeader title="More" />
 
@@ -88,10 +89,13 @@ export default async function MorePage() {
 
         <section className="mt-8 mb-4">
           <Typography.Heading level={2} className="text-base">
-            Event directory
+            Speakers
           </Typography.Heading>
+          <Typography type="body-sm" color="muted" className="mt-1">
+            Meet the people sharing their work and perspective on event day.
+          </Typography>
           <div className="mt-3">
-            <DirectoryClient people={people} />
+            <DirectoryClient people={speakers} />
           </div>
         </section>
       </div>

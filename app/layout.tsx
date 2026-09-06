@@ -1,20 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Lato } from "next/font/google";
+import { Geist } from "next/font/google";
 import localFont from "next/font/local";
 import { ServiceWorkerRegistration } from "@/components/push/service-worker-registration";
 import { Providers } from "./providers";
 import "./globals.css";
 
-/*
- * Portal typefaces. Only the signed-out landing (`app/page.tsx`) consumes
- * these — it sets Lato inline and reaches Perandory through the `font-display`
- * utility. They are declared here because next/font must run in a layout, not
- * because the authenticated HeroUI screens use them.
- */
-const lato = Lato({
-  variable: "--font-lato",
+/* Event typefaces are mapped to the shared UI tokens in globals.css. */
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
 const perandory = localFont({
@@ -47,18 +41,14 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
+  themeColor: "#052f3c",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${lato.variable} ${perandory.variable} h-full antialiased`}
-      suppressHydrationWarning
+      className={`${geist.variable} ${perandory.variable} dark h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <Providers>{children}</Providers>

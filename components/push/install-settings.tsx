@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Chip, Typography } from "@heroui/react";
+import { Button, Card, Chip, Typography } from "@/components/ui";
 import { Download } from "lucide-react";
 import {
   getInstallInstructions,
@@ -23,13 +23,13 @@ export function InstallSettings() {
 
   return (
     <Card className="mt-4">
-      <Card.Header>
+      <Card.Header className="gap-2">
         <Card.Title>Install Sync</Card.Title>
         <Card.Description>
           Keep Sync easy to open throughout event day.
         </Card.Description>
       </Card.Header>
-      <Card.Content className="flex flex-col gap-3">
+      <Card.Content className="mt-4 flex flex-col gap-4">
         {isInstalled ? (
           <>
             <Chip variant="secondary" size="sm" className="w-fit">

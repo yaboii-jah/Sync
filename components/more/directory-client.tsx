@@ -1,143 +1,95 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
-import { Avatar, Button, Card, Chip, Modal, Tabs, Typography } from "@heroui/react";
-import type { Key } from "react-aria-components/Tabs";
+import { useState } from "react";
+import { Button, Card, Modal, Typography } from "@/components/ui";
 import { ExternalLink, Users } from "lucide-react";
 import type { Person } from "@/lib/supabase/queries/directory";
 import { EmptyState } from "@/components/empty-states";
 import { primaryLinkClass } from "@/components/ui/link-button";
 
-type FilterKey =
-  | "all"
-  | "speaker"
-  | "facilitator"
-  | "host_panelist"
-  | "sponsor";
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "speaker", label: "Speakers" },
-  { key: "facilitator", label: "Facilitators" },
-  { key: "host_panelist", label: "Hosts & panelists" },
-  { key: "sponsor", label: "Sponsors" },
-];
-
-const ROLE_LABELS: Record<string, string> = {
-  speaker: "Speaker",
-  facilitator: "Facilitator",
-  host: "Host",
-  panelist: "Panelist",
-  sponsor: "Sponsor",
-};
-
-function matchesFilter(person: Person, filter: FilterKey): boolean {
-  if (filter === "all") return true;
-  if (filter === "host_panelist") {
-    return person.role === "host" || person.role === "panelist";
-  }
-  return person.role === filter;
-}
-
-function PersonAvatar({ person, size }: { person: Person; size: "md" | "lg" }) {
-  const px = size === "lg" ? 64 : 48;
+function PersonPortrait({
+  person,
+  variant,
+}: {
+  person: Person;
+  variant: "tile" | "modal";
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(person.photo_url) && !imageFailed;
 
   return (
-    <Avatar size={size} className={size === "lg" ? "size-16" : "size-12"}>
-      {person.photo_url ? (
-        <Avatar.Image asChild src={person.photo_url}>
-          <Image
-            src={person.photo_url}
-            alt=""
-            width={px}
-            height={px}
-            unoptimized
-          />
-        </Avatar.Image>
-      ) : null}
-      <Avatar.Fallback>{person.name.charAt(0).toUpperCase()}</Avatar.Fallback>
-    </Avatar>
+    <div
+      className={`relative overflow-hidden bg-surface-secondary ${
+        variant === "tile"
+          ? "h-20 w-20 shrink-0 sm:h-auto sm:w-auto sm:aspect-[4/5]"
+          : "aspect-square w-24 shrink-0 rounded-2xl sm:w-28"
+      }`}
+    >
+      {hasImage ? (
+        <Image
+          src={person.photo_url!}
+          alt={`Portrait of ${person.name}`}
+          fill
+          sizes={variant === "tile" ? "(min-width: 1024px) 20vw, (min-width: 640px) 40vw, 80px" : "112px"}
+          unoptimized
+          className="object-cover"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <span
+          aria-hidden
+          className="flex size-full items-center justify-center bg-[radial-gradient(circle_at_72%_18%,color-mix(in_srgb,var(--accent)_28%,transparent),transparent_44%),linear-gradient(145deg,var(--surface-tertiary),var(--surface-secondary))] text-3xl font-semibold text-foreground sm:text-5xl"
+        >
+          {person.name.charAt(0).toUpperCase()}
+        </span>
+      )}
+    </div>
   );
 }
 
 export function DirectoryClient({ people }: { people: Person[] }) {
-  const [filter, setFilter] = useState<FilterKey>("all");
   const [activePerson, setActivePerson] = useState<Person | null>(null);
 
-  const byFilter = useMemo(() => {
-    const map = {} as Record<FilterKey, Person[]>;
-    for (const f of FILTERS) {
-      map[f.key] = people.filter((person) => matchesFilter(person, f.key));
-    }
-    return map;
-  }, [people]);
-
-  function renderList(items: Person[]) {
-    if (items.length === 0) {
-      return (
-        <Card variant="transparent" className="border-border border border-dashed">
-          <EmptyState
-            icon={<Users />}
-            title="No one in this group yet"
-            description="Speakers and sponsors appear here as they are confirmed."
-          />
-        </Card>
-      );
-    }
-
+  if (people.length === 0) {
     return (
-      <div className="flex flex-col gap-3">
-        {items.map((person) => (
-          <Card key={person.id}>
+      <Card variant="transparent" className="border border-dashed border-border">
+        <EmptyState
+          icon={<Users />}
+          title="Speakers are being confirmed"
+          description="The event lineup will appear here once it is ready."
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {people.map((person) => (
+          <Card key={person.id} className="group overflow-hidden p-0 transition-transform hover:-translate-y-0.5 active:scale-[0.98] motion-reduce:transform-none">
             <button
               type="button"
               onClick={() => setActivePerson(person)}
               aria-haspopup="dialog"
-              className="flex w-full items-center gap-4 px-5 py-4 text-left"
+              className="flex w-full items-center text-left sm:block"
             >
-              <PersonAvatar person={person} size="md" />
-              <span className="min-w-0">
-                <Typography type="body-sm" weight="semibold" truncate>
+              <PersonPortrait person={person} variant="tile" />
+              <span className="min-w-0 flex-1 px-4 py-3.5 sm:block sm:px-4 sm:py-4">
+                <Typography type="body" weight="semibold" className="truncate">
                   {person.name}
                 </Typography>
-                <Typography type="body-xs" color="muted" truncate>
-                  {ROLE_LABELS[person.role] ?? person.role}
-                  {person.organization ? `, ${person.organization}` : ""}
+                <Typography type="body-xs" color="muted" className="mt-1 truncate">
+                  {person.organization ?? "Speaker"}
+                </Typography>
+                <Typography type="body-xs" weight="medium" className="mt-2 text-accent">
+                  View profile
                 </Typography>
               </span>
             </button>
           </Card>
         ))}
       </div>
-    );
-  }
-
-  return (
-    <div>
-      <Tabs
-        variant="secondary"
-        selectedKey={filter}
-         onSelectionChange={(key: Key) => setFilter(key as FilterKey)}
-      >
-        <Tabs.ListContainer>
-          <Tabs.List aria-label="Filter people by role">
-            {FILTERS.map((f, index) => (
-              <Tabs.Tab key={f.key} id={f.key}>
-                {index > 0 ? <Tabs.Separator /> : null}
-                {f.label}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
-
-        {FILTERS.map((f) => (
-          <Tabs.Panel key={f.key} {...{ id: f.key }} className="mt-4">
-            {renderList(byFilter[f.key])}
-          </Tabs.Panel>
-        ))}
-      </Tabs>
 
       {activePerson ? (
         <PersonBioModal
@@ -145,7 +97,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
           onClose={() => setActivePerson(null)}
         />
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -169,17 +121,16 @@ function PersonBioModal({
           <Modal.Dialog aria-label={person.name}>
             <Modal.CloseTrigger />
 
-            <Modal.Header>
-              <Modal.Heading>{person.name}</Modal.Heading>
-            </Modal.Header>
-
-            <Modal.Body className="flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <PersonAvatar person={person} size="lg" />
-                <div className="min-w-0">
-                  <Chip size="sm" variant="secondary">
-                    {ROLE_LABELS[person.role] ?? person.role}
-                  </Chip>
+            <Modal.Body className="flex flex-col gap-6">
+              <div className="flex items-start gap-4 pr-8">
+                <PersonPortrait person={person} variant="modal" />
+                <div className="min-w-0 pt-1">
+                  <Typography type="body-xs" weight="semibold" className="tracking-[0.12em] text-accent uppercase">
+                    Speaker
+                  </Typography>
+                  <Modal.Heading className="mt-2 text-xl leading-tight">
+                    {person.name}
+                  </Modal.Heading>
                   {person.organization ? (
                     <Typography type="body-sm" color="muted" className="mt-2">
                       {person.organization}
@@ -189,23 +140,25 @@ function PersonBioModal({
               </div>
 
               {person.bio ? (
-                <Typography type="body-sm">{person.bio}</Typography>
+                <Typography type="body-sm" className="leading-6">
+                  {person.bio}
+                </Typography>
               ) : null}
             </Modal.Body>
 
-            <Modal.Footer className="flex flex-col gap-3">
+            <Modal.Footer className="flex-col gap-3 sm:flex-row">
               {person.linkedin_url ? (
                 <a
                   href={person.linkedin_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${primaryLinkClass} w-full`}
+                  className={`${primaryLinkClass} w-full sm:w-auto`}
                 >
                   <ExternalLink className="size-4" aria-hidden />
-                  View LinkedIn profile
+                  LinkedIn profile
                 </a>
               ) : null}
-              <Button variant="secondary" fullWidth onPress={onClose}>
+              <Button variant="secondary" fullWidth onPress={onClose} className="sm:w-auto">
                 Close
               </Button>
             </Modal.Footer>

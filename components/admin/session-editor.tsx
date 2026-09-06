@@ -10,7 +10,7 @@ import {
   Modal,
   Switch,
   TextField,
-} from "@heroui/react";
+} from "@/components/ui";
 import {
   createSessionAction,
   updateSessionAction,

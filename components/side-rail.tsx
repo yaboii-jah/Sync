@@ -2,19 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Badge, Separator, Typography } from "@heroui/react";
+import { Badge, Separator, Typography } from "@/components/ui";
 import {
   Bell,
   House,
   MoreHorizontal,
   QrCode,
-  ShieldCheck,
-  User,
   type LucideIcon,
 } from "lucide-react";
 import { useAlertsCount } from "@/components/alerts-count-provider";
-import { SignOutButton } from "@/components/sign-out-button";
-import { ThemeSwitch } from "@/components/theme-switch";
+import { ProfileMenu } from "@/components/profile-menu";
 
 interface RailItem {
   label: string;
@@ -30,14 +27,20 @@ const RAIL_ITEMS: RailItem[] = [
 ];
 
 function railLinkClass(active: boolean) {
-  return `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
+  return `flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
     active
-      ? "bg-default text-foreground font-semibold"
-      : "text-muted hover:bg-default hover:text-foreground"
+      ? "border-accent text-accent font-semibold"
+      : "border-transparent text-muted hover:text-foreground"
   }`;
 }
 
-export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
+export function SideRail({
+  isAdmin = false,
+  profile,
+}: {
+  isAdmin?: boolean;
+  profile?: { name: string | null; photo_url: string | null } | null;
+}) {
   const pathname = usePathname();
   const { unreadCount } = useAlertsCount();
 
@@ -46,9 +49,9 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
       <div className="px-6 py-6">
         <Link
           href="/home"
-          className="inline-flex rounded-lg focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+          className="inline-flex rounded-lg focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
         >
-          <Typography type="h5" weight="semibold">
+          <Typography type="h5" weight="semibold" className="identity-font">
             Sync
           </Typography>
         </Link>
@@ -83,22 +86,14 @@ export function SideRail({ isAdmin = false }: { isAdmin?: boolean }) {
 
       <div className="mt-auto flex flex-col gap-1 px-3 pb-6">
         <Separator className="mb-3" />
-        {isAdmin ? (
-          <Link href="/admin" className={railLinkClass(false)}>
-            <ShieldCheck className="size-5" aria-hidden />
-            Admin view
-          </Link>
-        ) : null}
-        <ThemeSwitch className="w-full justify-start" />
-        <Link
-          href="/settings"
-          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
-          className={railLinkClass(pathname.startsWith("/settings"))}
-        >
-          <User className="size-5" aria-hidden />
-          Account
-        </Link>
-        <SignOutButton variant="labeled" />
+        <ProfileMenu
+          name={profile?.name}
+          photoUrl={profile?.photo_url}
+          isAdmin={isAdmin}
+          showName
+          placement="right bottom"
+          className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left text-sm text-muted outline-none transition hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus"
+        />
       </div>
     </aside>
   );

@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Browser object URLs and live booth imagery cannot use Next's image optimizer. */
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Alert, Button, Card, Chip, Typography } from "@heroui/react";
+import { Alert, Button, Card, Chip, Typography } from "@/components/ui";
 import {
   Camera,
   Download,
@@ -17,13 +17,14 @@ const OUTPUT_HEIGHT = 1920;
 const SLOT_LEFT = 72;
 const SLOT_WIDTH = 936;
 const SLOT_HEIGHT = 500;
-const SLOT_TOPS = [64, 612, 1160] as const;
+const SLOT_TOPS = [96, 628, 1160] as const;
 const SLOT_BORDER = 8;
 
 type CameraFacing = "user" | "environment";
 type BoothStage = "intro" | "starting" | "capture" | "countdown" | "composing" | "review";
 type SlotPhotos = [string | null, string | null, string | null];
 type CompletedPhotos = [string, string, string];
+type CameraDevice = { deviceId: string; label: string };
 
 const EMPTY_SLOTS: SlotPhotos = [null, null, null];
 
@@ -149,7 +150,8 @@ export function PhotoBoothClient() {
   const [slots, setSlots] = useState<SlotPhotos>(EMPTY_SLOTS);
   const [selectedSlot, setSelectedSlot] = useState(0);
   const [cameraFacing, setCameraFacing] = useState<CameraFacing>("user");
-  const [canSwitchCamera, setCanSwitchCamera] = useState(false);
+  const [cameraDevices, setCameraDevices] = useState<CameraDevice[]>([]);
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [streamVersion, setStreamVersion] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -160,7 +162,22 @@ export function PhotoBoothClient() {
   const slotsRef = useRef<SlotPhotos>(EMPTY_SLOTS);
   const resultUrlRef = useRef<string | null>(null);
   const countdownTimerRef = useRef<number | null>(null);
-  const isMountedRef = useRef(true);
+  const isMountedRef = useRef(false);
+  const cameraRequestRef = useRef(0);
+  const compositionRequestRef = useRef(0);
+  const capturingPhotoRef = useRef(false);
+
+  function isCurrentCameraRequest(requestId: number) {
+    return isMountedRef.current && cameraRequestRef.current === requestId && !document.hidden;
+  }
+
+  function invalidateCameraRequest() {
+    cameraRequestRef.current += 1;
+  }
+
+  function invalidateComposition() {
+    compositionRequestRef.current += 1;
+  }
 
   function replaceSlot(index: number, url: string | null): SlotPhotos {
     const next = copySlots(slotsRef.current);
@@ -198,6 +215,8 @@ export function PhotoBoothClient() {
   }
 
   async function composeStrip(completedSlots: CompletedPhotos) {
+    const requestId = compositionRequestRef.current + 1;
+    compositionRequestRef.current = requestId;
     setStage("composing");
     setError(null);
 
@@ -229,7 +248,7 @@ export function PhotoBoothClient() {
       });
 
       const result = URL.createObjectURL(await canvasToJpeg(canvas, 0.92));
-      if (!isMountedRef.current) {
+      if (!isMountedRef.current || compositionRequestRef.current !== requestId) {
         URL.revokeObjectURL(result);
         return;
       }
@@ -237,15 +256,21 @@ export function PhotoBoothClient() {
       replaceResult(result);
       setStage("review");
     } catch (cause) {
+      if (!isMountedRef.current || compositionRequestRef.current !== requestId) return;
       setError(cause instanceof Error ? cause.message : "Could not finish your photo strip.");
       setStage("review");
     }
   }
 
-  async function startCamera(facing: CameraFacing) {
+  async function startCamera(facing: CameraFacing, deviceId?: string) {
+    const requestId = cameraRequestRef.current + 1;
+    cameraRequestRef.current = requestId;
+    invalidateComposition();
     clearCountdown();
     stopCamera();
     setError(null);
+    setCameraDevices([]);
+    setActiveDeviceId(null);
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("This browser cannot open a camera. Choose a photo instead.");
@@ -255,41 +280,68 @@ export function PhotoBoothClient() {
 
     setStage("starting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: facing },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          aspectRatio: { ideal: 16 / 9 },
-        },
-      });
-      if (!isMountedRef.current || document.hidden) {
+      const preferredVideo = {
+        ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: facing } }),
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        aspectRatio: { ideal: 16 / 9 },
+      };
+      let stream: MediaStream;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: preferredVideo,
+        });
+      } catch (cause) {
+        const errorName = cause instanceof DOMException ? cause.name : "";
+        const canRetry = ["NotFoundError", "OverconstrainedError", "TypeError"].includes(errorName);
+        if (!canRetry) throw cause;
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            aspectRatio: { ideal: 16 / 9 },
+          },
+        });
+      }
+
+      if (!isCurrentCameraRequest(requestId)) {
         stream.getTracks().forEach((track) => track.stop());
-        if (isMountedRef.current) setStage("intro");
         return;
       }
 
       streamRef.current = stream;
-      const actualFacing = stream.getVideoTracks()[0]?.getSettings().facingMode;
-      setCameraFacing(actualFacing === "environment" ? "environment" : "user");
+      const videoTrack = stream.getVideoTracks()[0];
+      const settings = videoTrack?.getSettings();
+      const actualFacing = settings?.facingMode;
+      setActiveDeviceId(settings?.deviceId ?? deviceId ?? null);
+      if (actualFacing === "environment" || actualFacing === "user") {
+        setCameraFacing(actualFacing);
+      }
       setStage("capture");
       setStreamVersion((value) => value + 1);
 
       if (navigator.mediaDevices.enumerateDevices) {
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
-          if (isMountedRef.current) {
-            setCanSwitchCamera(devices.filter((device) => device.kind === "videoinput").length > 1);
+          if (!isCurrentCameraRequest(requestId)) {
+            stream.getTracks().forEach((track) => track.stop());
+            return;
           }
+          setCameraDevices(
+            devices
+              .filter((device) => device.kind === "videoinput" && device.deviceId)
+              .map((device) => ({ deviceId: device.deviceId, label: device.label })),
+          );
         } catch {
-          if (isMountedRef.current) {
-            setCanSwitchCamera(false);
-          }
+          if (isCurrentCameraRequest(requestId)) setCameraDevices([]);
         }
       }
     } catch (cause) {
-      if (isMountedRef.current) {
+      if (isCurrentCameraRequest(requestId)) {
         setError(getCameraError(cause));
         setStage("intro");
       }
@@ -298,6 +350,7 @@ export function PhotoBoothClient() {
 
   async function takePhoto() {
     const video = videoRef.current;
+    const requestId = cameraRequestRef.current;
     if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
       setError("The camera is still getting ready. Try again in a moment.");
       return;
@@ -305,6 +358,7 @@ export function PhotoBoothClient() {
 
     setStage("composing");
     setError(null);
+    capturingPhotoRef.current = true;
     try {
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
@@ -319,7 +373,7 @@ export function PhotoBoothClient() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       const snapshotUrl = URL.createObjectURL(await canvasToJpeg(canvas, 0.94));
-      if (!isMountedRef.current) {
+      if (!isCurrentCameraRequest(requestId)) {
         URL.revokeObjectURL(snapshotUrl);
         return;
       }
@@ -327,7 +381,9 @@ export function PhotoBoothClient() {
       const nextSlots = replaceSlot(selectedSlot, snapshotUrl);
       const nextOpenSlot = nextSlots.findIndex((slot) => slot === null);
       if (hasCompletedPhotos(nextSlots)) {
+        capturingPhotoRef.current = false;
         stopCamera();
+        invalidateCameraRequest();
         await composeStrip(nextSlots);
         return;
       }
@@ -335,8 +391,11 @@ export function PhotoBoothClient() {
       setSelectedSlot(nextOpenSlot);
       setStage("capture");
     } catch (cause) {
+      if (!isCurrentCameraRequest(requestId)) return;
       setError(cause instanceof Error ? cause.message : "Could not capture this photo.");
       setStage("capture");
+    } finally {
+      capturingPhotoRef.current = false;
     }
   }
 
@@ -383,6 +442,8 @@ export function PhotoBoothClient() {
 
   function retakeSlot(index: number) {
     clearCountdown();
+    invalidateCameraRequest();
+    invalidateComposition();
     stopCamera();
     replaceResult(null);
     replaceSlot(index, null);
@@ -406,26 +467,50 @@ export function PhotoBoothClient() {
 
     video.srcObject = stream;
     void video.play().catch(() => {
-      if (isMountedRef.current) {
-        setError("The camera preview could not start. Try opening the camera again.");
-        setStage("intro");
-      }
+      if (!isMountedRef.current || streamRef.current !== stream) return;
+      invalidateCameraRequest();
+      stopCamera();
+      setError("The camera preview could not start. Try opening the camera again.");
+      setStage("intro");
     });
   }, [stage, streamVersion]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
+    function stopForLifecycle() {
+      invalidateCameraRequest();
+      invalidateComposition();
+      clearCountdown();
+      stopCamera();
+      setStage((current) => {
+        if (current === "starting" || current === "capture" || current === "countdown") {
+          return "intro";
+        }
+        return current === "composing"
+          ? capturingPhotoRef.current
+            ? "intro"
+            : "review"
+          : current;
+      });
+    }
+
     function handleVisibilityChange() {
-      if (document.hidden) {
-        clearCountdown();
-        stopCamera();
-        setStage((current) => (current === "capture" || current === "countdown" ? "intro" : current));
-      }
+      if (document.hidden) stopForLifecycle();
+    }
+
+    function handlePageHide() {
+      stopForLifecycle();
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
     return () => {
       isMountedRef.current = false;
+      invalidateCameraRequest();
+      invalidateComposition();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
       clearCountdown();
       stopCamera();
       slotsRef.current.forEach((slot) => {
@@ -506,13 +591,21 @@ export function PhotoBoothClient() {
                   Three-second countdown
                 </Typography>
               </div>
-              {canSwitchCamera ? (
+              {cameraDevices.length > 1 ? (
                 <Button
                   isIconOnly
                   variant="secondary"
                   aria-label="Switch camera"
                   isDisabled={stage !== "capture"}
-                  onPress={() => void startCamera(cameraFacing === "user" ? "environment" : "user")}
+                  onPress={() => {
+                    const nextDevice =
+                      cameraDevices.find((device) => device.deviceId !== activeDeviceId) ??
+                      cameraDevices[0];
+                    void startCamera(
+                      cameraFacing === "user" ? "environment" : "user",
+                      nextDevice?.deviceId,
+                    );
+                  }}
                 >
                   <SwitchCamera className="size-5" aria-hidden />
                 </Button>
@@ -606,7 +699,6 @@ export function PhotoBoothClient() {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture={cameraFacing}
         className="sr-only"
         onChange={choosePhoto}
       />

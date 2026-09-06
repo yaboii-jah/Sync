@@ -8,13 +8,13 @@ import {
   Chip,
   Separator,
   Typography,
-} from "@heroui/react";
+} from "@/components/ui";
 import { Download, Eye } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { secondaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
 
-const QR_FOREGROUND = "#171717";
+const QR_FOREGROUND = "#024056";
 const QR_BACKGROUND = "#FFFFFF";
 
 interface ConnectCardProps {
@@ -53,13 +53,13 @@ export function ConnectCard({
       <Card.Content className="flex flex-col gap-6">
         <div className="flex flex-col items-center text-center">
           <div
-            className="border-border mt-4 w-full max-w-[320px] rounded-2xl border p-4"
+            className="border-border mt-4 w-full max-w-[272px] rounded-2xl border p-4"
             style={{ backgroundColor: QR_BACKGROUND }}
           >
-            <div className="mx-auto aspect-square w-full max-w-[288px]">
+            <div className="mx-auto aspect-square w-full max-w-[240px]">
               <QRCodeSVG
                 value={cardUrl}
-                size={288}
+                size={240}
                 className="block size-full"
                 fgColor={QR_FOREGROUND}
                 bgColor={QR_BACKGROUND}

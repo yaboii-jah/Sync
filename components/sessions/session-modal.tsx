@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, Button, Modal, Separator, Typography } from "@heroui/react";
+import { Avatar, Button, Modal, Separator, Typography } from "@/components/ui";
 import { CalendarPlus } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
@@ -52,8 +52,7 @@ export function SessionModal({
           * sheet gets clipped by the device frames this is previewed in, and a
           * centred dialog is what was asked for. `scroll="inside"` plus the
           * `dvh` cap keeps a long session inside the viewport with its actions
-          * reachable; `dvh` is browser-measured, unlike HeroUI's
-          * `--visual-viewport-height`, which some embedded contexts never set.
+           * reachable; `dvh` is browser-measured in the embedding viewport.
           */}
         <Modal.Container size="md" scroll="inside" placement="center">
           <Modal.Dialog

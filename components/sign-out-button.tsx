@@ -1,16 +1,32 @@
 "use client";
 
-import { useTransition } from "react";
-import { AlertDialog, Button, Typography } from "@heroui/react";
+import { useState, useTransition } from "react";
+import { AlertDialog, Button, Typography } from "@/components/ui";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/app/(app)/home/actions";
 
 interface SignOutButtonProps {
   variant?: "icon" | "labeled";
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
+export function SignOutButton({
+  variant = "icon",
+  isOpen,
+  onOpenChange,
+  hideTrigger = false,
+}: SignOutButtonProps) {
   const [pending, startTransition] = useTransition();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = isOpen !== undefined;
+  const open = isControlled ? isOpen : uncontrolledOpen;
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }
 
   function confirmSignOut() {
     startTransition(async () => {
@@ -20,23 +36,29 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
 
   return (
     <AlertDialog>
-      <AlertDialog.Trigger>
-        <span
-          aria-label={variant === "icon" ? "Sign out" : undefined}
-          className={
-            variant === "icon"
-              ? "button button--icon-only button--sm button--ghost"
-              : "button button--full-width button--sm button--ghost justify-start"
-          }
-        >
-          <LogOut className="size-5" aria-hidden />
-          {variant === "labeled" ? "Sign out" : null}
-        </span>
-      </AlertDialog.Trigger>
+      {!hideTrigger ? (
+        <AlertDialog.Trigger>
+          <span
+            aria-label={variant === "icon" ? "Sign out" : undefined}
+            className={
+              variant === "icon"
+                ? "button button--icon-only button--sm button--ghost"
+                : "button button--full-width button--sm button--ghost justify-start"
+            }
+          >
+            <LogOut className="size-5" aria-hidden />
+            {variant === "labeled" ? "Sign out" : null}
+          </span>
+        </AlertDialog.Trigger>
+      ) : null}
 
-      <AlertDialog.Backdrop isDismissable={!pending}>
+      <AlertDialog.Backdrop
+        isOpen={isControlled ? open : undefined}
+        isDismissable={!pending}
+        onOpenChange={isControlled ? setOpen : undefined}
+      >
         <AlertDialog.Container size="sm">
-          <AlertDialog.Dialog>
+            <AlertDialog.Dialog aria-label="Sign out">
             {({ close }) => (
               <>
                 <AlertDialog.Header>
@@ -51,7 +73,10 @@ export function SignOutButton({ variant = "icon" }: SignOutButtonProps) {
                   <Button
                     variant="secondary"
                     isDisabled={pending}
-                    onPress={close}
+                    onPress={() => {
+                      close();
+                      if (isControlled) setOpen(false);
+                    }}
                   >
                     Cancel
                   </Button>

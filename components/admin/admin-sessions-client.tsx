@@ -10,7 +10,7 @@ import {
   Chip,
   Description,
   Typography,
-} from "@heroui/react";
+} from "@/components/ui";
 import {
   Eye,
   EyeOff,
@@ -60,7 +60,7 @@ export function AdminSessionsClient({
     session: SessionWithSpeakers;
     requestId: string;
   } | null>(null);
-  const [sendNotification, setSendNotification] = useState(true);
+  const [sendNotification, setSendNotification] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -114,7 +114,7 @@ export function AdminSessionsClient({
 
   function open(session: SessionWithSpeakers, action: SessionAction) {
     setSelection({ session, action, requestId: crypto.randomUUID() });
-    setSendNotification(action !== "resume_auto");
+    setSendNotification(false);
   }
 
   function confirm() {
@@ -339,11 +339,10 @@ export function AdminSessionsClient({
                       <Checkbox.Control>
                         <Checkbox.Indicator />
                       </Checkbox.Control>
-                      Notify every attendee
+                      Notify attendees
                     </Checkbox.Content>
                     <Description>
-                      Creates an event-wide in-app alert and sends push where
-                      available.
+                      Sends an event-wide in-app alert and push where available.
                     </Description>
                   </Checkbox>
                 ) : null}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Badge } from "@heroui/react";
+import { Badge } from "@/components/ui";
 import {
   Bell,
   House,
@@ -46,7 +46,7 @@ export function BottomTabs() {
               href={tab.href}
               aria-current={active ? "page" : undefined}
               className={`flex flex-1 flex-col items-center gap-1 py-1 transition active:scale-95 motion-reduce:transform-none ${
-                active ? "text-accent" : "text-muted hover:text-foreground"
+                active ? "text-success" : "text-muted hover:text-foreground"
               }`}
             >
               <Badge.Anchor>

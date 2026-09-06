@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@heroui/react";
+import { Button } from "@/components/ui";
 import { Crosshair } from "lucide-react";
 
 interface ScrollToNowProps {

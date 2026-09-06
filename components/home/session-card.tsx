@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Chip, ProgressBar, ToggleButton, Typography } from "@heroui/react";
+import { Card, Chip, ProgressBar, ToggleButton, Typography } from "@/components/ui";
 import { Bookmark, Clock3, MapPin } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
@@ -56,7 +56,7 @@ export function SessionCard({
     <Card
       id={`session-${session.id}`}
       variant={ongoing ? "secondary" : "default"}
-      className={`squircle rounded-[20px] transition-transform active:scale-[0.98] motion-reduce:transform-none ${finished ? "opacity-60" : ""} ${ongoing ? "ring-accent/50 ring-1" : ""}`}
+      className={`squircle rounded-[20px] transition-transform active:scale-[0.98] motion-reduce:transform-none ${finished ? "opacity-60" : ""} ${ongoing ? "border border-success/50 bg-success/10 shadow-lg shadow-success/10 ring-1 ring-success/40" : ""}`}
     >
       {/*
         * Title leads, the way an iOS list cell reads: what it is, then when,
@@ -116,8 +116,8 @@ export function SessionCard({
             className="mt-3"
           >
             <ProgressBar.Track className="bg-separator h-1 rounded-full">
-              <ProgressBar.Fill
-                className="bg-accent rounded-full"
+                <ProgressBar.Fill
+                  className="bg-success rounded-full"
                 suppressHydrationWarning
               />
             </ProgressBar.Track>

@@ -1,4 +1,4 @@
-import { Card, Separator, Typography } from "@heroui/react";
+import { Card, Separator, Typography } from "@/components/ui/static";
 import { ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminAudit } from "@/lib/supabase/queries/admin";
