@@ -22,7 +22,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 4. User lands on the Home dashboard showing the current session and what's next
 5. User taps into a session to view its description, room, and speaker
 6. User receives audited organizer alerts and deliberate manual status alerts; schedule timing itself does not generate attendee notifications
-7. User opens Connect to show their QR code; scanning it opens an active card containing only the social links they chose to save
+7. User opens Connect to show their QR code or scan another attendee's Sync QR; scanning opens an active card containing only the social links that attendee chose to save
 8. User opens the Photo Booth from More, captures three event-framed photos, and downloads a shareable keepsake that never leaves their device
 9. User browses the More page for the speaker lineup and event website link
 
@@ -49,6 +49,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 
 ### Networking (Connect)
 - One stable personal networking QR code resolving to an app-owned card whenever at least one link is saved
+- Built-in QR scanner with rear-camera capture and image-picker fallback for saved QR screenshots; it accepts only Sync networking-card paths
 - Optional LinkedIn, Instagram, Facebook, and GitHub profile links managed together
 - The card activates automatically when links exist; clearing the last link disables existing QR copies without changing the code
 
