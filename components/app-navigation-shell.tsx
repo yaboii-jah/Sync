@@ -20,7 +20,7 @@ export function AppNavigationShell({
   profile,
 }: AppNavigationShellProps) {
   return (
-    <div className="app-field min-h-dvh min-w-0 overflow-x-hidden">
+    <div className="app-field min-h-dvh min-w-0 overflow-x-clip">
       <AlertsCountProvider>
         <SideRail isAdmin={isAdmin} profile={profile} />
         <div className="relative flex min-h-dvh min-w-0 flex-col pb-24 lg:ml-[232px] lg:pb-0">
