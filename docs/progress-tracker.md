@@ -13,7 +13,7 @@ change.
 
 ## In Progress
 
-- **Photo Booth temporary hold:** attendee discovery and direct access are disabled by default with the server-only `PHOTO_BOOTH_ENABLED` flag. The existing route and local-only implementation remain intact, while allowlisted admins can open `/more/photo-booth` directly for verification. Set the flag to `true` and redeploy near the event to restore the More link and attendee access.
+- **Photo Booth temporary hold:** the More card remains visible while the server-only `PHOTO_BOOTH_ENABLED` flag is off, but it opens an availability notice instead of starting the booth. Attendee visits to `/more/photo-booth` redirect to `/more`, while allowlisted admins can open the route directly for verification. Set the flag to `true` and redeploy near the event to enable the card navigation and attendee access.
 
 - **Social share-card metadata:** Sync now generates matching 1200×630 Open Graph and X share images from `scripts/generate-icons.mjs`. The card uses the AWS SCD teal-and-gold night skyline, with the same event identity and deliberate hierarchy as the main event site's banner, while naming Sync's live schedule, session alerts, and attendee networking. Root metadata supplies the matching Open Graph and large-image X titles/descriptions; route-owned static image files provide the image URLs and alt text.
 

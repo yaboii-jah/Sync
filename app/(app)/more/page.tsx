@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Card, Typography } from "@/components/ui/static";
-import { Camera, Globe, MessageSquare, type LucideIcon } from "lucide-react";
+import { Typography } from "@/components/ui/static";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getSpeakersSponsors } from "@/lib/supabase/queries/directory";
@@ -10,20 +8,11 @@ import { isPhotoBoothEnabled } from "@/lib/feature-flags";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { DirectoryClient } from "@/components/more/directory-client";
+import { QuickLinksClient } from "@/components/more/quick-links-client";
 
 export const metadata: Metadata = {
   title: "More — Sync",
 };
-
-const ICONS: Record<string, LucideIcon> = {
-  globe: Globe,
-  camera: Camera,
-  "message-square": MessageSquare,
-};
-
-function isInternalQuickLink(url: string) {
-  return url.startsWith("/") && !url.startsWith("//");
-}
 
 export default async function MorePage() {
   await requireCompleteProfile();
@@ -33,11 +22,7 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
-  const visibleQuickLinks = isPhotoBoothEnabled()
-    ? quickLinks
-    : quickLinks.filter(
-        (link) => link.label !== "Photo Booth" && link.url !== "/more/photo-booth",
-      );
+  const photoBoothEnabled = isPhotoBoothEnabled();
   const speakers = people.filter((person) => person.role === "speaker");
 
   return (
@@ -46,51 +31,15 @@ export default async function MorePage() {
         <AppHeader />
         <PageHeader title="More" />
 
-        {visibleQuickLinks.length > 0 ? (
+        {quickLinks.length > 0 ? (
           <section className="mt-8">
             <Typography.Heading level={2} className="text-base">
               Quick links
             </Typography.Heading>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              {visibleQuickLinks.map((link) => {
-                const Icon = (link.icon && ICONS[link.icon]) || Globe;
-                const content = (
-                  <Card className="hover:bg-default h-full transition-colors">
-                    <Card.Content className="flex items-center gap-3 py-4">
-                      <span
-                        aria-hidden
-                        className="bg-surface-secondary flex size-10 shrink-0 items-center justify-center rounded-full"
-                      >
-                        <Icon className="size-5" />
-                      </span>
-                      <Typography type="body-sm" weight="medium">
-                        {link.label}
-                      </Typography>
-                    </Card.Content>
-                  </Card>
-                );
-
-                if (isInternalQuickLink(link.url)) {
-                  return (
-                    <Link key={link.id} href={link.url} className="rounded-xl">
-                      {content}
-                    </Link>
-                  );
-                }
-
-                return (
-                  <a
-                    key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl"
-                  >
-                    {content}
-                  </a>
-                );
-              })}
-            </div>
+            <QuickLinksClient
+              quickLinks={quickLinks}
+              photoBoothEnabled={photoBoothEnabled}
+            />
           </section>
         ) : null}
 
