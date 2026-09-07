@@ -54,6 +54,7 @@ export function ProfileMenu({
         <Popover
           placement={placement}
           offset={8}
+          isNonModal
           className="min-w-56 rounded-2xl border border-border bg-overlay p-1 text-foreground shadow-overlay outline-none"
         >
           <Menu aria-label="Profile options" className="outline-none">
