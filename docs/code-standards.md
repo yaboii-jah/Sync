@@ -8,6 +8,7 @@
 - Don't build toward deferred scope such as workshop registration or general content management; admin work remains limited to the approved event-operations surface
 - Treat `datetime-local` values as Asia/Manila wall-clock input at the boundary; never let the browser or server default timezone reinterpret an event time
 - Keep attendee queries explicitly publication-filtered even when RLS also permits allowlisted admins to read drafts
+- Two relative-time formatters in `lib/format.ts` coexist on purpose and must not be merged into one. `formatRelativeTime` keeps the long vocabulary (`5 hours ago`) and serves `/alerts`, the five admin routes, and the session detail modal. `relativeSessionLabel` serves the `/home` session card with the short vocabulary (`5 hr ago`). The split exists because a single vocabulary would change screens that were out of scope for the home UI fix batch. The known, accepted consequence is that an open session detail modal reads `ended 5 hours ago` while the card behind it reads `ended 5 hr ago`. Unifying them is a decision about those other screens first, not a refactor of these two functions
 
 ## TypeScript
 
