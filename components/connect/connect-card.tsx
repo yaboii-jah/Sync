@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button, Card, Chip, Label, Separator, Typography } from "@/components/ui";
-import { Download } from "lucide-react";
+import { ChevronDown, Download } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { NetworkCard } from "@/components/network-card";
 import { secondaryLinkClass } from "@/components/ui/link-button";
@@ -97,32 +97,47 @@ export function ConnectCard({
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="network-template">Card template</Label>
-          <select
-            id="network-template"
-            value={template}
-            disabled={!hasSavedLinks || savingTemplate}
-            onChange={async (e) => {
-              const next = Number(e.target.value) as NetworkCardTemplate;
-              setTemplate(next);
-              setTemplateError(null);
-              if (!hasSavedLinks) return;
-              setSavingTemplate(true);
-              const supabase = createClient();
-              const { error } = await supabase.rpc("set_networking_card_template", { p_template: next });
-              if (error) {
-                setTemplateError("Could not save template. Please try again.");
-                setTemplate(initialTemplate);
-              }
-              setSavingTemplate(false);
-            }}
-            className="w-full rounded-lg border border-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none focus:border-focus focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {TEMPLATE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+
+          <div className="relative">
+            <select
+              id="network-template"
+              value={template}
+              disabled={!hasSavedLinks || savingTemplate}
+              onChange={async (e) => {
+                const next = Number(e.target.value) as NetworkCardTemplate;
+                setTemplate(next);
+                setTemplateError(null);
+                if (!hasSavedLinks) return;
+
+                setSavingTemplate(true);
+                const supabase = createClient();
+                const { error } = await supabase.rpc(
+                  "set_networking_card_template",
+                  { p_template: next },
+                );
+
+                if (error) {
+                  setTemplateError("Could not save template. Please try again.");
+                  setTemplate(initialTemplate);
+                }
+
+                setSavingTemplate(false);
+              }}
+              className="w-full appearance-none rounded-lg border border-border bg-field-background px-3 py-2.5 pr-10 text-sm text-field-foreground outline-none focus:border-focus focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {TEMPLATE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
+          </div>
+
           {templateError ? (
             <Typography type="body-xs" className="text-danger">
               {templateError}

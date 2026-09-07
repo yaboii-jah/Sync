@@ -279,7 +279,7 @@ export function QrScanner() {
   return (
     <>
       <Button fullWidth onPress={() => handleOpenChange(true)}>
-        <QrCode className="size-4" aria-hidden />
+        <Camera className="size-4" aria-hidden />
         Scan attendee QR
       </Button>
 

@@ -630,6 +630,7 @@ export function PhotoBoothClient() {
                 <Button
                   isIconOnly
                   variant="secondary"
+                  className="p-2"
                   aria-label="Switch camera"
                   isDisabled={stage !== "capture"}
                   onPress={() => {
@@ -642,7 +643,7 @@ export function PhotoBoothClient() {
                     );
                   }}
                 >
-                  <SwitchCamera className="size-5" aria-hidden />
+                  <SwitchCamera className="size-full" aria-hidden />
                 </Button>
               ) : null}
             </div>
