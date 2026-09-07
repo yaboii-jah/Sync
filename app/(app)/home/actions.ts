@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getAuthenticatedClaims } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { StoredPushSubscription } from "@/lib/push";
 import type { BookmarkConflict } from "@/lib/program-flow";
@@ -45,11 +46,9 @@ export async function savePushSubscription(
   subscription: StoredPushSubscription,
 ): Promise<ToggleBookmarkResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const claims = await getAuthenticatedClaims(supabase);
 
-  if (!user) return { error: "Not signed in" };
+  if (!claims) return { error: "Not signed in" };
 
   if (!isValidPushEndpoint(subscription.endpoint)) {
     return { error: "Invalid notification endpoint" };
@@ -61,14 +60,14 @@ export async function savePushSubscription(
   const { error: cleanupError } = await supabase
     .from("push_subscriptions")
     .delete()
-    .eq("user_id", user.id)
+    .eq("user_id", claims.sub)
     .eq("device_id", subscription.device_id);
 
   if (cleanupError) return { error: "Could not save your notification settings" };
 
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
-      user_id: user.id,
+      user_id: claims.sub,
       device_id: subscription.device_id,
       endpoint: subscription.endpoint,
       p256dh: subscription.p256dh,
@@ -87,18 +86,16 @@ export async function hasPushSubscription(
   deviceId: string,
 ): Promise<boolean> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const claims = await getAuthenticatedClaims(supabase);
 
-  if (!user || !isValidPushEndpoint(endpoint) || !isValidDeviceId(deviceId)) {
+  if (!claims || !isValidPushEndpoint(endpoint) || !isValidDeviceId(deviceId)) {
     return false;
   }
 
   const { data: endpointMatch } = await supabase
     .from("push_subscriptions")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", claims.sub)
     .eq("endpoint", endpoint)
     .maybeSingle();
 
@@ -107,7 +104,7 @@ export async function hasPushSubscription(
   const { data: deviceMatch } = await supabase
     .from("push_subscriptions")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", claims.sub)
     .eq("device_id", deviceId)
     .maybeSingle();
 
@@ -119,11 +116,9 @@ export async function removePushSubscription(
   deviceId: string,
 ): Promise<ToggleBookmarkResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const claims = await getAuthenticatedClaims(supabase);
 
-  if (!user) return { error: "Not signed in" };
+  if (!claims) return { error: "Not signed in" };
   if (
     (endpoint !== null && !isValidPushEndpoint(endpoint)) ||
     !isValidDeviceId(deviceId)
@@ -135,7 +130,7 @@ export async function removePushSubscription(
     const { error: endpointError } = await supabase
       .from("push_subscriptions")
       .delete()
-      .eq("user_id", user.id)
+      .eq("user_id", claims.sub)
       .eq("endpoint", endpoint);
 
     if (endpointError) return { error: "Could not disable notifications" };
@@ -144,7 +139,7 @@ export async function removePushSubscription(
   const { error: deviceError } = await supabase
     .from("push_subscriptions")
     .delete()
-    .eq("user_id", user.id)
+    .eq("user_id", claims.sub)
     .eq("device_id", deviceId);
 
   return deviceError ? { error: "Could not disable notifications" } : {};

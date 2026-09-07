@@ -251,9 +251,6 @@ export function HomeClient({
             now={now}
             onOpenSession={(target) => setActiveSessionId(target.id)}
           />
-          <div className="mt-4">
-            <InstallChip />
-          </div>
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
@@ -303,6 +300,8 @@ export function HomeClient({
           </Tabs>
         </section>
       </div>
+
+      <InstallChip />
 
       {activeSession ? (
         <SessionModal

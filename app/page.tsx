@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getSafeInternalPath } from "@/lib/auth-redirect";
+import { getAuthenticatedClaims } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SignInButton } from "@/components/auth/sign-in-button";
 
@@ -54,10 +55,8 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/home");
+  const claims = await getAuthenticatedClaims(supabase);
+  if (claims) redirect("/home");
 
   return (
     <main
