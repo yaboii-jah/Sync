@@ -31,7 +31,7 @@ function PersonPortrait({
           src={person.photo_url!}
           alt={`Portrait of ${person.name}`}
           fill
-          sizes={variant === "tile" ? "(min-width: 1024px) 20vw, (min-width: 640px) 40vw, 80px" : "112px"}
+          sizes={variant === "tile" ? "(min-width: 1024px) 18vw, (min-width: 640px) 40vw, 80px" : "112px"}
           unoptimized
           className="object-cover"
           onError={() => setImageFailed(true)}
@@ -65,7 +65,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {people.map((person) => (
           <Card key={person.id} className="group overflow-hidden p-0 transition-transform hover:-translate-y-0.5 active:scale-[0.98] motion-reduce:transform-none">
             <button

@@ -34,6 +34,7 @@ import { SessionModal } from "@/components/sessions/session-modal";
 import { ScrollToNow } from "./scroll-to-now";
 import { LiveMiniBar } from "./live-mini-bar";
 import { InstallChip } from "@/components/push/install-chip";
+import { VenueMap } from "./venue-map";
 import {
   getConflictingSessionIds,
   getLiveSessions,
@@ -305,6 +306,7 @@ export function HomeClient({
             now={now}
             onOpenSession={(target) => setActiveSessionId(target.id)}
           />
+          <VenueMap />
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
