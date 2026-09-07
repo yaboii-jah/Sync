@@ -5,7 +5,9 @@ import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { ConnectClient } from "@/components/connect/connect-client";
+import { ScannedAttendeesCard } from "@/components/connect/scanned-attendees-card";
 import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
+import { getMyNetworkingScanHistory } from "@/lib/supabase/queries/scan-history";
 
 export const metadata: Metadata = {
   title: "Connect — Sync",
@@ -25,7 +27,7 @@ const SHARED_MESSAGES: Record<string, { status: "success" | "danger"; text: stri
 export default async function ConnectPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shared?: string }>;
+  searchParams: Promise<{ shared?: string; scan?: string }>;
 }) {
   const { shared } = await searchParams;
   await requireCompleteProfile();
@@ -34,7 +36,10 @@ export default async function ConnectPage({
    * Read through the card RPC rather than selecting `social_profiles`
    * directly, so one query answers what is saved for the stable card.
    */
-  const card = await getOwnNetworkingCard();
+  const [card, scans] = await Promise.all([
+    getOwnNetworkingCard(),
+    getMyNetworkingScanHistory(),
+  ]);
   if (!card) throw new Error("Networking card recovery failed");
 
   const headerList = await headers();
@@ -57,7 +62,7 @@ export default async function ConnectPage({
 
   return (
     <main className="w-full">
-      <div className="mx-auto w-full max-w-md px-4 pt-8 lg:pt-10">
+      <div className="mx-auto w-full max-w-5xl px-4 pt-8 lg:pt-10">
         <AppHeader />
         <PageHeader
           title="Connect"
@@ -73,11 +78,18 @@ export default async function ConnectPage({
           </Alert>
         ) : null}
 
-        <div className="mt-6">
-          <ConnectClient
-            cardUrl={cardUrl}
-            initialLinks={card.links}
-          />
+        <div className="mt-6 grid gap-6 lg:grid-cols-2 lg:items-start">
+          <section id="my-qr" className="scroll-mt-6">
+            <ConnectClient cardUrl={cardUrl} initialLinks={card.links} initialTemplate={card.template} />
+          </section>
+          <section aria-label="Scanned attendees">
+            <ScannedAttendeesCard
+              scans={scans.map((scan) => ({
+                ...scan,
+                cardUrl: new URL(scan.cardPath, origin).toString(),
+              }))}
+            />
+          </section>
         </div>
       </div>
     </main>

@@ -1,18 +1,24 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { Avatar, Card, Typography } from "@/components/ui/static";
+import type { ReactNode } from "react";
+import { Card, Typography } from "@/components/ui/static";
 import { UserX } from "lucide-react";
 
+import { AppNavigationShell } from "@/components/app-navigation-shell";
+import { BackToMyQrButton } from "@/components/connect/back-to-my-qr-button";
 import { EmptyState } from "@/components/empty-states";
-import { HistoryBackButton } from "@/components/history-back-button";
-import { SocialIcon } from "@/components/social-icon";
-import { secondaryLinkClass } from "@/components/ui/link-button";
-import { SOCIAL_NETWORKS, SOCIAL_SPECS } from "@/lib/social";
+import { NetworkCard } from "@/components/network-card";
+import { SOCIAL_NETWORKS } from "@/lib/social";
+import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
+import { currentUserIsAdmin } from "@/lib/supabase/admin-auth";
 import {
   getOwnNetworkingCard,
   getPublicNetworkingCard,
   type PublicNetworkingCard,
 } from "@/lib/supabase/queries/networking";
+import {
+  isMissingNetworkingScanHistoryRpc,
+  recordNetworkingCardScan,
+} from "@/lib/supabase/queries/scan-history";
 import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 
 export const metadata: Metadata = {
@@ -27,73 +33,163 @@ export const metadata: Metadata = {
 export default async function CardPage(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
   const searchParams = await props.searchParams;
+  const authenticated = await getAuthenticatedProfile();
+  const isAdmin = authenticated ? await currentUserIsAdmin() : false;
   const ownerPreview =
     searchParams.preview === "1"
-      ? await getOwnerPreview(token)
+      ? await getOwnerPreview(token, authenticated)
       : null;
   const resolvedCard = ownerPreview ?? (await getPublicNetworkingCard(token));
+  if (resolvedCard && !ownerPreview) {
+    try {
+      await recordNetworkingCardScan(token);
+    } catch (error) {
+      // A scan-history migration rollout must not prevent a public card from
+      // opening. Other recording failures remain visible in server logs.
+      if (!isMissingNetworkingScanHistoryRpc(error)) {
+        console.error("Could not record networking card scan", error);
+      }
+    }
+  }
   const links = resolvedCard
     ? SOCIAL_NETWORKS.filter((network) => resolvedCard.links[network])
     : [];
 
-  return (
-    <main className="flex min-h-full w-full items-center justify-center px-4 py-10">
+  const variant =
+    resolvedCard?.template === 2
+      ? "glass"
+      : resolvedCard?.template === 3
+        ? "crystal"
+        : resolvedCard?.template === 4
+          ? "event"
+          : "solid";
+  const returnControl = authenticated?.profile ? (
+    <div className="mb-4">
+      <BackToMyQrButton
+        label={ownerPreview ? "Back to Connect" : "Back to my QR"}
+      />
+    </div>
+  ) : null;
+
+  function withAuthenticatedNavigation(content: ReactNode) {
+    if (!authenticated?.profile) return content;
+
+    return (
+      <AppNavigationShell isAdmin={isAdmin} profile={authenticated.profile}>
+        {content}
+      </AppNavigationShell>
+    );
+  }
+
+  if (variant === "glass" && resolvedCard) {
+    return withAuthenticatedNavigation(
+      <main className="c-page c-page--glass">
+        <div className="c-page__bg" aria-hidden="true">
+          <span className="c-page__glow c-page__glow--glass-a" />
+          <span className="c-page__glow c-page__glow--glass-b" />
+          <span className="c-page__star" style={{ top: "10%", left: "16%" }} />
+          <span className="c-page__star" style={{ top: "20%", right: "14%" }} />
+          <span className="c-page__star" style={{ top: "74%", left: "12%" }} />
+          <img src="/assets/scd%20pubmats%20(4).svg" alt="" aria-hidden="true" className="c-page__pubmat" loading="lazy" />
+        </div>
+        <div className="c-page__inner">
+          {returnControl}
+          <p className="c-page__eyebrow c-page__eyebrow--glass">You met</p>
+          <div className="mt-3">
+            <NetworkCard
+              variant={resolvedCard.template}
+              name={resolvedCard.name}
+              photoUrl={resolvedCard.photoUrl}
+              links={resolvedCard.links}
+            />
+          </div>
+          <p className="c-page__footnote c-page__footnote--glass">Atmospheric · glass edition</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (variant === "crystal" && resolvedCard) {
+    return withAuthenticatedNavigation(
+      <main className="c-page c-page--crystal">
+        <div className="c-page__bg" aria-hidden="true">
+          <svg className="c-page__crystal" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M60 6 L95 30 L95 78 L60 102 L25 78 L25 30 Z" stroke="currentColor" strokeWidth="0.7" opacity="0.9" />
+            <path d="M25 30 L60 52 L95 30" stroke="currentColor" strokeWidth="0.5" opacity="0.6" />
+            <path d="M60 52 L60 102" stroke="currentColor" strokeWidth="0.5" opacity="0.35" />
+            <path d="M25 78 L60 52 L95 78" stroke="currentColor" strokeWidth="0.5" opacity="0.35" />
+          </svg>
+          <span className="c-page__star" style={{ top: "8%", left: "14%" }} />
+          <span className="c-page__star" style={{ top: "18%", right: "12%" }} />
+          <span className="c-page__star" style={{ top: "72%", left: "10%" }} />
+          <span className="c-page__star" style={{ top: "64%", right: "18%" }} />
+          <span className="c-page__star c-page__star--lg" style={{ top: "12%", left: "42%" }} />
+          <img src="/assets/scd%20pubmats%20(3).svg" alt="" aria-hidden="true" className="c-page__pubmat" loading="lazy" />
+        </div>
+        <div className="c-page__inner">
+          {returnControl}
+          <p className="c-page__eyebrow">You met</p>
+          <div className="mt-3">
+            <NetworkCard
+              variant={resolvedCard.template}
+              name={resolvedCard.name}
+              photoUrl={resolvedCard.photoUrl}
+              links={resolvedCard.links}
+            />
+          </div>
+          <p className="c-page__footnote">Dark outline · crystal edition</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (variant === "event" && resolvedCard) {
+    return withAuthenticatedNavigation(
+      <main className="c-page c-page--event">
+        <div className="c-page__bg" aria-hidden="true">
+          <span className="c-page__glow c-page__glow--gold" />
+          <span className="c-page__glow c-page__glow--aqua" />
+          <span className="c-page__star" style={{ top: "10%", left: "18%" }} />
+          <span className="c-page__star" style={{ top: "16%", right: "16%" }} />
+          <span className="c-page__star" style={{ top: "70%", left: "12%" }} />
+          <span className="c-page__star c-page__star--lg" style={{ top: "8%", right: "22%" }} />
+          <img src="/assets/scd%20pubmats%20clena.svg" alt="" aria-hidden="true" className="c-page__pubmat" loading="lazy" />
+        </div>
+        <div className="c-page__inner">
+          {returnControl}
+          <p className="c-page__eyebrow c-page__eyebrow--event">You met</p>
+          <div className="mt-3">
+            <NetworkCard
+              variant={resolvedCard.template}
+              name={resolvedCard.name}
+              photoUrl={resolvedCard.photoUrl}
+              links={resolvedCard.links}
+            />
+          </div>
+          <p className="c-page__footnote c-page__footnote--event">Featured · event edition — BUILD · FORGE · REPEAT</p>
+        </div>
+      </main>
+    );
+  }
+
+  return withAuthenticatedNavigation(
+    <main className={`c-page c-page--${variant} flex min-h-full w-full items-center justify-center px-4 py-10`}>
       <div className="w-full max-w-md">
         {resolvedCard ? (
           <>
-            {ownerPreview ? (
-              <div className="mb-4">
-                <HistoryBackButton fallback="/connect" label="Back to Connect" />
-              </div>
-            ) : null}
+            {returnControl}
             <Typography type="body-sm" color="muted">
               You met
             </Typography>
 
-            <Card className="mt-2">
-              <Card.Content className="flex flex-col items-center gap-4 py-8 text-center">
-                <Avatar size="lg" className="size-24">
-                  {resolvedCard.photoUrl ? (
-                    <Avatar.Image asChild src={resolvedCard.photoUrl}>
-                      <Image
-                        src={resolvedCard.photoUrl}
-                        alt=""
-                        width={96}
-                        height={96}
-                        unoptimized
-                      />
-                    </Avatar.Image>
-                  ) : null}
-                  <Avatar.Fallback>
-                    {(resolvedCard.name || "?").charAt(0).toUpperCase()}
-                  </Avatar.Fallback>
-                </Avatar>
-
-                <Typography.Heading level={1} className="font-display text-2xl tracking-wide">
-                  {resolvedCard.name || "Attendee"}
-                </Typography.Heading>
-                <Typography type="body-sm" color="muted">
-                  Choose where you would like to connect.
-                </Typography>
-              </Card.Content>
-
-              <Card.Footer className="!grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {links.map((network) => (
-                  <a
-                    key={network}
-                    href={resolvedCard.links[network]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${secondaryLinkClass} h-full min-w-0 w-full px-3 py-3`}
-                  >
-                    <span className="mx-auto grid w-full max-w-[15rem] grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-2 text-left leading-5">
-                      <SocialIcon network={network} />
-                      <span>Connect on {SOCIAL_SPECS[network].label}</span>
-                    </span>
-                  </a>
-                ))}
-              </Card.Footer>
-            </Card>
+            <div className="mt-2">
+              <NetworkCard
+                variant={resolvedCard.template}
+                name={resolvedCard.name}
+                photoUrl={resolvedCard.photoUrl}
+                links={resolvedCard.links}
+              />
+            </div>
           </>
         ) : (
           <Card>
@@ -104,14 +200,15 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
             />
           </Card>
         )}
-
       </div>
     </main>
   );
 }
 
-async function getOwnerPreview(token: string): Promise<PublicNetworkingCard | null> {
-  const authenticated = await getAuthenticatedProfile();
+async function getOwnerPreview(
+  token: string,
+  authenticated: Awaited<ReturnType<typeof getAuthenticatedProfile>>,
+): Promise<PublicNetworkingCard | null> {
   if (!authenticated?.profile) return null;
 
   const ownCard = await getOwnNetworkingCard();
@@ -124,5 +221,6 @@ async function getOwnerPreview(token: string): Promise<PublicNetworkingCard | nu
     name: authenticated.profile.name,
     photoUrl: authenticated.profile.photo_url,
     links: ownCard.links,
+    template: ownCard.template,
   };
 }

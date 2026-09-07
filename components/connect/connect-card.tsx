@@ -1,34 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import {
-  Button,
-  Card,
-  Chip,
-  Separator,
-  Typography,
-} from "@/components/ui";
+import { useRef, useState } from "react";
+import { Button, Card, Chip, Label, Separator, Typography } from "@/components/ui";
 import { Download, Eye } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { secondaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
+import { createClient } from "@/lib/supabase/client";
+import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
 
 const QR_FOREGROUND = "#024056";
 const QR_BACKGROUND = "#FFFFFF";
+
+const TEMPLATE_OPTIONS: { value: NetworkCardTemplate; label: string }[] = [
+  { value: 1, label: "Solid — Default" },
+  { value: 2, label: "Glass — Atmospheric" },
+  { value: 3, label: "Crystal Outline — Artistic" },
+  { value: 4, label: "Event — Featured" },
+];
 
 interface ConnectCardProps {
   configuredNetworks: SocialNetwork[];
   cardUrl: string;
   hasSavedLinks: boolean;
+  initialTemplate: NetworkCardTemplate;
 }
 
-export function ConnectCard({
-  configuredNetworks,
-  cardUrl,
-  hasSavedLinks,
-}: ConnectCardProps) {
+export function ConnectCard({ configuredNetworks, cardUrl, hasSavedLinks, initialTemplate }: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const [template, setTemplate] = useState<NetworkCardTemplate>(initialTemplate);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
 
   function saveQr() {
     const canvas = canvasWrapRef.current?.querySelector("canvas");
@@ -93,6 +96,49 @@ export function ConnectCard({
           <Eye className="size-4" aria-hidden />
           Preview social card
         </Button>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="network-template">Card template</Label>
+          <select
+            id="network-template"
+            value={template}
+            disabled={!hasSavedLinks || savingTemplate}
+            onChange={async (e) => {
+              const next = Number(e.target.value) as NetworkCardTemplate;
+              setTemplate(next);
+              setTemplateError(null);
+              if (!hasSavedLinks) return;
+              setSavingTemplate(true);
+              const supabase = createClient();
+              const { error } = await supabase.rpc("set_networking_card_template", { p_template: next });
+              if (error) {
+                setTemplateError("Could not save template. Please try again.");
+                setTemplate(initialTemplate);
+              }
+              setSavingTemplate(false);
+            }}
+            className="w-full rounded-lg border border-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none focus:border-focus focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {TEMPLATE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {templateError ? (
+            <Typography type="body-xs" className="text-danger">
+              {templateError}
+            </Typography>
+          ) : savingTemplate ? (
+            <Typography type="body-xs" color="muted">
+              Saving…
+            </Typography>
+          ) : !hasSavedLinks ? (
+            <Typography type="body-xs" color="muted">
+              Add a profile to enable templates.
+            </Typography>
+          ) : null}
+        </div>
 
         <Separator />
 
