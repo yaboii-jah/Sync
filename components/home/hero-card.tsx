@@ -25,8 +25,16 @@ const heroSurface =
   "event-hero squircle relative overflow-hidden rounded-[28px] p-5 sm:p-6";
 const heroTitle = "text-foreground text-2xl font-semibold tracking-tight";
 const heroMuted = "text-muted";
-const venueMapUrl =
-  "https://www.google.com/maps/search/?api=1&query=Asia+Pacific+College";
+const fallbackVenue = "Asia Pacific College";
+
+/**
+ * Google Maps search for the event venue. The name is percent-encoded, so a
+ * venue containing `&` or `#` stays inside the `query` parameter instead of
+ * truncating the URL.
+ */
+function venueMapUrl(venue: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`;
+}
 
 function HeroTheme({ theme }: { theme: string }) {
   return (
@@ -251,6 +259,7 @@ export function HeroCard({
     );
   }
 
+  const venue = event.venue ?? fallbackVenue;
   const parts = countdownParts(startsAt - now);
   const pad = (value: number) => String(value).padStart(2, "0");
   const units: [string, number][] = [
@@ -292,20 +301,15 @@ export function HeroCard({
         </div>
       </Card.Content>
        <Card.Footer className="relative z-10 pt-5">
-        <Typography type="body-sm" className={`lg:hidden ${heroMuted}`}>
-          {event.venue ?? "Asia Pacific College"}
-        </Typography>
         <Link
-          href={venueMapUrl}
+          href={venueMapUrl(venue)}
           target="_blank"
           rel="noreferrer"
-          aria-label="Open Asia Pacific College in Google Maps"
-          className={`hidden min-w-0 items-center gap-2 ${heroMuted} transition-opacity hover:opacity-100 lg:flex`}
+          aria-label={`Open ${venue} in Google Maps`}
+          className={`flex min-w-0 items-center gap-2 ${heroMuted} transition-opacity hover:opacity-100`}
         >
           <MapPin className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">
-            {event.venue ?? "Asia Pacific College"}
-          </span>
+          <span className="truncate">{venue}</span>
           <ExternalLink className="size-3.5 shrink-0" aria-hidden />
         </Link>
       </Card.Footer>
