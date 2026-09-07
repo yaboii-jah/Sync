@@ -20,7 +20,20 @@ const perandory = localFont({
 export const metadata: Metadata = {
   title: "Sync",
   description:
-    "Your companion app for AWS Student Community Day Mega Manila 2026.",
+    "The AWS Student Community Day Mega Manila 2026 companion for the live schedule, session alerts, and attendee networking.",
+  openGraph: {
+    type: "website",
+    siteName: "Sync",
+    title: "Sync — AWS Student Community Day Mega Manila 2026",
+    description:
+      "Your event day, in one place: the live schedule, session alerts, and attendee networking.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sync — AWS Student Community Day Mega Manila 2026",
+    description:
+      "Your event day, in one place: the live schedule, session alerts, and attendee networking.",
+  },
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

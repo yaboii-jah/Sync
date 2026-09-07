@@ -95,9 +95,9 @@ await Promise.all([
 ]);
 
 const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#024056"/>
+  <rect width="1200" height="630" fill="#041A19"/>
   <defs>
-    <radialGradient id="og-glow" cx="80%" cy="8%" r="85%">
+    <radialGradient id="og-glow" cx="82%" cy="5%" r="94%">
       <stop offset="0%" stop-color="#E6B84F" stop-opacity="0.45"/>
       <stop offset="50%" stop-color="#197B62" stop-opacity="0.35"/>
       <stop offset="100%" stop-color="#041A19" stop-opacity="0"/>
@@ -111,6 +111,11 @@ const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"
       <stop offset="60%" stop-color="#E6B84F" stop-opacity="0.1"/>
       <stop offset="100%" stop-color="#E6B84F" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="og-wash" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#041A19" stop-opacity="0.12"/>
+      <stop offset="58%" stop-color="#041A19" stop-opacity="0.68"/>
+      <stop offset="100%" stop-color="#041A19" stop-opacity="0.94"/>
+    </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#og-glow)"/>
   <g fill="#E6FFC9">
@@ -123,15 +128,36 @@ const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"
     <circle cx="560" cy="180" r="2"/>
     <circle cx="1100" cy="200" r="2"/>
   </g>
-  <g transform="rotate(-24 600 200)">
-    <rect x="380" y="196" width="440" height="5" rx="2.5" fill="url(#og-comet)"/>
-    <circle cx="820" cy="198.5" r="12" fill="#FCDB64"/>
+  <g transform="rotate(-24 810 175)">
+    <rect x="690" y="171" width="400" height="5" rx="2.5" fill="url(#og-comet)"/>
+    <circle cx="1090" cy="173.5" r="12" fill="#FCDB64"/>
   </g>
   <rect x="0" y="240" width="1200" height="390" fill="url(#og-city-glow)"/>
   <path d="M0 630 V520 H110 V480 H240 V540 H370 V440 H470 V510 H600 V470 H720 V545 H840 V455 H950 V520 H1070 V480 H1200 V630 Z"
         fill="#041A19" stroke="#BC8330" stroke-width="2"/>
+  <rect width="1200" height="630" fill="url(#og-wash)"/>
+  <g font-family="DejaVu Sans, Arial, sans-serif">
+    <text x="72" y="77" fill="#D7F6A8" font-size="19" font-weight="700" letter-spacing="7">AWS STUDENT COMMUNITY DAY</text>
+    <text x="765" y="77" fill="#D7F6A8" fill-opacity="0.72" font-size="19" font-weight="700" letter-spacing="7">MEGA MANILA 2026</text>
+    <text x="72" y="264" fill="#E6FFC9" font-family="DejaVu Serif, Georgia, serif" font-size="125" letter-spacing="5">SYNC</text>
+    <text x="77" y="320" fill="#E6FFC9" fill-opacity="0.82" font-size="29">Your event day, in one place.</text>
+    <rect x="77" y="352" width="50" height="3" rx="1.5" fill="#E6B84F"/>
+    <text x="145" y="361" fill="#E6B84F" font-size="21" font-weight="700" letter-spacing="2">LIVE SCHEDULE</text>
+    <text x="408" y="361" fill="#E6FFC9" fill-opacity="0.58" font-size="21" letter-spacing="2">SESSION ALERTS</text>
+    <text x="704" y="361" fill="#E6FFC9" fill-opacity="0.58" font-size="21" letter-spacing="2">ATTENDEE NETWORKING</text>
+    <text x="72" y="561" fill="#D7F6A8" fill-opacity="0.85" font-size="19" font-weight="700" letter-spacing="5">FOLLOW THE FLOW · MEET THE COMMUNITY</text>
+    <text x="958" y="561" fill="#E6FFC9" fill-opacity="0.55" font-size="19" letter-spacing="3">SYNC</text>
+  </g>
 </svg>`;
 
-await sharp(Buffer.from(ogSvg)).resize(1200, 630).png().toFile("app/opengraph-image.png");
+const ogImage = await sharp(Buffer.from(ogSvg))
+  .resize(1200, 630)
+  .png({ compressionLevel: 9 })
+  .toBuffer();
 
-console.log("icons + OG image generated");
+await Promise.all([
+  sharp(ogImage).toFile("app/opengraph-image.png"),
+  sharp(ogImage).toFile("app/twitter-image.png"),
+]);
+
+console.log("icons + social share images generated");
