@@ -78,15 +78,16 @@ export default async function ConnectPage({
           </Alert>
         ) : null}
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2 lg:items-start">
-          <section id="my-qr" className="scroll-mt-6">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+          <section id="my-qr" className="min-w-0 scroll-mt-6">
             <ConnectClient cardUrl={cardUrl} initialLinks={card.links} initialTemplate={card.template} />
           </section>
-          <section aria-label="Scanned attendees">
+          <section aria-label="Scanned attendees" className="min-w-0">
             <ScannedAttendeesCard
-              scans={scans.map((scan) => ({
-                ...scan,
-                cardUrl: new URL(scan.cardPath, origin).toString(),
+              scans={scans.map(({ name, photoUrl, cardPath }) => ({
+                name,
+                photoUrl,
+                cardUrl: new URL(cardPath, origin).toString(),
               }))}
             />
           </section>

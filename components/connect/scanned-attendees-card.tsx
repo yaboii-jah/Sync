@@ -7,12 +7,12 @@ import { QRCodeSVG } from "qrcode.react";
 import { EmptyState } from "@/components/empty-states";
 import { secondaryLinkClass } from "@/components/ui/link-button";
 import { Avatar, Button, Card, Modal, Separator, Typography } from "@/components/ui";
-import type { NetworkingScanHistoryEntry } from "@/lib/supabase/queries/scan-history";
-
 const QR_FOREGROUND = "#024056";
 const QR_BACKGROUND = "#FFFFFF";
 
-export interface ScannedAttendee extends NetworkingScanHistoryEntry {
+export interface ScannedAttendee {
+  name: string;
+  photoUrl: string | null;
   cardUrl: string;
 }
 
@@ -42,7 +42,7 @@ export function ScannedAttendeesCard({ scans }: ScannedAttendeesCardProps) {
           {scans.length ? (
             <div className="flex flex-col">
               {scans.map((scan, index) => (
-                <div key={scan.cardPath}>
+                <div key={scan.cardUrl}>
                   {index ? <Separator /> : null}
                   <Button
                     variant="ghost"
@@ -50,12 +50,11 @@ export function ScannedAttendeesCard({ scans }: ScannedAttendeesCardProps) {
                     className="min-h-16 justify-start rounded-xl px-2 py-2 text-left"
                     onPress={() => setSelectedScan(scan)}
                     aria-label={`View ${scan.name || "attendee"}'s scanned QR`}
-                  >
-                    <AttendeeAvatar name={scan.name} photoUrl={scan.photoUrl} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{scan.name || "Attendee"}</span>
-                      <span className="mt-0.5 block truncate text-xs text-muted">{scan.cardPath}</span>
-                    </span>
+                    >
+                      <AttendeeAvatar name={scan.name} photoUrl={scan.photoUrl} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{scan.name || "Attendee"}</span>
+                      </span>
                     <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
                   </Button>
                 </div>
@@ -104,8 +103,8 @@ export function ScannedAttendeesCard({ scans }: ScannedAttendeesCardProps) {
                         bgColor={QR_BACKGROUND}
                       />
                     </div>
-                    <Typography type="body-xs" color="muted" className="break-all text-center">
-                      Saved URL: {selectedScan.cardPath}
+                    <Typography type="body-xs" color="muted" className="text-center">
+                      Open this attendee&apos;s card whenever you need it.
                     </Typography>
                   </Modal.Body>
                   <Modal.Footer className="flex-col gap-3">

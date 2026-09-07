@@ -4,7 +4,6 @@ export interface NetworkingScanHistoryEntry {
   name: string;
   photoUrl: string | null;
   cardPath: string;
-  scannedAt: string;
 }
 
 type NetworkingScanHistoryRow = {
@@ -49,7 +48,6 @@ export async function getMyNetworkingScanHistory(): Promise<NetworkingScanHistor
     name: scan.name,
     photoUrl: scan.photo_url,
     cardPath: scan.card_path,
-    scannedAt: scan.scanned_at,
   }));
 }
 
