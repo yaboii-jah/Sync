@@ -11,6 +11,8 @@ import {
   Modal as AriaModal,
   ModalOverlay as AriaModalOverlay,
   ProgressBar as AriaProgressBar,
+  Radio as AriaRadio,
+  RadioGroup as AriaRadioGroup,
   SearchField as AriaSearchField,
   Tab as AriaTab,
   TabList as AriaTabList,
@@ -442,6 +444,16 @@ Checkbox.Control = function CheckboxControl({ className, ...props }: HTMLAttribu
 };
 Checkbox.Indicator = function CheckboxIndicator({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return <span className={join("size-1.5 rounded-full bg-success-foreground opacity-0 group-data-[selected]:opacity-100", className)} {...props} />;
+};
+
+export function RadioGroup({ className, ...props }: ComponentProps<typeof AriaRadioGroup>) {
+  return <AriaRadioGroup className={join("flex flex-col gap-1.5", typeof className === "string" && className)} {...props} />;
+}
+RadioGroup.Option = function RadioOption({ className, ...props }: ComponentProps<typeof AriaRadio>) {
+  return <AriaRadio className={join("group flex cursor-pointer items-start gap-3 rounded-xl bg-surface-secondary px-4 py-3 text-foreground outline-none transition hover:bg-default data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[focus-visible]:ring-2 data-[focus-visible]:ring-focus", typeof className === "string" && className)} {...props} />;
+};
+RadioGroup.Control = function RadioControl({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+  return <span aria-hidden className={join("mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-border bg-surface transition group-data-[selected]:border-accent group-data-[selected]:bg-accent", className)} {...props}><span className="size-1.5 rounded-full bg-accent-foreground opacity-0 group-data-[selected]:opacity-100" /></span>;
 };
 
 export function TextField({ fullWidth, className, ...props }: ComponentProps<typeof AriaTextField> & { fullWidth?: boolean }) {

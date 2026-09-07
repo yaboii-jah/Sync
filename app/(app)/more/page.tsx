@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, Typography } from "@/components/ui/static";
-import { Camera, Globe, type LucideIcon } from "lucide-react";
+import { Camera, Globe, MessageSquare, type LucideIcon } from "lucide-react";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getSpeakersSponsors } from "@/lib/supabase/queries/directory";
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 const ICONS: Record<string, LucideIcon> = {
   globe: Globe,
   camera: Camera,
+  "message-square": MessageSquare,
 };
 
 function isInternalQuickLink(url: string) {
