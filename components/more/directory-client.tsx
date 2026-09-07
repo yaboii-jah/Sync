@@ -22,7 +22,7 @@ function PersonPortrait({
     <div
       className={`relative overflow-hidden bg-surface-secondary ${
         variant === "tile"
-          ? "h-20 w-20 shrink-0 sm:h-auto sm:w-auto sm:aspect-[4/5]"
+          ? "h-20 w-20 shrink-0 rounded-full sm:h-auto sm:w-auto sm:aspect-[4/5] sm:rounded-none"
           : "aspect-square w-24 shrink-0 rounded-2xl sm:w-28"
       }`}
     >
