@@ -80,6 +80,41 @@ export type Database = {
         }
         Relationships: []
       }
+      app_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          request_id: string
+          user_id?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           ends_at: string
@@ -235,6 +270,42 @@ export type Database = {
             foreignKeyName: "networking_cards_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      networking_scan_history: {
+        Row: {
+          card_path: string
+          scanned_at: string
+          scanned_user_id: string
+          scanner_id: string
+        }
+        Insert: {
+          card_path: string
+          scanned_at?: string
+          scanned_user_id: string
+          scanner_id: string
+        }
+        Update: {
+          card_path?: string
+          scanned_at?: string
+          scanned_user_id?: string
+          scanner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "networking_scan_history_scanned_user_id_fkey"
+            columns: ["scanned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "networking_scan_history_scanner_id_fkey"
+            columns: ["scanner_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -699,11 +770,7 @@ export type Database = {
     Views: {
       [_ in never]: never
     }
-      Functions: {
-        admin_get_attendee: {
-          Args: { target_attendee_id: string }
-          Returns: Json
-        }
+    Functions: {
       admin_create_notification: {
         Args: {
           audience: string
@@ -735,6 +802,10 @@ export type Database = {
         Args: { mutation_request_id: string; target_session_id: string }
         Returns: string
       }
+      admin_get_attendee: {
+        Args: { target_attendee_id: string }
+        Returns: Json
+      }
       admin_get_dashboard: { Args: never; Returns: Json }
       admin_get_notification: {
         Args: { target_notification_id: string }
@@ -751,6 +822,17 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: number
+        }[]
+      }
+      admin_list_feedback: {
+        Args: { result_limit?: number }
+        Returns: {
+          attendee_name: string
+          attendee_photo_url: string
+          category: string
+          created_at: string
+          id: string
+          message: string
         }[]
       }
       admin_list_notifications: {
@@ -789,7 +871,7 @@ export type Database = {
       admin_set_session_capacity: {
         Args: {
           mutation_request_id: string
-          session_capacity: number | null
+          session_capacity: number
           session_reserved_seats: number
           session_seats_closed: boolean
           target_session_id: string
@@ -832,11 +914,17 @@ export type Database = {
         }
         Returns: string
       }
-      claim_session_seat: {
-        Args: { target_session_id: string }
-        Returns: Json
-      }
+      claim_session_seat: { Args: { target_session_id: string }; Returns: Json }
       current_user_is_admin: { Args: never; Returns: boolean }
+      get_my_networking_scan_history: {
+        Args: never
+        Returns: {
+          card_path: string
+          name: string
+          photo_url: string
+          scanned_at: string
+        }[]
+      }
       get_own_networking_card: {
         Args: never
         Returns: {
@@ -856,14 +944,6 @@ export type Database = {
           templates: number
           url: string
         }[]
-      }
-      set_networking_card_template: {
-        Args: { p_template: number }
-        Returns: undefined
-      }
-      release_session_seat: {
-        Args: { target_session_id: string }
-        Returns: Json
       }
       mark_alerts_read: { Args: never; Returns: undefined }
       merch_claim_attendee: {
@@ -912,6 +992,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_networking_card_scan: {
+        Args: { card_token: string }
+        Returns: undefined
+      }
+      release_session_seat: {
+        Args: { target_session_id: string }
+        Returns: Json
+      }
       retry_push_dispatches: { Args: never; Returns: undefined }
       save_social_profiles:
         | {
@@ -931,6 +1019,18 @@ export type Database = {
             }
             Returns: undefined
           }
+      set_networking_card_template: {
+        Args: { p_template: number }
+        Returns: undefined
+      }
+      submit_app_feedback: {
+        Args: {
+          feedback_category: string
+          feedback_message: string
+          feedback_request_id: string
+        }
+        Returns: undefined
+      }
       sync_program_flow_statuses: { Args: never; Returns: undefined }
       toggle_my_flow_bookmark: {
         Args: { target_session_id: string }
