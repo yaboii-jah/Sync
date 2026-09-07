@@ -409,14 +409,14 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 ### 5.9 Connect Page — The QR Networking Card
 
-**What you see:** a large stable QR tile, Save QR, Preview social card, and the list of configured social profiles.
+**What you see:** a stable QR tile, Save QR, a live preview of your selected social card, the card-template picker, and the list of configured social profiles.
 
 **Under the hood:**
 
 - The QR encodes the app-owned `/c/<public_token>` URL. The token stays stable while the attendee changes their social links.
-- Rendered by `qrcode.react` as an **SVG** (`QRCodeSVG`) with a neutral-white ground, near-black modules, and a 240px visible cap so scanners get reliable contrast in both app themes.
-- **Save QR** works via a hidden **canvas** twin (`QRCodeCanvas`, 512px): clicking grabs `canvas.toDataURL("image/png")` and triggers a download. SVG for crisp screens, canvas for exportable pixels.
-- The public card reveals the attendee's Google identity plus only their saved social destinations. With no saved links, the QR remains visible but the card is unavailable until a link is added. Only a verified owner preview gets Back to Connect.
+- The inline preview and public route share the same selected `NetworkCard` template, so choosing a template updates the visible card immediately.
+- **Save QR** works via a hidden `qrcode.react` canvas (`QRCodeCanvas`, 512px): clicking grabs `canvas.toDataURL("image/png")` and triggers a download.
+- The public card reveals the attendee's Google identity plus only their saved social destinations. Save QR stays disabled until a link is added. Only a verified owner preview gets Back to Connect.
 
 **Files:** `app/(app)/connect/page.tsx`, `components/connect/connect-card.tsx`, `next.config.ts`.
 

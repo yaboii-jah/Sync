@@ -1,9 +1,19 @@
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
-import { effectiveSessionStatus } from "@/lib/format";
+import {
+  effectiveSessionStatus,
+  formatManilaDateTimeInput,
+} from "@/lib/format";
 
 export interface SessionTimeGroup {
   key: string;
   startTime: string;
+  /**
+   * Manila calendar day of `startTime` as `YYYY-MM-DD`. Identity only, never
+   * displayed: the list compares adjacent groups on this key to decide where a
+   * date heading belongs, so two groups at the same wall-clock time on
+   * different days are distinguishable.
+   */
+  dateKey: string;
   sessions: SessionWithSpeakers[];
 }
 
@@ -13,6 +23,15 @@ export interface BookmarkConflict {
   start_time: string;
   end_time: string;
   room: string | null;
+}
+
+/**
+ * Manila calendar day of an instant. Derived from the existing Manila
+ * wall-clock formatter so grouping and display agree on the event timezone
+ * (architecture invariant 10) without introducing a second date formatter.
+ */
+export function manilaDateKey(iso: string): string {
+  return formatManilaDateTimeInput(iso).slice(0, 10);
 }
 
 function compareSessions(
@@ -56,6 +75,7 @@ export function groupSessionsByStartTime(
     groups.set(start, {
       key: String(start),
       startTime: session.start_time,
+      dateKey: manilaDateKey(session.start_time),
       sessions: [session],
     });
   }

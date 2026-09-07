@@ -11,12 +11,14 @@ import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
 import { QrScanner } from "./qr-scanner";
 
 interface ConnectClientProps {
+  name: string;
+  photoUrl: string | null;
   cardUrl: string;
   initialLinks: SocialLinks;
   initialTemplate: NetworkCardTemplate;
 }
 
-export function ConnectClient({ cardUrl, initialLinks, initialTemplate }: ConnectClientProps) {
+export function ConnectClient({ name, photoUrl, cardUrl, initialLinks, initialTemplate }: ConnectClientProps) {
   const configuredNetworks = SOCIAL_NETWORKS.filter((network) => initialLinks[network]);
   const hasSavedLinks = configuredNetworks.length > 0;
   const [showSetup, setShowSetup] = useState(!hasSavedLinks);
@@ -28,6 +30,9 @@ export function ConnectClient({ cardUrl, initialLinks, initialTemplate }: Connec
       </div>
 
       <ConnectCard
+        name={name}
+        photoUrl={photoUrl}
+        links={initialLinks}
         configuredNetworks={configuredNetworks}
         cardUrl={cardUrl}
         hasSavedLinks={hasSavedLinks}

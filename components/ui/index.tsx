@@ -255,10 +255,10 @@ Avatar.Image = function AvatarImage({
   if (asChild && isValidElement(children)) {
     const child = children as ReactElement<{ className?: string }>;
     return cloneElement(child, {
-      className: join("size-full object-cover", child.props.className, className),
+      className: join("absolute inset-0 z-10 size-full object-cover", child.props.className, className),
     });
   }
-  return <img alt="" className={join("size-full object-cover", className)} {...props} />;
+  return <img alt="" className={join("absolute inset-0 z-10 size-full object-cover", className)} {...props} />;
 };
 Avatar.Fallback = function AvatarFallback({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return <span className={join("inline-flex size-full items-center justify-center", className)} {...props} />;

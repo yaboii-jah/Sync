@@ -160,13 +160,27 @@ export function HomeClient({
 
     return (
       <ol className="flex flex-col gap-6">
-        {groups.map((group) => {
+        {groups.map((group, index) => {
           const live = group.sessions.some(
             (session) => effectiveSessionStatus(session, now) === "ongoing",
           );
+          // D-1: the first group always states its date, and every later group
+          // states it again when the Manila calendar day changes, so two groups
+          // that read the same wall-clock time are told apart in the list.
+          const showDate =
+            index === 0 || group.dateKey !== groups[index - 1].dateKey;
 
           return (
             <li key={group.key}>
+              {showDate ? (
+                <Typography
+                  type="body-sm"
+                  color="muted"
+                  className="pb-1 font-semibold"
+                >
+                  {formatManilaDate(group.startTime)}
+                </Typography>
+              ) : null}
               <div className="flex items-center justify-between gap-3 pb-2">
                 <span
                   className={`text-[13px] font-semibold tabular-nums ${
@@ -240,11 +254,6 @@ export function HomeClient({
           <div className="mt-4">
             <InstallChip />
           </div>
-          <Typography type="body-sm" color="muted" className="mt-4 hidden lg:block">
-            {formatManilaDate(event.starts_at)}
-            {", "}
-            {event.venue}
-          </Typography>
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">

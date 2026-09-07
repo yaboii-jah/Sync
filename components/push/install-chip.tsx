@@ -7,6 +7,7 @@ import {
   getInstallInstructions,
   useInstall,
 } from "@/components/push/install-provider";
+import { useInstallPromptReleased } from "@/components/push/first-run-signal";
 
 const STORAGE_KEY = "install-chip-dismissed";
 
@@ -19,18 +20,23 @@ export function InstallChip() {
   const [pending, setPending] = useState(false);
   const [visible, setVisible] = useState(false);
   const { ready, canPrompt, isInstalled, platform, promptInstall } = useInstall();
+  // FR-5 / D-2: the push dialog goes first. The short delay below is not
+  // replaced, it is now measured from the moment that dialog lets go.
+  const pushPromptReleased = useInstallPromptReleased();
 
   useEffect(() => {
-    if (!ready || isInstalled || dismissed) {
+    if (!ready || isInstalled || dismissed || !pushPromptReleased) {
       const timer = window.setTimeout(() => setVisible(false), 0);
       return () => window.clearTimeout(timer);
     }
 
     const timer = window.setTimeout(() => setVisible(true), 900);
     return () => window.clearTimeout(timer);
-  }, [dismissed, isInstalled, ready]);
+  }, [dismissed, isInstalled, pushPromptReleased, ready]);
 
-  if (!ready || isInstalled || dismissed || !visible) return null;
+  if (!ready || isInstalled || dismissed || !pushPromptReleased || !visible) {
+    return null;
+  }
 
   async function install() {
     setPending(true);
