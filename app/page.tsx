@@ -81,14 +81,24 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
       </div>
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
-        <Image
-          src="/icons/icon-512.png"
-          alt="AWS Student Community Day Mega Manila 2026 event logo"
-          width={96}
-          height={96}
-          preload
-          className="size-24 rounded-full object-cover shadow-xl"
-        />
+        <div className="flex items-center justify-center gap-4">
+          <Image
+            src="/icons/icon-512.png"
+            alt="AWS Student Community Day Mega Manila 2026 event logo"
+            width={80}
+            height={80}
+            preload
+            className="size-20 rounded-full object-cover shadow-xl"
+          />
+          <Image
+            src="/assets/v2.png"
+            alt="AWS Builder Group Alpha logo"
+            width={80}
+            height={80}
+            preload
+            className="size-20 rounded-full object-cover shadow-xl"
+          />
+        </div>
         <p className="mt-4 text-[0.68rem] font-bold tracking-[0.24em] text-text-muted uppercase">
           AWS Student Community Day Mega Manila 2026
         </p>
