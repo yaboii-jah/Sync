@@ -24,7 +24,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 6. User receives audited organizer alerts and deliberate manual status alerts; schedule timing itself does not generate attendee notifications
 7. User opens Connect to show their QR code or scan another attendee's Sync QR; scanning opens an active card containing only the social links that attendee chose to save
 8. User opens the Photo Booth from More, captures three event-framed photos, and downloads a shareable keepsake that never leaves their device
-9. User browses the More page for the speaker lineup and event website link
+9. User browses the More page for the speaker lineup, event website link, and app feedback form
 
 ## Features
 
@@ -69,6 +69,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 
 ### Quick Links
 - Link to the main event website
+- Link to the native app feedback form
 
 ### Photo Booth
 - An authenticated, local-only three-shot booth reached from More
@@ -80,6 +81,12 @@ The application uses the event's dark AWS Student Community Day visual identity 
 ### Account Settings
 - View/update name and networking links from the authenticated header or desktop navigation rail
 
+### App Feedback
+- Authenticated attendees can submit identified feedback about Sync
+- Fixed categories: Bug, Usability, and Idea
+- Required trimmed message limited to 2,000 characters
+- Submit-only flow with request-id deduplication and a clear thank-you state
+
 ### Admin Operations
 - Database-allowlisted administrators switch between attendee and admin views in the same app
 - Responsive operations dashboard for current program state, attendee reachability, recent sends, and failures
@@ -87,6 +94,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Seat controls in the same session editor: a capacity, the count registered off-app, and a switch that closes seats. A live preview shows the exact badge attendees will read. Capacity can never be set below the seats attendees already hold
 - Unpublished, not-started drafts can be permanently deleted after confirmation; published or started sessions are unpublished instead
 - Immediate title/body notifications sent to everyone or explicitly selected attendees
+- Read-only latest-100 app feedback list showing category, message, attendee name/photo, and submission time
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
 - Manual Start, End, and Resume Auto controls persist against schedule automation; manual timestamps become the attendee-facing live state
 - Searchable read-only attendee directory, notification history, delivery results, and immutable mutation audit log
@@ -107,7 +115,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Workshop seat capacity: admin-set seat numbers, an attendee-facing fullness badge, and atomic seat claim/release
 - QR-based social networking (LinkedIn, Instagram, Facebook, GitHub)
 - Speaker lineup
-- Event website quick link and local Photo Booth
+- Event website quick link, native app feedback, and local Photo Booth
 - PWA installability
 - Protected event-operations admin workspace
 
@@ -117,6 +125,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Speaker management and other general content-management tooling outside the approved session editor
 - Scheduled notification resends, external notification links, and multi-admin approval
 - Attendee editing, access suspension, deletion, or pass-type management
+- Attendee feedback history, editing, and deletion; feedback triage, replies, badges, and notifications
 
 ## Success Criteria
 
@@ -127,3 +136,4 @@ The application uses the event's dark AWS Student Community Day visual identity 
 5. A user can browse the complete speaker lineup and open an entry's LinkedIn profile when one is provided
 6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override
 7. Attendees can understand every concurrent live or upcoming program choice and receive a clear warning when saved My Flow sessions overlap
+8. An authenticated attendee can submit identified app feedback in one of three categories, and an allowlisted administrator can review the latest 100 submissions without exposing feedback to attendees

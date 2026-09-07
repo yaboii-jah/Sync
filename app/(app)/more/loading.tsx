@@ -9,7 +9,7 @@ export default function MoreLoading() {
 
         <SkeletonText className="mt-8 w-24" />
         <div className="mt-3 grid grid-cols-2 gap-3">
-          {[0, 1].map((i) => (
+          {[0, 1, 2].map((i) => (
             <Card key={i} className="flex flex-row items-center gap-3 px-5 py-4">
               <Skeleton className="size-10 rounded-full" />
               <SkeletonText className="w-24" />

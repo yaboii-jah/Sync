@@ -8,6 +8,7 @@ import {
   BellRing,
   ClipboardList,
   House,
+  MessageSquare,
   Radio,
   Users,
   type LucideIcon,
@@ -25,6 +26,7 @@ const ITEMS: AdminNavItem[] = [
   { label: "Notifications", href: "/admin/notifications", icon: BellRing },
   { label: "Program", href: "/admin/sessions", icon: Radio },
   { label: "Attendees", href: "/admin/attendees", icon: Users },
+  { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
   { label: "Audit", href: "/admin/audit", icon: ClipboardList },
 ];
 
@@ -104,7 +106,7 @@ export function AdminNav() {
         aria-label="Admin"
         className="border-border bg-surface fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        <div className="mx-auto grid max-w-md grid-cols-5 items-stretch">
+        <div className="mx-auto grid max-w-md grid-cols-6 items-stretch">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
