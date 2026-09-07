@@ -285,6 +285,30 @@ export async function updateAdminSession(
   });
 }
 
+export interface AdminSessionCapacityInput {
+  sessionId: string;
+  /** Null clears the seat limit and every seat held against it. */
+  capacity: number | null;
+  /** Seats registered off-app; ignored when capacity is null. */
+  reservedSeats: number;
+  /** Presents the session as full whatever the counts say. */
+  seatsClosed: boolean;
+  requestId: string;
+}
+
+export async function setAdminSessionCapacity(
+  client: QueryClient,
+  input: AdminSessionCapacityInput,
+): Promise<void> {
+  await callRpc(client, "admin_set_session_capacity", {
+    target_session_id: input.sessionId,
+    session_capacity: input.capacity,
+    session_reserved_seats: input.reservedSeats,
+    session_seats_closed: input.seatsClosed,
+    mutation_request_id: input.requestId,
+  });
+}
+
 export async function setAdminSessionPublished(
   client: QueryClient,
   input: { sessionId: string; published: boolean; requestId: string },

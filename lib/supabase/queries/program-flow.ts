@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
+import type { SessionSeats } from "@/lib/seats";
 
 type QueryClient = SupabaseClient<Database>;
 
@@ -20,7 +21,13 @@ export interface EventInfo {
   status: string;
 }
 
-export interface SessionWithSpeakers {
+/**
+ * Seat columns ride along on every session read. They are `SessionSeats`, so
+ * `seatAvailability(session)` works on a session straight out of a query with
+ * nothing to unpack first — and a session with no seat limit carries a null
+ * capacity, which reads as "no seats to show".
+ */
+export interface SessionWithSpeakers extends SessionSeats {
   id: string;
   title: string;
   description: string | null;
@@ -49,11 +56,15 @@ interface SessionRow {
   actual_started_at: string | null;
   actual_ended_at: string | null;
   published: boolean;
+  capacity: number | null;
+  reserved_seats: number;
+  claimed_seats: number;
+  seats_closed: boolean;
   session_speakers: { speakers_sponsors: SpeakerLite }[];
 }
 
 const SESSION_SELECT =
-  "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, session_speakers(speakers_sponsors(id, name, role, organization))";
+  "id, title, description, room, start_time, end_time, status, status_override, status_override_at, actual_started_at, actual_ended_at, published, capacity, reserved_seats, claimed_seats, seats_closed, session_speakers(speakers_sponsors(id, name, role, organization))";
 
 function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
   return {
@@ -69,6 +80,10 @@ function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
     actual_started_at: row.actual_started_at,
     actual_ended_at: row.actual_ended_at,
     published: row.published,
+    capacity: row.capacity,
+    reserved_seats: row.reserved_seats,
+    claimed_seats: row.claimed_seats,
+    seats_closed: row.seats_closed,
     speakers: row.session_speakers.map((link) => link.speakers_sponsors),
   };
 }
@@ -157,6 +172,22 @@ export async function getBookmarkedSessionIds(
   client: QueryClient,
 ): Promise<string[]> {
   const { data, error } = await client.from("my_flow_bookmarks").select("session_id");
+
+  if (error) throw error;
+  return (data ?? []).map((row) => row.session_id);
+}
+
+/**
+ * The sessions this attendee holds a seat in. RLS restricts the table to the
+ * caller's own rows, so this is their seats and nobody else's — the roster of
+ * a workshop is never readable from the attendee app.
+ */
+export async function getClaimedSessionIds(
+  client: QueryClient,
+): Promise<string[]> {
+  const { data, error } = await client
+    .from("session_seat_claims")
+    .select("session_id");
 
   if (error) throw error;
   return (data ?? []).map((row) => row.session_id);
