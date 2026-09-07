@@ -13,6 +13,7 @@ import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
 
 const QR_FOREGROUND = "#024056";
 const QR_BACKGROUND = "#FFFFFF";
+const QR_QUIET_ZONE_MODULES = 4;
 
 const TEMPLATE_OPTIONS: { value: NetworkCardTemplate; label: string }[] = [
   { value: 1, label: "Solid — Default" },
@@ -177,6 +178,7 @@ export function ConnectCard({
             size={512}
             fgColor={QR_FOREGROUND}
             bgColor={QR_BACKGROUND}
+            marginSize={QR_QUIET_ZONE_MODULES}
           />
         ) : null}
       </div>
