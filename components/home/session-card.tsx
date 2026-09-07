@@ -8,6 +8,7 @@ import {
   formatDurationMinutes,
   relativeSessionLabel,
 } from "@/lib/format";
+import { seatAvailability, seatBadgeTone } from "@/lib/seats";
 import { StatusBadge } from "@/components/status-badge";
 
 interface SessionCardProps {
@@ -42,6 +43,11 @@ export function SessionCard({
   );
   const ongoing = status === "ongoing";
   const finished = status === "finished";
+  /*
+   * Only sessions with a seat limit carry this, and a finished one has nothing
+   * left to say about seats — so the card of an ordinary talk is untouched.
+   */
+  const seats = finished ? null : seatAvailability(session);
   /*
    * One formatter for the whole line, so the card never mixes vocabularies.
    * An operator's end time wins when there is one; otherwise the clause is
@@ -80,13 +86,23 @@ export function SessionCard({
           </Typography>
           {/* The time header already flags a live session; showing "Ongoing"
               here as well says the same thing twice. */}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {conflict ? (
               <Chip size="sm" color="warning" variant="soft">
                 Time conflict
               </Chip>
             ) : null}
             {ongoing ? null : <StatusBadge status={status} />}
+            {seats ? (
+              <Chip
+                size="sm"
+                color={seatBadgeTone(seats)}
+                variant="soft"
+                className="tabular-nums"
+              >
+                {seats.label}
+              </Chip>
+            ) : null}
           </div>
         </div>
 

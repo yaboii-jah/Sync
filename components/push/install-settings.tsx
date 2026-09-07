@@ -43,15 +43,18 @@ export function InstallSettings() {
           <Typography type="body-sm" color="muted">
             Checking installation options...
           </Typography>
-        ) : canPrompt ? (
-          <Button fullWidth isPending={pending} onPress={install}>
-            <Download className="size-4" aria-hidden />
-            Install app
-          </Button>
         ) : (
-          <Typography type="body-sm" color="muted">
-            {getInstallInstructions(platform)}
-          </Typography>
+          <>
+            <Button fullWidth isPending={pending} onPress={install}>
+              <Download className="size-4" aria-hidden />
+              Install Sync
+            </Button>
+            {!canPrompt ? (
+              <Typography type="body-sm" color="muted">
+                {getInstallInstructions(platform)}
+              </Typography>
+            ) : null}
+          </>
         )}
       </Card.Content>
     </Card>

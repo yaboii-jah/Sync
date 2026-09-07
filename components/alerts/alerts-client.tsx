@@ -14,14 +14,20 @@ import { createClient } from "@/lib/supabase/client";
 import type { NotificationRow } from "@/lib/supabase/queries/notifications";
 import { getNotifications } from "@/lib/supabase/queries/notifications";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
-import { getPublishedSessionById } from "@/lib/supabase/queries/program-flow";
+import {
+  getClaimedSessionIds,
+  getPublishedSessionById,
+} from "@/lib/supabase/queries/program-flow";
 import { formatRelativeTime } from "@/lib/format";
+import { seatClaimNotice } from "@/lib/seats";
 import { useRealtimeRefetch } from "@/hooks/use-realtime-refetch";
 import { useToast } from "@/components/toast/toast-provider";
 import { useAlertsCount } from "@/components/alerts-count-provider";
 import { SessionModal } from "@/components/sessions/session-modal";
 import { EmptyState } from "@/components/empty-states";
 import {
+  claimSeat,
+  releaseSeat,
   toggleBookmark,
   type ToggleBookmarkResult,
 } from "@/app/(app)/home/actions";
@@ -66,6 +72,12 @@ export function AlertsClient({
   const [unavailableSessionIds, setUnavailableSessionIds] = useState<Set<string>>(
     () => new Set(),
   );
+  /*
+   * Seats are only ever needed once a linked session is actually opened, so
+   * they are read then rather than on every visit to the feed.
+   */
+  const [claims, setClaims] = useState<Set<string>>(() => new Set());
+  const [seatPendingId, setSeatPendingId] = useState<string | null>(null);
   const { toast } = useToast();
   const { markAllRead } = useAlertsCount();
 
@@ -83,14 +95,26 @@ export function AlertsClient({
     void refetchNotifications();
   });
 
-  async function openLinkedSession(sessionId: string) {
+  /**
+   * Read a session and this attendee's seats together, and adopt them as the
+   * open session. Returns null when the session is not attendee-visible, which
+   * is how `openLinkedSession` tells a missing session from a loaded one.
+   */
+  async function loadSessionWithSeats(sessionId: string) {
     const client = createClient();
+    const [session, claimedIds] = await Promise.all([
+      getPublishedSessionById(client, sessionId),
+      getClaimedSessionIds(client),
+    ]);
+
+    setClaims(new Set(claimedIds));
+    if (session) setActiveSession(session);
+    return session;
+  }
+
+  async function openLinkedSession(sessionId: string) {
     try {
-      const session = await getPublishedSessionById(client, sessionId);
-      if (session) {
-        setActiveSession(session);
-        return;
-      }
+      if (await loadSessionWithSeats(sessionId)) return;
 
       setUnavailableSessionIds((previous) => {
         const next = new Set(previous);
@@ -145,6 +169,36 @@ export function AlertsClient({
           toast(isBookmarked ? "Added to My Flow" : "Removed from My Flow");
         }
       }
+    })();
+  }
+
+  /*
+   * Same rule as Home: seats are shared, so nothing is updated optimistically
+   * and the open session is re-read once the server has decided.
+   */
+  function changeSeat(sessionId: string, action: "claim" | "release") {
+    if (seatPendingId) return;
+    setSeatPendingId(sessionId);
+
+    void (async () => {
+      const result =
+        action === "claim"
+          ? await claimSeat(sessionId)
+          : await releaseSeat(sessionId);
+
+      if (result.error) {
+        toast(result.error, "error");
+      } else if (action === "claim") {
+        // The RPC saves the session to My Flow in the same transaction.
+        setBookmarks((previous) => new Set(previous).add(sessionId));
+        const notice = seatClaimNotice(result.conflicts?.length ?? 0);
+        toast(notice.message, notice.tone);
+      } else {
+        toast("Seat released");
+      }
+
+      await loadSessionWithSeats(sessionId);
+      setSeatPendingId(null);
     })();
   }
 
@@ -239,7 +293,11 @@ export function AlertsClient({
         <SessionModal
           session={activeSession}
           bookmarked={bookmarks.has(activeSession.id)}
+          seatHeld={claims.has(activeSession.id)}
+          seatPending={seatPendingId === activeSession.id}
           onToggleBookmark={handleToggleBookmark}
+          onClaimSeat={(sessionId) => changeSeat(sessionId, "claim")}
+          onReleaseSeat={(sessionId) => changeSeat(sessionId, "release")}
           onClose={() => setActiveSession(null)}
         />
       ) : null}

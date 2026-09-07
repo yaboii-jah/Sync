@@ -9,6 +9,7 @@ import {
   createAdminSession,
   deleteAdminSession,
   searchAdminAttendees,
+  setAdminSessionCapacity,
   setAdminSessionPublished,
   setAdminSessionStatus,
   updateAdminSession,
@@ -22,6 +23,8 @@ export interface AdminActionResult {
   notificationId?: string;
   recipientCount?: number;
   deviceCount?: number;
+  /** Set by `createSessionAction` so the caller can follow up on the new row. */
+  sessionId?: string;
 }
 
 export async function sendAdminNotification(input: {
@@ -171,7 +174,7 @@ export async function createSessionAction(
 
   try {
     const supabase = await createClient();
-    await createAdminSession(supabase, {
+    const sessionId = await createAdminSession(supabase, {
       eventId: input.eventId,
       title: validated.title,
       description: input.description.trim(),
@@ -182,7 +185,7 @@ export async function createSessionAction(
       requestId: input.requestId,
     });
     revalidateProgramFlow();
-    return {};
+    return { sessionId };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Could not create the session.",
@@ -215,6 +218,62 @@ export async function updateSessionAction(
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Could not update the session.",
+    };
+  }
+}
+
+/**
+ * Set a session's seat numbers.
+ *
+ * Kept separate from the details save because `assert_admin_mutation` refuses
+ * to reuse one request id across two different actions — and because seats and
+ * schedule are corrected on different days by different people.
+ *
+ * A null capacity means "no seat limit", which is the state of every session
+ * that is not a workshop. The database is the one that decides whether a new
+ * capacity still covers the seats attendees are sitting in, so its refusal is
+ * passed through verbatim: it names the numbers, and this surface is
+ * admin-only.
+ */
+export async function setSessionCapacityAction(input: {
+  sessionId: string;
+  capacity: number | null;
+  reservedSeats: number;
+  seatsClosed: boolean;
+  requestId: string;
+}): Promise<AdminActionResult> {
+  await requireAdmin();
+  if (!UUID_PATTERN.test(input.sessionId) || !UUID_PATTERN.test(input.requestId)) {
+    return { error: "Invalid request." };
+  }
+
+  const { capacity, reservedSeats } = input;
+  if (capacity !== null) {
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 100_000) {
+      return { error: "Capacity must be a whole number of at least 1." };
+    }
+    if (!Number.isInteger(reservedSeats) || reservedSeats < 0) {
+      return { error: "Reserved seats must be zero or more." };
+    }
+    if (reservedSeats > capacity) {
+      return { error: "Reserved seats cannot exceed the capacity." };
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+    await setAdminSessionCapacity(supabase, {
+      sessionId: input.sessionId,
+      capacity,
+      reservedSeats: capacity === null ? 0 : reservedSeats,
+      seatsClosed: capacity === null ? false : input.seatsClosed,
+      requestId: input.requestId,
+    });
+    revalidateProgramFlow();
+    return {};
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Could not update seats.",
     };
   }
 }

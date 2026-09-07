@@ -662,6 +662,9 @@ This is why scheduled event-day behavior needs no organizer at the controls for 
 **…change the schedule?**
 Use the source-controlled finalized-program migration for a complete schedule replacement. The current event has 13 main-program rows plus three parallel workshop rows; statuses, notifications, and pushes adjust automatically. Use the admin session editor for event-day title, room, and time corrections plus status overrides; its date-time fields are always Asia/Manila (PHT). Only unpublished, not-started drafts may be hard-deleted, after confirmation.
 
+**…open seats in a full workshop?**
+Open the session in the admin session editor and lower **Registered off-app**. That number is the organiser export's registration count, and the gap between it and **Capacity** is what attendees can take in the app — drop Track A from 33 to 30 and three attendees can each claim a seat, at which point it reads `33/33 · Full` again. **Close seats** presents the session as Full even with seats free, and refuses new claims without touching the seats people already hold. Leave **Capacity** blank for any session that has no seat limit; that is every non-workshop row and shows attendees nothing at all. Capacity can never be set below the seats attendees are already sitting in — the database refuses and the editor says by how much.
+
 **…add a quick link?**
 `insert into quick_links (label, url, icon) values ('Label', 'https://…', 'globe');` — `icon` accepts `globe` or `camera` (mapped in `app/(app)/more/page.tsx`).
 

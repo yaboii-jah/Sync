@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# Supabase/Vercel env pulls land here; the leading dot is missing so `.env*`
+# above does not catch them.
+env.download
 
 # vercel
 .vercel

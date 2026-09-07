@@ -157,8 +157,8 @@ export default async function AdminDashboardPage() {
         </Card>
       </section>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_1fr]">
-        <section>
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+        <section className="min-w-0">
           <div className="flex items-center justify-between">
             <Typography.Heading level={2} className="text-base">
               Recent notifications
@@ -208,7 +208,7 @@ export default async function AdminDashboardPage() {
           </div>
         </section>
 
-        <section>
+        <section className="min-w-0">
           <div className="flex items-center justify-between">
             <Typography.Heading level={2} className="text-base">
               Recent admin actions

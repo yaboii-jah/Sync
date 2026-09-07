@@ -19,6 +19,7 @@ export function InstallChip() {
   );
   const [pending, setPending] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const { ready, canPrompt, isInstalled, platform, promptInstall } = useInstall();
   // FR-5 / D-2: the push dialog goes first. The short delay below is not
   // replaced, it is now measured from the moment that dialog lets go.
@@ -41,7 +42,8 @@ export function InstallChip() {
   async function install() {
     setPending(true);
     try {
-      await promptInstall();
+      const outcome = await promptInstall();
+      if (outcome === null) setShowInstructions(true);
     } finally {
       setPending(false);
     }
@@ -75,17 +77,27 @@ export function InstallChip() {
         <Typography type="body-sm" color="muted" className="mt-1 leading-5">
           {canPrompt
             ? "Add it to your home screen for faster access on event day."
-            : getInstallInstructions(platform)}
+            : "Install Sync for one-tap access on event day."}
         </Typography>
-        {canPrompt ? (
-          <Button
-            size="sm"
-            isPending={pending}
-            onPress={install}
-            className="mt-4 w-full"
+        <Button
+          size="sm"
+          isPending={pending}
+          onPress={install}
+          aria-expanded={showInstructions}
+          aria-controls="install-instructions"
+          className="mt-4 w-full"
+        >
+          Install Sync
+        </Button>
+        {!canPrompt && showInstructions ? (
+          <Typography
+            id="install-instructions"
+            type="body-xs"
+            color="muted"
+            className="mt-3 leading-5"
           >
-            Install
-          </Button>
+            {getInstallInstructions(platform)}
+          </Typography>
         ) : null}
       </section>
     </div>
