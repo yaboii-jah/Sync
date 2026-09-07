@@ -13,6 +13,8 @@ change.
 
 ## In Progress
 
+- **Saved networking QR quiet zone:** the Connect download canvas now includes the QR specification's four-module white quiet zone, matching the usable white padding presented around the on-screen code instead of exporting edge-to-edge modules.
+
 - **Targeted notification visibility repair:** added forward migration `20260907010000_repair_notification_recipient_rls.sql` to remove drifted `notifications` policies, revoke client writes, and expose alerts only to snapshotted recipients or allowlisted admins. Added `supabase/tests/notifications_rls.test.sql` covering RLS, grants, and the absence of unconditional read access. Applying and executing the migration is still blocked in this workspace because Docker/Postgres is unavailable and the Supabase CLI has no access token.
 
 - **Notification settings recovery:** `/settings` now detects iOS browser tabs that need Home Screen installation, provides platform-specific browser/device steps for blocked alerts, rechecks permission when the page becomes active, and lets the user retry subscription creation after changing settings.
