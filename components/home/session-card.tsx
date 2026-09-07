@@ -5,8 +5,8 @@ import { Bookmark, Clock3, MapPin } from "lucide-react";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 import {
   effectiveSessionStatus,
-  formatRelativeTime,
-  relativeStartLabel,
+  formatDurationMinutes,
+  relativeSessionLabel,
 } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badge";
 
@@ -30,7 +30,7 @@ export function SessionCard({
   const status = effectiveSessionStatus(session, now);
   const startedAt = new Date(session.start_time).getTime();
   const endsAt = new Date(session.end_time).getTime();
-  const durationMinutes = Math.round((endsAt - startedAt) / 60_000);
+  const duration = formatDurationMinutes((endsAt - startedAt) / 60_000);
   /*
    * Quantised to the minute so the server and client renders agree — the same
    * reason the hero's bar is. A talk needs no finer resolution than that.
@@ -42,15 +42,20 @@ export function SessionCard({
   );
   const ongoing = status === "ongoing";
   const finished = status === "finished";
-  const relative =
-    session.status_override === "finished" && session.actual_ended_at
-      ? `ended ${formatRelativeTime(session.actual_ended_at, now)}`
-      : relativeStartLabel(
-          session.status_override === "ongoing" && session.actual_started_at
-            ? session.actual_started_at
-            : session.start_time,
-          now,
-        );
+  /*
+   * One formatter for the whole line, so the card never mixes vocabularies.
+   * An operator's end time wins when there is one; otherwise the clause is
+   * about the start the attendee was promised.
+   */
+  const operatorEnd =
+    session.status_override === "finished" ? session.actual_ended_at : null;
+  const operatorStart =
+    session.status_override === "ongoing" ? session.actual_started_at : null;
+  const relative = relativeSessionLabel(
+    operatorEnd ?? operatorStart ?? session.start_time,
+    operatorEnd ? "end" : "start",
+    now,
+  );
 
   return (
     <Card
@@ -93,8 +98,7 @@ export function SessionCard({
             className="tabular-nums"
             suppressHydrationWarning
           >
-            {durationMinutes} min
-            {relative ? ` · ${relative}` : ""}
+            {duration} · {relative}
           </Typography>
         </div>
 

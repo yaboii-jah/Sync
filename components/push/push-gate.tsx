@@ -9,8 +9,18 @@ import {
   PUSH_EXPLAINER_DISMISSED_KEY,
 } from "@/lib/push";
 import { savePushSubscription } from "@/app/(app)/home/actions";
+import { holdInstallPrompt } from "@/components/push/first-run-signal";
 
 type Stage = "checking" | "hidden" | "explain" | "busy" | "done" | "dismissed";
+
+// Stages where this dialog no longer owns the first run. "checking" is not one
+// of them: the permission check runs before anything is drawn, and releasing
+// there would let the install card open next to the dialog again.
+const TERMINAL_STAGES: ReadonlySet<Stage> = new Set<Stage>([
+  "dismissed",
+  "done",
+  "hidden",
+]);
 
 export function PushGate() {
   const [stage, setStage] = useState<Stage>("checking");
@@ -94,6 +104,19 @@ export function PushGate() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [stage]);
+
+  // FR-5 / D-2: the install card waits on this dialog. Every stage change is
+  // reported, so all four ways out — dismissed, done, hidden, and the Escape
+  // path above, which lands on dismissed — release the card through one place.
+  useEffect(() => {
+    holdInstallPrompt(!TERMINAL_STAGES.has(stage));
+  }, [stage]);
+
+  // Leaving the page also releases the card, so an unresolved check cannot
+  // strand it.
+  useEffect(() => {
+    return () => holdInstallPrompt(false);
+  }, []);
 
   async function enable() {
     setStage("busy");

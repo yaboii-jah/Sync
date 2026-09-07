@@ -63,9 +63,10 @@ Live state is the one signal allowed a dot: `live-mini-bar.tsx`, the hero eyebro
 
 - **One dramatic surface.** The hero is a luminous dark-teal focal panel with a selective gold edge, layered jade/gold atmosphere, a green live dot, a `ProgressBar` and a ticking countdown. Every other card stays a quiet tonal panel.
 - **Squircles.** `corner-shape: squircle` via the `.squircle` utility on hero, cells, capsule and dialog. Progressive enhancement — browsers without it keep the plain radius.
-- **Grouped time blocks.** The program list uses one time heading per start-time block and stacks concurrent choices beneath it. The old continuous progress rail is omitted because a single day-progress line is misleading when sessions run in parallel.
+- **Grouped time blocks.** The program list uses one time heading per start-time block and stacks concurrent choices beneath it. A Manila date heading sits above the first group and above every group whose Manila calendar date differs from the group above it, so consecutive same-day groups state their date once and two groups sharing a clock time on different days are still told apart. The old continuous progress rail is omitted because a single day-progress line is misleading when sessions run in parallel.
 - **Parallel hero choices.** Happening Now and Up Next show every live session or every session in the earliest upcoming time block; each choice opens its own detail dialog.
 - **Event theme placement.** `event.theme` is centered at the top of every hero state, including the pre-event countdown; it is not repeated beneath the program date.
+- **Venue placement.** The pre-event countdown hero states the venue once, as a single map link that serves every breakpoint. Its URL and its accessible name are both built from `event.venue`, with a constant venue name as the fallback when that column is null. The program column carries no venue text of its own, so at desktop width the venue appears only while the hero is in its countdown state. The other hero states keep their present content.
 - **Conflict feedback.** My Flow permits overlapping bookmarks, warns on save, and marks every involved saved card with a warning chip.
 - **Press feedback.** `active:scale-[0.98]` on cards and the capsule, `active:scale-95` on tabs, all collapsing under `motion-reduce`.
 - **Safe areas.** The tab bar pads by `env(safe-area-inset-bottom)`.
@@ -79,6 +80,7 @@ Geist is the application-wide interface font through `--font-sans` and `--font-d
 - Section titles: `<Typography.Heading level={2} className="text-base">`
 - Body: `<Typography type="body-sm">`, muted variants with `color="muted"`
 - Numbers in metrics and countdowns: `tabular-nums`
+- Session-card durations and relative times use the short vocabulary `min`, `hr`, `d`. The longer wording (`5 hours ago`) belongs to Alerts, the admin console, and the session detail modal
 
 ## Shape, spacing, elevation
 
@@ -102,7 +104,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Lists**: stacked tonal `Card`s where hierarchy needs separation. Program Flow uses grouped time headings with stacked session cards; Alerts, audit, attendees, deliveries, and notification history use one surface with `Separator` rows rather than a border on every row.
 - **Overlays**: `Modal` for detail (session, person, push explainer), `AlertDialog` for anything destructive or irreversible (sign out, live session control, notification send). Dialog panels are always opaque `--overlay` surfaces; only the backdrop is translucent.
 - **Overlay dismissal**: every idle `Modal` and `AlertDialog` closes when the backdrop outside its container is clicked; submission states disable outside dismissal until the action settles.
-- **Install prompt**: Home offers a dismissible, opaque floating install card above the mobile navigation and at the desktop bottom-right after a short delay. It has no decorative download icon, never blocks the page or uses a backdrop, and reflows from an inline action to a second-row full-width action below 360px.
+- **Install prompt**: Home offers a dismissible, opaque floating install card above the mobile navigation and at the desktop bottom-right after a short delay. It has no decorative download icon, never blocks the page or uses a backdrop, and reflows from an inline action to a second-row full-width action below 360px. It also waits for the first-run push dialog. The card is held from the moment that dialog begins its permission check and is released once the dialog reaches a terminal state, including a permission denial, so the two first-run prompts are never on screen together.
 - **Sign-out confirmation**: uses the same medium-width AlertDialog treatment as event controls — a plain left-aligned heading/body, neutral `Cancel`, and accent `Confirm` action without a decorative leading icon.
 - **Admin session editing**: schedule fields are labeled `(PHT)` and use the event's Asia/Manila wall-clock timezone. Deleting a draft always opens a destructive confirmation dialog.
 - **Bottom tabs** (`<1024px`) and a **fixed labeled sidebar** (`232px`, `≥1024px`) for attendees; the attendee profile menu owns Account, Admin, and Sign out in both presentations. `/admin` keeps a compact mobile utility header above a fixed icon-and-label bottom bar and uses a **256px rail** on desktop. All use dark-teal grounds, tonal edges, and readable off-white labels.
