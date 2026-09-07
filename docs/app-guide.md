@@ -424,17 +424,19 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 ### 5.10 Photo Booth — Three-Shot Story Strip
 
-**What you see:** open **Photo Booth** from More, take three photos with three-second countdowns, then download one event-framed vertical story strip. You can switch between front and rear cameras when the device makes both available, choose an existing image for any slot, and retake one slot without losing the other two.
+**What you see when enabled:** open **Photo Booth** from More, take three photos with three-second countdowns, then download one event-framed vertical story strip. You can switch between front and rear cameras when the device makes both available, choose an existing image for any slot, and retake one slot without losing the other two. It is temporarily hidden and blocked for attendees until the event team enables it.
 
 **Under the hood:** the browser asks for camera permission only after the attendee chooses **Open camera**. Each source image stays in browser memory as a temporary object URL. Once all three slots are full, a canvas draws the supplied event background plus three centre-cropped landscape photos into a 1080×1920 JPEG. Neither source images nor the finished JPEG are uploaded, stored in Supabase, or attached to an account. Camera tracks stop whenever review starts, the page is hidden, or the component unmounts.
 
 **Files:** `app/(app)/more/photo-booth/page.tsx`, `components/photo-booth/photo-booth-client.tsx`, `public/assets/event-frame-source.png`.
 
+**Availability:** `PHOTO_BOOTH_ENABLED=false` keeps the More link hidden and redirects attendee visits to `/more`. Allowlisted admins can still open the route directly for verification. Set `PHOTO_BOOTH_ENABLED=true` in the deployment environment and redeploy when the booth should go live.
+
 ---
 
 ### 5.11 More Page — Directory and Quick Links
 
-**What you see:** two stacked sections — **Quick Links** (an external event-website card and an in-app Photo Booth card) and **Speakers**: an image-led responsive lineup that uses a branded initial when no portrait is supplied. Tap a speaker → their **bio modal** (role, portrait or initial, optional organization, bio, and LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
+**What you see:** two stacked sections — **Quick Links** (an external event-website card and, when enabled, an in-app Photo Booth card) and **Speakers**: an image-led responsive lineup that uses a branded initial when no portrait is supplied. Tap a speaker → their **bio modal** (role, portrait or initial, optional organization, bio, and LinkedIn button). Account Settings is reached from the shared mobile header or desktop navigation rail, not from the More page body.
 
 **Under the hood:**
 

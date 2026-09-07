@@ -6,6 +6,7 @@ import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getSpeakersSponsors } from "@/lib/supabase/queries/directory";
 import { getQuickLinks } from "@/lib/supabase/queries/quick-links";
+import { isPhotoBoothEnabled } from "@/lib/feature-flags";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { DirectoryClient } from "@/components/more/directory-client";
@@ -32,6 +33,11 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
+  const visibleQuickLinks = isPhotoBoothEnabled()
+    ? quickLinks
+    : quickLinks.filter(
+        (link) => link.label !== "Photo Booth" && link.url !== "/more/photo-booth",
+      );
   const speakers = people.filter((person) => person.role === "speaker");
 
   return (
@@ -40,13 +46,13 @@ export default async function MorePage() {
         <AppHeader />
         <PageHeader title="More" />
 
-        {quickLinks.length > 0 ? (
+        {visibleQuickLinks.length > 0 ? (
           <section className="mt-8">
             <Typography.Heading level={2} className="text-base">
               Quick links
             </Typography.Heading>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              {quickLinks.map((link) => {
+              {visibleQuickLinks.map((link) => {
                 const Icon = (link.icon && ICONS[link.icon]) || Globe;
                 const content = (
                   <Card className="hover:bg-default h-full transition-colors">
