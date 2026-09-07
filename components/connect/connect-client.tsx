@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Modal, Typography } from "@/components/ui";
+import { Button, Modal, Typography } from "@/components/ui";
 import { QrCode, Settings } from "lucide-react";
 import { primaryLinkClass } from "@/components/ui/link-button";
 import { SOCIAL_NETWORKS, type SocialLinks } from "@/lib/social";
@@ -23,10 +23,29 @@ export function ConnectClient({ name, photoUrl, cardUrl, initialLinks, initialTe
   const hasSavedLinks = configuredNetworks.length > 0;
   const [showSetup, setShowSetup] = useState(!hasSavedLinks);
 
+  function focusScannedAttendees() {
+    const section = document.getElementById("scanned-attendees");
+    if (!section) return;
+
+    section.focus({ preventScroll: true });
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <>
       <div className="mb-4">
         <QrScanner />
+      </div>
+
+      <div className="mb-4 lg:hidden">
+        <Button
+          variant="outline"
+          fullWidth
+          onPress={focusScannedAttendees}
+        >
+          <QrCode className="size-4" aria-hidden />
+          View scanned attendees
+        </Button>
       </div>
 
       <ConnectCard

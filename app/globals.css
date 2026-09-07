@@ -64,7 +64,7 @@ body {
 
 .identity-font {
   font-family: var(--font-identity), sans-serif;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 
 .event-hero {

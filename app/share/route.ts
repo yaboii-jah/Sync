@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthenticatedClaims } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { extractLinkedInProfileUrl } from "@/lib/social";
 import { getOwnNetworkingCard } from "@/lib/supabase/queries/networking";
@@ -63,11 +64,9 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const claims = await getAuthenticatedClaims(supabase);
 
-  if (!user) return redirectTo(origin, "/");
+  if (!claims) return redirectTo(origin, "/");
 
   const getText = (key: string) => {
     const value = formData.get(key);

@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Alert, Card, Switch, Typography } from "@/components/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Button, Card, Switch, Typography } from "@/components/ui";
+import {
+  useInstall,
+  type InstallPlatform,
+} from "@/components/push/install-provider";
 import {
   ensurePushSubscription,
   getPushDeviceId,
@@ -22,61 +26,177 @@ type NotificationStatus =
   | "disabled"
   | "blocked"
   | "unavailable"
+  | "install-required"
   | "busy";
 
+interface NotificationGuidance {
+  title: string;
+  description: string;
+  steps: string[];
+}
+
+function getNotificationGuidance(
+  platform: InstallPlatform,
+  isInstalled: boolean,
+): NotificationGuidance {
+  if (platform === "ios" && !isInstalled) {
+    return {
+      title: "Install Sync before enabling alerts",
+      description:
+        "iPhone and iPad support web push notifications for Home Screen web apps.",
+      steps: [
+        "In Safari, tap Share, then choose Add to Home Screen.",
+        "Open Sync from the new Home Screen icon.",
+        "Open Settings > Notifications > Sync and turn on Allow Notifications.",
+      ],
+    };
+  }
+
+  if (platform === "ios") {
+    return {
+      title: "Allow alerts for Sync",
+      description:
+        "Sync is installed, but notifications are blocked in the device settings.",
+      steps: [
+        "Open your device Settings app and choose Notifications > Sync.",
+        "Turn on Allow Notifications and choose an alert style.",
+        "Return to Sync and tap Check again.",
+      ],
+    };
+  }
+
+  if (platform === "android" && isInstalled) {
+    return {
+      title: "Allow alerts for Sync",
+      description:
+        "Sync is installed, but notifications are blocked in the device settings.",
+      steps: [
+        "Long-press the Sync app icon and tap App info.",
+        "Tap Notifications and turn on Allow notifications.",
+        "Return to Sync and tap Check again.",
+      ],
+    };
+  }
+
+  if (platform === "android") {
+    return {
+      title: "Allow notifications for this site",
+      description:
+        "Your browser is blocking notifications for Sync.",
+      steps: [
+        "Open the browser's site controls for this page.",
+        "Open Permissions or Site settings and set Notifications to Allow.",
+        "Return to Sync and tap Check again.",
+      ],
+    };
+  }
+
+  return {
+    title: "Allow notifications for this site",
+    description:
+      "Your browser is blocking notifications for Sync. Chrome and Edge use Site settings; Safari uses Safari > Settings > Websites > Notifications.",
+    steps: [
+      "Open the site controls icon beside the address bar.",
+      "Set Notifications to Allow for Sync.",
+      "Return to Sync and tap Check again.",
+    ],
+  };
+}
+
+function isPermissionBlockedError(caught: unknown): boolean {
+  return (
+    caught instanceof DOMException &&
+    (caught.name === "AbortError" || caught.name === "NotAllowedError")
+  );
+}
+
 export function NotificationSettings() {
+  const { ready: installReady, isInstalled, platform } = useInstall();
   const [status, setStatus] = useState<NotificationStatus>("checking");
   const [error, setError] = useState<string | null>(null);
+  const statusCheckId = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshStatus = useCallback(async () => {
+    const checkId = ++statusCheckId.current;
+    setStatus("checking");
+    setError(null);
 
-    async function checkStatus() {
-      const supported =
-        "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        typeof Notification !== "undefined";
+    if (!installReady) return;
 
-      if (!supported) {
-        setStatus("unavailable");
-        return;
-      }
+    const updateStatus = (nextStatus: NotificationStatus) => {
+      if (checkId === statusCheckId.current) setStatus(nextStatus);
+    };
 
-      if (Notification.permission === "denied") {
-        setStatus("blocked");
-        return;
-      }
-
-      if (Notification.permission !== "granted") {
-        setStatus("disabled");
-        return;
-      }
-
-      try {
-        const subscription = await getExistingPushSubscription();
-        if (!subscription) {
-          if (!cancelled) setStatus("disabled");
-          return;
-        }
-
-        const stored = await hasPushSubscription(
-          subscription.endpoint,
-          subscription.device_id,
-        );
-        if (!cancelled) setStatus(stored ? "enabled" : "disabled");
-      } catch {
-        if (!cancelled) {
-          setStatus("disabled");
-          setError("We couldn't check this device's notification status.");
-        }
-      }
+    const iosBrowser = platform === "ios" && !isInstalled;
+    if (iosBrowser) {
+      updateStatus("install-required");
+      return;
     }
 
-    void checkStatus();
+    const supported =
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      typeof Notification !== "undefined";
+
+    if (!supported) {
+      updateStatus("unavailable");
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      updateStatus("blocked");
+      return;
+    }
+
+    if (Notification.permission !== "granted") {
+      updateStatus("disabled");
+      return;
+    }
+
+    try {
+      const subscription = await getExistingPushSubscription();
+      if (!subscription) {
+        updateStatus("disabled");
+        return;
+      }
+
+      const stored = await hasPushSubscription(
+        subscription.endpoint,
+        subscription.device_id,
+      );
+      updateStatus(stored ? "enabled" : "disabled");
+    } catch {
+      if (checkId === statusCheckId.current) {
+        setStatus("disabled");
+        setError("We couldn't check this device's notification status.");
+      }
+    }
+  }, [installReady, isInstalled, platform]);
+
+  useEffect(() => {
+    void Promise.resolve().then(() => refreshStatus());
+  }, [refreshStatus]);
+
+  useEffect(() => {
+    function refreshWhenActive() {
+      if (
+        document.visibilityState !== "visible" ||
+        status === "busy" ||
+        status === "checking"
+      ) {
+        return;
+      }
+
+      void refreshStatus();
+    }
+
+    window.addEventListener("focus", refreshWhenActive);
+    document.addEventListener("visibilitychange", refreshWhenActive);
     return () => {
-      cancelled = true;
+      window.removeEventListener("focus", refreshWhenActive);
+      document.removeEventListener("visibilitychange", refreshWhenActive);
     };
-  }, []);
+  }, [refreshStatus, status]);
 
   async function enable() {
     setStatus("busy");
@@ -105,13 +225,32 @@ export function NotificationSettings() {
       localStorage.removeItem(PUSH_EXPLAINER_DISMISSED_KEY);
       setStatus("enabled");
     } catch (caught) {
-      setStatus("disabled");
+      const blockedByBrowser =
+        (typeof Notification !== "undefined" &&
+          Notification.permission === "denied") ||
+        isPermissionBlockedError(caught);
+
+      setStatus(blockedByBrowser ? "blocked" : "disabled");
       setError(
-        caught instanceof DOMException && caught.name === "AbortError"
-          ? "Notifications are blocked in this browser. Check your browser settings."
+        blockedByBrowser
+          ? null
           : "Could not enable notifications on this device.",
       );
     }
+  }
+
+  async function checkAgain() {
+    setError(null);
+
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted"
+    ) {
+      await enable();
+      return;
+    }
+
+    await refreshStatus();
   }
 
   async function disable() {
@@ -159,19 +298,24 @@ export function NotificationSettings() {
   }
 
   const unavailable = status === "unavailable";
+  const installRequired = status === "install-required";
   const blocked = status === "blocked";
   const busy = status === "busy" || status === "checking";
   const enabled = status === "enabled";
+  const guidance = getNotificationGuidance(platform, isInstalled);
+  const needsRecoveryGuidance = blocked || installRequired;
 
   const statusLabel = busy
     ? "Checking this device"
     : enabled
       ? "Enabled on this device"
       : blocked
-        ? "Blocked by browser"
-        : unavailable
-          ? "Unavailable in this browser"
-          : "Disabled on this device";
+        ? "Blocked by browser or device"
+        : installRequired
+          ? "Install Sync to enable alerts"
+          : unavailable
+            ? "Unavailable in this browser"
+            : "Disabled on this device";
 
   return (
     <Card className="mt-4">
@@ -183,7 +327,7 @@ export function NotificationSettings() {
       </Card.Header>
 
       <Card.Content className="flex flex-col gap-4">
-        {!unavailable && !blocked ? (
+        {!unavailable && !blocked && !installRequired ? (
           <Switch
             className="w-full"
             isSelected={enabled}
@@ -204,22 +348,39 @@ export function NotificationSettings() {
           </Typography>
         )}
 
-        {blocked ? (
-          <Alert status="danger">
+        {needsRecoveryGuidance ? (
+          <Alert status="warning">
             <Alert.Indicator />
-            <Alert.Content>
+            <Alert.Content className="flex flex-col gap-2">
+              <Alert.Title>{guidance.title}</Alert.Title>
               <Alert.Description>
-                Notifications are blocked. Allow them in your browser or device
-                settings, then return here to enable session alerts.
+                {guidance.description}
               </Alert.Description>
+              <ol className="list-decimal space-y-1 pl-5 text-sm leading-5 text-muted">
+                {guidance.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              {blocked ? (
+                <Button
+                  className="w-fit"
+                  variant="outline"
+                  size="sm"
+                  isDisabled={busy}
+                  onPress={() => void checkAgain()}
+                >
+                  Check again
+                </Button>
+              ) : null}
             </Alert.Content>
           </Alert>
         ) : null}
 
         {unavailable ? (
-          <Alert>
+          <Alert status="warning">
             <Alert.Indicator />
             <Alert.Content>
+              <Alert.Title>Push notifications unavailable</Alert.Title>
               <Alert.Description>
                 This browser does not support push notifications. Try an
                 installed PWA or a supported mobile browser.

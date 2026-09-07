@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getAuthenticatedClaims } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
   SOCIAL_NETWORKS,
@@ -56,16 +57,14 @@ export async function updateProfile(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const claims = await getAuthenticatedClaims(supabase);
 
-  if (!user) redirect("/login");
+  if (!claims) redirect("/login");
 
   const { error: nameError } = await supabase
     .from("profiles")
     .update({ name })
-    .eq("id", user.id);
+    .eq("id", claims.sub);
 
   if (nameError) {
     return { error: "Could not save your profile. Please try again.", success: false };

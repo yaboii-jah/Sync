@@ -88,7 +88,12 @@ export default async function ConnectPage({
               initialTemplate={card.template}
             />
           </section>
-          <section aria-label="Scanned attendees" className="min-w-0">
+          <section
+            id="scanned-attendees"
+            aria-label="Scanned attendees"
+            tabIndex={-1}
+            className="min-w-0 scroll-mt-6 outline-none"
+          >
             <ScannedAttendeesCard
               scans={scans.map(({ name, photoUrl, cardPath }) => ({
                 name,

@@ -1,24 +1,29 @@
 import { redirect } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
 import { createClient } from "./server";
+import { getAuthenticatedClaims } from "./auth";
 import type { Tables } from "./database.types";
 
 export type Profile = Tables<"profiles">;
 
+export interface AuthenticatedUser {
+  id: string;
+  user_metadata: Record<string, unknown>;
+}
+
 export interface AuthenticatedProfile {
-  user: User;
+  user: AuthenticatedUser;
   profile: Profile | null;
 }
 
 export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const claims = await getAuthenticatedClaims(supabase);
+  if (!claims) return null;
 
-  if (userError) throw userError;
-  if (!user) return null;
+  const user: AuthenticatedUser = {
+    id: claims.sub,
+    user_metadata: toMetadata(claims.user_metadata),
+  };
 
   const profileResult = await supabase
     .from("profiles")
@@ -33,9 +38,10 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | 
   if (!profile) {
     const { error: createError } = await supabase.from("profiles").upsert({
       id: user.id,
-      name: user.user_metadata?.name ?? "",
+      name: metadataString(user.user_metadata, "name") ?? "",
       photo_url:
-        user.user_metadata?.picture ?? user.user_metadata?.avatar_url ?? null,
+        metadataString(user.user_metadata, "picture") ??
+        metadataString(user.user_metadata, "avatar_url"),
     });
 
     if (createError) throw createError;
@@ -54,7 +60,7 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | 
 }
 
 export async function requireCompleteProfile(): Promise<{
-  user: User;
+  user: AuthenticatedUser;
   profile: Profile;
 }> {
   const result = await getAuthenticatedProfile();
@@ -65,4 +71,20 @@ export async function requireCompleteProfile(): Promise<{
    * activates its card as soon as at least one link is saved. */
 
   return { user: result.user, profile: result.profile };
+}
+
+function toMetadata(value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function metadataString(
+  metadata: Record<string, unknown>,
+  key: string,
+): string | null {
+  const value = metadata[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
