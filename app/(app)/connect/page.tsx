@@ -30,7 +30,7 @@ export default async function ConnectPage({
   searchParams: Promise<{ shared?: string; scan?: string }>;
 }) {
   const { shared } = await searchParams;
-  await requireCompleteProfile();
+  const { profile } = await requireCompleteProfile();
 
   /*
    * Read through the card RPC rather than selecting `social_profiles`
@@ -80,7 +80,13 @@ export default async function ConnectPage({
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
           <section id="my-qr" className="min-w-0 scroll-mt-6">
-            <ConnectClient cardUrl={cardUrl} initialLinks={card.links} initialTemplate={card.template} />
+            <ConnectClient
+              name={profile.name}
+              photoUrl={profile.photo_url}
+              cardUrl={cardUrl}
+              initialLinks={card.links}
+              initialTemplate={card.template}
+            />
           </section>
           <section aria-label="Scanned attendees" className="min-w-0">
             <ScannedAttendeesCard

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button, Card, Chip, Label, Separator, Typography } from "@/components/ui";
-import { Download, Eye } from "lucide-react";
+import { Download } from "lucide-react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
+import { NetworkCard } from "@/components/network-card";
 import { secondaryLinkClass } from "@/components/ui/link-button";
-import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
+import { SOCIAL_SPECS, type SocialLinks, type SocialNetwork } from "@/lib/social";
 import { createClient } from "@/lib/supabase/client";
 import type { NetworkCardTemplate } from "@/lib/supabase/queries/networking";
 
@@ -21,13 +22,24 @@ const TEMPLATE_OPTIONS: { value: NetworkCardTemplate; label: string }[] = [
 ];
 
 interface ConnectCardProps {
+  name: string;
+  photoUrl: string | null;
+  links: SocialLinks;
   configuredNetworks: SocialNetwork[];
   cardUrl: string;
   hasSavedLinks: boolean;
   initialTemplate: NetworkCardTemplate;
 }
 
-export function ConnectCard({ configuredNetworks, cardUrl, hasSavedLinks, initialTemplate }: ConnectCardProps) {
+export function ConnectCard({
+  name,
+  photoUrl,
+  links,
+  configuredNetworks,
+  cardUrl,
+  hasSavedLinks,
+  initialTemplate,
+}: ConnectCardProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const [template, setTemplate] = useState<NetworkCardTemplate>(initialTemplate);
   const [savingTemplate, setSavingTemplate] = useState(false);
@@ -41,14 +53,6 @@ export function ConnectCard({ configuredNetworks, cardUrl, hasSavedLinks, initia
     link.href = canvas.toDataURL("image/png");
     link.download = "sync-networking-card-qr.png";
     link.click();
-  }
-
-  function previewCard() {
-    if (!cardUrl) return;
-
-    const previewUrl = new URL(cardUrl);
-    previewUrl.searchParams.set("preview", "1");
-    window.open(previewUrl.toString(), "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -87,15 +91,9 @@ export function ConnectCard({ configuredNetworks, cardUrl, hasSavedLinks, initia
           Save QR
         </Button>
 
-        <Button
-          variant="secondary"
-          fullWidth
-          isDisabled={!hasSavedLinks || !cardUrl}
-          onPress={previewCard}
-        >
-          <Eye className="size-4" aria-hidden />
-          Preview social card
-        </Button>
+        <div className="overflow-hidden rounded-2xl border border-border">
+          <NetworkCard variant={template} name={name} photoUrl={photoUrl} links={links} />
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="network-template">Card template</Label>

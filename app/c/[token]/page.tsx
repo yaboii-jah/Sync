@@ -173,7 +173,7 @@ export default async function CardPage(props: PageProps<"/c/[token]">) {
   }
 
   return withAuthenticatedNavigation(
-    <main className={`c-page c-page--${variant} flex min-h-full w-full items-center justify-center px-4 py-10`}>
+    <main className={`c-page c-page--${variant}`}>
       <div className="w-full max-w-md">
         {resolvedCard ? (
           <>

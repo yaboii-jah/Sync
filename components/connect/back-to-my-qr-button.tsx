@@ -22,7 +22,7 @@ export function BackToMyQrButton({
   }
 
   return (
-    <Button size="md" onPress={returnToConnect}>
+    <Button variant="outline" size="md" onPress={returnToConnect}>
       <ArrowLeft className="size-4" aria-hidden />
       {label}
     </Button>

@@ -991,6 +991,17 @@ body {
   isolation: isolate;
 }
 
+.c-page--solid {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem 2rem;
+  background:
+    radial-gradient(100% 64% at 50% 0%, rgba(108, 230, 209, 0.08), transparent 64%),
+    linear-gradient(180deg, #063943 0%, #032b34 100%);
+}
+
 .c-page--crystal {
   display: flex;
   min-height: 100dvh;
@@ -1168,11 +1179,12 @@ body {
 }
 
 @media (max-width: 640px) {
+  .c-page--solid,
   .c-page--crystal,
   .c-page--event,
   .c-page--glass {
     padding: 1.5rem 1rem 1.75rem;
-    align-items: flex-start;
+    align-items: center;
     padding-top: max(1.25rem, env(safe-area-inset-top));
   }
   .c-page__crystal {
