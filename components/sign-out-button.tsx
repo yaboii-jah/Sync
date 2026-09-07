@@ -42,11 +42,11 @@ export function SignOutButton({
             aria-label={variant === "icon" ? "Sign out" : undefined}
             className={
               variant === "icon"
-                ? "button button--icon-only button--sm button--ghost"
-                : "button button--full-width button--sm button--ghost justify-start"
+                ? "inline-flex size-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                : "inline-flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted whitespace-nowrap transition-colors hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
             }
           >
-            <LogOut className="size-5" aria-hidden />
+            <LogOut className="size-5 shrink-0" aria-hidden />
             {variant === "labeled" ? "Sign out" : null}
           </span>
         </AlertDialog.Trigger>
