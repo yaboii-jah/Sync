@@ -5,6 +5,7 @@ import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import {
   getBookmarkedSessionIds,
+  getClaimedSessionIds,
   getEvent,
   getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
@@ -20,10 +21,11 @@ export default async function HomePage() {
   await requireCompleteProfile();
 
   const supabase = await createClient();
-  const [event, sessions, bookmarks] = await Promise.all([
+  const [event, sessions, bookmarks, claims] = await Promise.all([
     getEvent(supabase),
     getPublishedSessionsWithSpeakers(supabase),
     getBookmarkedSessionIds(supabase),
+    getClaimedSessionIds(supabase),
   ]);
   const initialNow = getServerNow();
 
@@ -39,6 +41,7 @@ export default async function HomePage() {
               initialEvent={event}
               initialSessions={sessions}
               initialBookmarks={bookmarks}
+              initialClaims={claims}
               initialNow={initialNow}
             />
           </div>

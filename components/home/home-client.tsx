@@ -11,11 +11,14 @@ import type {
 } from "@/lib/supabase/queries/program-flow";
 import {
   getBookmarkedSessionIds,
+  getClaimedSessionIds,
   getEvent,
   getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { formatManilaDate, formatManilaTime } from "@/lib/format";
 import {
+  claimSeat,
+  releaseSeat,
   toggleBookmark,
   type ToggleBookmarkResult,
 } from "@/app/(app)/home/actions";
@@ -23,6 +26,7 @@ import { useProgramFlowRealtime } from "@/hooks/use-program-flow-realtime";
 import { useNow } from "@/hooks/use-now";
 import { useToast } from "@/components/toast/toast-provider";
 import { effectiveSessionStatus } from "@/lib/format";
+import { seatClaimNotice } from "@/lib/seats";
 import { EmptyState } from "@/components/empty-states";
 import { HeroCard } from "./hero-card";
 import { SessionCard } from "./session-card";
@@ -42,6 +46,8 @@ interface HomeClientProps {
   initialEvent: EventInfo;
   initialSessions: SessionWithSpeakers[];
   initialBookmarks: string[];
+  /** Sessions this attendee already holds a seat in. */
+  initialClaims: string[];
   /** Server-captured clock value used for the first hydrated render. */
   initialNow: number;
 }
@@ -50,6 +56,7 @@ export function HomeClient({
   initialEvent,
   initialSessions,
   initialBookmarks,
+  initialClaims,
   initialNow,
 }: HomeClientProps) {
   const [event, setEvent] = useState(initialEvent);
@@ -57,6 +64,11 @@ export function HomeClient({
   const [bookmarks, setBookmarks] = useState<Set<string>>(
     () => new Set(initialBookmarks),
   );
+  const [claims, setClaims] = useState<Set<string>>(
+    () => new Set(initialClaims),
+  );
+  /** The session whose seat is mid-flight, so a double tap cannot double-claim. */
+  const [seatPendingId, setSeatPendingId] = useState<string | null>(null);
   const [view, setView] = useState<View>("all");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -70,15 +82,18 @@ export function HomeClient({
 
   async function refetchProgramFlow() {
     const client = createClient();
-    const [nextEvent, nextSessions, nextBookmarks] = await Promise.all([
-      getEvent(client),
-      getPublishedSessionsWithSpeakers(client),
-      getBookmarkedSessionIds(client),
-    ]);
+    const [nextEvent, nextSessions, nextBookmarks, nextClaims] =
+      await Promise.all([
+        getEvent(client),
+        getPublishedSessionsWithSpeakers(client),
+        getBookmarkedSessionIds(client),
+        getClaimedSessionIds(client),
+      ]);
 
     if (nextEvent) setEvent(nextEvent);
     setSessions(nextSessions);
     setBookmarks(new Set(nextBookmarks));
+    setClaims(new Set(nextClaims));
   }
 
   useProgramFlowRealtime(() => {
@@ -129,6 +144,45 @@ export function HomeClient({
           toast(isBookmarked ? "Added to My Flow" : "Removed from My Flow");
         }
       }
+    });
+  }
+
+  /*
+   * Seats are shared state: a count can move because someone else took the
+   * last one, so there is nothing safe to update optimistically here. Both
+   * handlers let the server decide and then re-read the counts, which is also
+   * what makes the loser of a race see the truth immediately.
+   */
+  function changeSeat(sessionId: string, action: "claim" | "release") {
+    if (seatPendingId) return;
+    setSeatPendingId(sessionId);
+
+    startTransition(async () => {
+      const result =
+        action === "claim"
+          ? await claimSeat(sessionId)
+          : await releaseSeat(sessionId);
+
+      if (result.error) {
+        toast(result.error, "error");
+      } else if (action === "claim") {
+        // The RPC saves the session to My Flow in the same transaction.
+        setClaims((previous) => new Set(previous).add(sessionId));
+        setBookmarks((previous) => new Set(previous).add(sessionId));
+        const notice = seatClaimNotice(result.conflicts?.length ?? 0);
+        toast(notice.message, notice.tone);
+      } else {
+        setClaims((previous) => {
+          const next = new Set(previous);
+          next.delete(sessionId);
+          return next;
+        });
+        // The bookmark deliberately stays: only the seat was given up.
+        toast("Seat released");
+      }
+
+      await refetchProgramFlow();
+      setSeatPendingId(null);
     });
   }
 
@@ -307,7 +361,11 @@ export function HomeClient({
         <SessionModal
           session={activeSession}
           bookmarked={bookmarks.has(activeSession.id)}
+          seatHeld={claims.has(activeSession.id)}
+          seatPending={seatPendingId === activeSession.id}
           onToggleBookmark={handleToggleBookmark}
+          onClaimSeat={(sessionId) => changeSeat(sessionId, "claim")}
+          onReleaseSeat={(sessionId) => changeSeat(sessionId, "release")}
           onClose={() => setActiveSessionId(null)}
         />
       ) : null}

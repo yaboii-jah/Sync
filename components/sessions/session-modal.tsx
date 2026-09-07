@@ -10,12 +10,19 @@ import {
   formatTimeRange,
 } from "@/lib/format";
 import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
+import { seatAvailability, seatButtonState } from "@/lib/seats";
 import { StatusBadge } from "@/components/status-badge";
 
 interface SessionModalProps {
   session: SessionWithSpeakers;
   bookmarked: boolean;
+  /** Whether this attendee is holding a seat in this session. */
+  seatHeld: boolean;
+  /** True while a seat change is in flight, to stop a double claim. */
+  seatPending: boolean;
   onToggleBookmark: (sessionId: string) => void;
+  onClaimSeat: (sessionId: string) => void;
+  onReleaseSeat: (sessionId: string) => void;
   onClose: () => void;
 }
 
@@ -33,10 +40,24 @@ const secondaryAction =
 export function SessionModal({
   session,
   bookmarked,
+  seatHeld,
+  seatPending,
   onToggleBookmark,
+  onClaimSeat,
+  onReleaseSeat,
   onClose,
 }: SessionModalProps) {
   const status = effectiveSessionStatus(session);
+  /*
+   * Taking a seat is a deliberate act, so it lives here rather than on the
+   * card: the card states how full a workshop is, and the decision is made
+   * with the description, room and facilitator in front of you.
+   */
+  const seats = seatAvailability(session);
+  const seatState = seatButtonState(seats, {
+    held: seatHeld,
+    finished: status === "finished",
+  });
 
   return (
     <Modal>
@@ -135,6 +156,39 @@ export function SessionModal({
             </Modal.Body>
 
             <Modal.Footer className="flex shrink-0 flex-col gap-3">
+              {seats && seatState !== "hidden" ? (
+                <div className="flex w-full flex-col gap-2">
+                  <Typography
+                    type="body-sm"
+                    color="muted"
+                    className="tabular-nums"
+                  >
+                    {seatHeld
+                      ? `You have a seat · ${seats.label}`
+                      : `Seats · ${seats.label}`}
+                  </Typography>
+
+                  {seatState === "full" ? (
+                    <Button fullWidth variant="secondary" isDisabled>
+                      {seats.closed ? "Seats closed" : "No seats left"}
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      variant={seatState === "held" ? "outline" : "primary"}
+                      isDisabled={seatPending}
+                      onPress={() =>
+                        seatState === "held"
+                          ? onReleaseSeat(session.id)
+                          : onClaimSeat(session.id)
+                      }
+                    >
+                      {seatState === "held" ? "Release your seat" : "Take a seat"}
+                    </Button>
+                  )}
+                </div>
+              ) : null}
+
               {status !== "finished" ? (
                 <Button
                   fullWidth

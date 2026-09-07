@@ -18,7 +18,7 @@ Split an implementation step if it combines:
 
 - UI changes and Supabase schema or RLS policy changes (e.g. don't build a session card component in the same step as adding a column to `sessions`)
 - Realtime sync logic and Web Push delivery logic — these are two separate layers per `architecture.md` and should be built and verified independently
-- Any behavior not clearly defined in `project-overview.md` or `architecture.md` — most notably workshop registration or admin capabilities beyond the approved event-operations scope
+- Any behavior not clearly defined in `project-overview.md` or `architecture.md` — most notably workshop registration beyond seat capacity (waitlists, payment, QR check-in) or admin capabilities beyond the approved event-operations scope
 
 If a change cannot be verified end to end quickly,
 the scope is too broad — split it.

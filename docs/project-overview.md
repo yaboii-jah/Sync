@@ -37,6 +37,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Full event schedule with real-time status badges (Not Started / Ongoing / Finished)
 - Finalized schedule supports parallel sessions, grouped by time block
 - Personalized schedule view ("My Flow") vs. full schedule ("All")
+- Seat capacity on the sessions that have a seat limit: the card states how full a workshop is (`33/33 · Full`, `30/33 · 3 left`) and the session detail view offers the seat
 - Overlapping My Flow bookmarks remain allowed but are warned about when saved and marked in My Flow
 - Session detail view — description, time, room, speaker info
 - Published sessions are attendee-visible; unpublished drafts remain available only to event operators
@@ -53,6 +54,13 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Optional LinkedIn, Instagram, Facebook, and GitHub profile links managed together
 - The card activates automatically when links exist; clearing the last link disables existing QR copies without changing the code
 - A private, deduplicated list of attendees whose networking cards an attendee has scanned, with the saved card URL available for reopening
+
+### Workshop Seats
+- The three workshop tracks carry a seat limit; every other session has none and shows nothing
+- Tracks A and B seat 33, Track C (the BuilderCards tournament's four teams of four) seats 16, and all three start full because registration happened off-app through the organiser export
+- Event operations edits the off-app registered count to open seats, and can close a workshop outright even while seats are free
+- An attendee can take a free seat and release it again; taking a seat also saves the session to My Flow, while removing the bookmark never gives the seat up
+- A seat claim is settled in the database under a row lock, so the last seat is only ever sold once
 
 ### Speakers
 - Browsable speaker lineup with portrait when supplied and branded initials otherwise
@@ -76,6 +84,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Database-allowlisted administrators switch between attendee and admin views in the same app
 - Responsive operations dashboard for current program state, attendee reachability, recent sends, and failures
 - Session create/edit/publish controls for event-day schedule corrections; admin time inputs always use Asia/Manila (PHT)
+- Seat controls in the same session editor: a capacity, the count registered off-app, and a switch that closes seats. A live preview shows the exact badge attendees will read. Capacity can never be set below the seats attendees already hold
 - Unpublished, not-started drafts can be permanently deleted after confirmation; published or started sessions are unpublished instead
 - Immediate title/body notifications sent to everyone or explicitly selected attendees
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
@@ -95,6 +104,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Audited organizer announcements and explicitly confirmed manual status notifications
 - Organizer announcements managed through the protected admin composer and audited database RPC
 - Persisted unread alert count and session-linked alert detail access
+- Workshop seat capacity: admin-set seat numbers, an attendee-facing fullness badge, and atomic seat claim/release
 - QR-based social networking (LinkedIn, Instagram, Facebook, GitHub)
 - Speaker lineup
 - Event website quick link and local Photo Booth
@@ -103,7 +113,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 
 ### Out of Scope
 
-- Workshop registration, capacity, and slot management (including the BuilderCards activity) remain out of scope
+- Full workshop registration remains out of scope: no waitlists, no payment, no QR check-in, and no attendee roster in the app. Seat capacity and seat claiming are in scope and described above; the organiser export stays the source of truth for who registered off-app
 - Speaker management and other general content-management tooling outside the approved session editor
 - Scheduled notification resends, external notification links, and multi-admin approval
 - Attendee editing, access suspension, deletion, or pass-type management

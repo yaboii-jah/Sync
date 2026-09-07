@@ -500,6 +500,32 @@ export type Database = {
         }
         Relationships: []
       }
+      session_seat_claims: {
+        Row: {
+          claimed_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_seat_claims_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_speakers: {
         Row: {
           session_id: string
@@ -534,13 +560,17 @@ export type Database = {
         Row: {
           actual_ended_at: string | null
           actual_started_at: string | null
+          capacity: number | null
+          claimed_seats: number
           description: string | null
           end_time: string
           event_id: string
           id: string
           published: boolean
           reminder_sent_at: string | null
+          reserved_seats: number
           room: string | null
+          seats_closed: boolean
           start_time: string
           status: string
           status_override: string | null
@@ -551,13 +581,17 @@ export type Database = {
         Insert: {
           actual_ended_at?: string | null
           actual_started_at?: string | null
+          capacity?: number | null
+          claimed_seats?: number
           description?: string | null
           end_time: string
           event_id: string
           id?: string
           published?: boolean
           reminder_sent_at?: string | null
+          reserved_seats?: number
           room?: string | null
+          seats_closed?: boolean
           start_time: string
           status?: string
           status_override?: string | null
@@ -568,13 +602,17 @@ export type Database = {
         Update: {
           actual_ended_at?: string | null
           actual_started_at?: string | null
+          capacity?: number | null
+          claimed_seats?: number
           description?: string | null
           end_time?: string
           event_id?: string
           id?: string
           published?: boolean
           reminder_sent_at?: string | null
+          reserved_seats?: number
           room?: string | null
+          seats_closed?: boolean
           start_time?: string
           status?: string
           status_override?: string | null
@@ -748,6 +786,16 @@ export type Database = {
           push_device_count: number
         }[]
       }
+      admin_set_session_capacity: {
+        Args: {
+          mutation_request_id: string
+          session_capacity: number | null
+          session_reserved_seats: number
+          session_seats_closed: boolean
+          target_session_id: string
+        }
+        Returns: string
+      }
       admin_set_session_published: {
         Args: {
           mutation_request_id: string
@@ -784,6 +832,10 @@ export type Database = {
         }
         Returns: string
       }
+      claim_session_seat: {
+        Args: { target_session_id: string }
+        Returns: Json
+      }
       current_user_is_admin: { Args: never; Returns: boolean }
       get_own_networking_card: {
         Args: never
@@ -808,6 +860,10 @@ export type Database = {
       set_networking_card_template: {
         Args: { p_template: number }
         Returns: undefined
+      }
+      release_session_seat: {
+        Args: { target_session_id: string }
+        Returns: Json
       }
       mark_alerts_read: { Args: never; Returns: undefined }
       merch_claim_attendee: {

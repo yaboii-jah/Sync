@@ -42,6 +42,92 @@ export async function toggleBookmark(
   return result;
 }
 
+export interface SeatActionResult {
+  error?: string;
+  /** Whether the attendee holds a seat after the call. */
+  held?: boolean;
+  taken?: number;
+  capacity?: number | null;
+  seatsClosed?: boolean;
+  /** Saved sessions this one overlaps, because a seat also saves to My Flow. */
+  conflicts?: BookmarkConflict[];
+}
+
+/**
+ * The database's seat vocabulary, said the way an attendee reads it. The
+ * losing side of a race for the last seat lands on "just went", which is what
+ * actually happened, rather than a generic failure.
+ */
+const SEAT_ERRORS: Array<[string, string]> = [
+  ["not signed in", "Not signed in"],
+  ["session not found", "Session not found"],
+  ["session does not have seats", "This session does not have seats"],
+  ["no seats left", "That seat just went"],
+  ["seats are closed", "Seats are closed for this session"],
+  ["finished sessions", "This session has already finished"],
+];
+
+function seatErrorMessage(message: string, fallback: string): string {
+  const lowered = message.toLowerCase();
+  for (const [needle, friendly] of SEAT_ERRORS) {
+    if (lowered.includes(needle)) return friendly;
+  }
+  return fallback;
+}
+
+function parseSeatResult(value: unknown): SeatActionResult | null {
+  if (!isRecord(value) || typeof value.held !== "boolean") return null;
+  if (typeof value.taken !== "number") return null;
+  if (value.capacity !== null && typeof value.capacity !== "number") return null;
+
+  const conflicts = parseConflicts(value.conflicts);
+  if (!conflicts) return null;
+
+  return {
+    held: value.held,
+    taken: value.taken,
+    capacity: value.capacity,
+    seatsClosed:
+      typeof value.seats_closed === "boolean" ? value.seats_closed : undefined,
+    conflicts,
+  };
+}
+
+async function changeSeat(
+  sessionId: string,
+  rpc: "claim_session_seat" | "release_session_seat",
+  fallbackError: string,
+): Promise<SeatActionResult> {
+  if (!isUuid(sessionId)) return { error: "Invalid session" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(rpc, {
+    target_session_id: sessionId,
+  });
+
+  if (error) return { error: seatErrorMessage(error.message, fallbackError) };
+
+  const result = parseSeatResult(data);
+  if (!result) return { error: fallbackError };
+
+  revalidatePath("/home");
+  return result;
+}
+
+export async function claimSeat(sessionId: string): Promise<SeatActionResult> {
+  return changeSeat(sessionId, "claim_session_seat", "Could not take that seat");
+}
+
+export async function releaseSeat(
+  sessionId: string,
+): Promise<SeatActionResult> {
+  return changeSeat(
+    sessionId,
+    "release_session_seat",
+    "Could not release that seat",
+  );
+}
+
 export async function savePushSubscription(
   subscription: StoredPushSubscription,
 ): Promise<ToggleBookmarkResult> {
@@ -170,12 +256,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseBookmarkResult(value: unknown): ToggleBookmarkResult | null {
-  if (!isRecord(value) || typeof value.bookmarked !== "boolean") return null;
-  if (!Array.isArray(value.conflicts)) return null;
+/**
+ * Overlap details come back the same shape from the bookmark RPC and the seat
+ * RPC, because taking a seat is also a My Flow save. Null means the payload
+ * was not the shape it claims to be, which both callers treat as a failure.
+ */
+function parseConflicts(value: unknown): BookmarkConflict[] | null {
+  if (!Array.isArray(value)) return null;
 
   const conflicts: BookmarkConflict[] = [];
-  for (const conflict of value.conflicts) {
+  for (const conflict of value) {
     if (!isRecord(conflict)) return null;
     if (
       typeof conflict.id !== "string" ||
@@ -194,6 +284,15 @@ function parseBookmarkResult(value: unknown): ToggleBookmarkResult | null {
       room: conflict.room,
     });
   }
+
+  return conflicts;
+}
+
+function parseBookmarkResult(value: unknown): ToggleBookmarkResult | null {
+  if (!isRecord(value) || typeof value.bookmarked !== "boolean") return null;
+
+  const conflicts = parseConflicts(value.conflicts);
+  if (!conflicts) return null;
 
   return { bookmarked: value.bookmarked, conflicts };
 }
