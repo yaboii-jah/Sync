@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
-import { createClient } from "./server";
-import { getAuthenticatedClaims } from "./auth";
 import { isAdmin } from "./queries/admin";
+import { getRequestAuth } from "./request-auth";
 
 export async function currentUserIsAdmin(): Promise<boolean> {
-  const supabase = await createClient();
-  const claims = await getAuthenticatedClaims(supabase);
+  const { supabase, claims } = await getRequestAuth();
   if (!claims) return false;
 
   try {
@@ -16,8 +14,7 @@ export async function currentUserIsAdmin(): Promise<boolean> {
 }
 
 export async function requireAdmin(): Promise<void> {
-  const supabase = await createClient();
-  const claims = await getAuthenticatedClaims(supabase);
+  const { supabase, claims } = await getRequestAuth();
   if (!claims) redirect("/");
   if (!(await isAdmin(supabase))) redirect("/home");
 }

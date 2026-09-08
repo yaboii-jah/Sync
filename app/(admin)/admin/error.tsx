@@ -5,10 +5,10 @@ import { ErrorState } from "@/components/error-state";
 
 export default function AdminError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error("[admin] route error", error);
@@ -18,7 +18,7 @@ export default function AdminError({
     <ErrorState
       title="Operations unavailable"
       description="The admin data could not be loaded. No change was made."
-      reset={reset}
+      retry={retry}
       homeHref="/admin"
       homeLabel="Back to Admin"
     />

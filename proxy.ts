@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getAuthenticatedClaims } from "./lib/supabase/auth";
 import { getSupabaseEnv } from "./lib/supabase/env";
 
 const PUBLIC_PATHS = ["/", "/login", "/c"];
@@ -35,7 +36,7 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: claims } = await supabase.auth.getClaims();
+  const claims = await getAuthenticatedClaims(supabase);
   setPrivateNoStore(response);
 
   const { pathname } = request.nextUrl;
@@ -50,17 +51,30 @@ export async function proxy(request: NextRequest) {
      * the original query, so an OAuth code can never leak onto a public page.
      */
     redirectUrl.search = `?next=${encodeURIComponent(pathname)}`;
-    return setPrivateNoStore(NextResponse.redirect(redirectUrl));
+    return setPrivateNoStore(redirectWithCookies(redirectUrl, response));
   }
 
   if (claims && (pathname === "/" || pathname === "/login")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/home";
     redirectUrl.search = "";
-    return setPrivateNoStore(NextResponse.redirect(redirectUrl));
+    return setPrivateNoStore(redirectWithCookies(redirectUrl, response));
   }
 
   return response;
+}
+
+function redirectWithCookies(
+  redirectUrl: URL,
+  response: NextResponse,
+): NextResponse {
+  const redirectResponse = NextResponse.redirect(redirectUrl);
+
+  response.cookies
+    .getAll()
+    .forEach((cookie) => redirectResponse.cookies.set(cookie));
+
+  return redirectResponse;
 }
 
 function setPrivateNoStore(response: NextResponse): NextResponse {

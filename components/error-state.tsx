@@ -9,7 +9,7 @@ interface ErrorStateProps {
   title: string;
   description: string;
   reference?: string;
-  reset?: () => void;
+  retry?: () => void;
   homeHref?: string;
   homeLabel?: string;
 }
@@ -18,7 +18,7 @@ export function ErrorState({
   title,
   description,
   reference,
-  reset,
+  retry,
   homeHref = "/home",
   homeLabel = "Back to Home",
 }: ErrorStateProps) {
@@ -48,15 +48,15 @@ export function ErrorState({
           </Typography>
         </Card.Content>
         <Card.Footer className="mt-2 flex flex-col gap-2">
-          {reset ? (
-            <Button fullWidth onPress={reset}>
+          {retry ? (
+            <Button fullWidth onPress={retry}>
               <RotateCcw className="size-4" aria-hidden />
               Try again
             </Button>
           ) : null}
           <Link
             href={homeHref}
-            className={`${reset ? "border-border text-muted hover:text-foreground border" : "bg-accent text-accent-foreground hover:opacity-90"} w-full rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-opacity`}
+            className={`${retry ? "border-border text-muted hover:text-foreground border" : "bg-accent text-accent-foreground hover:opacity-90"} w-full rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-opacity`}
           >
             {homeLabel}
           </Link>
