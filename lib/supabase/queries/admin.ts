@@ -43,6 +43,13 @@ export interface AdminAttendee {
   push_device_count: number;
 }
 
+export interface AdminRaffleSnapshot {
+  attendees: Array<{ id: string; name: string }>;
+  excluded_blank_count: number;
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface AdminNotificationSummary {
   id: string;
   type: string;
@@ -168,6 +175,30 @@ export async function getAdminAttendee(
   return callRpc<AdminAttendeeDetail>(client, "admin_get_attendee", {
     target_attendee_id: attendeeId,
   });
+}
+
+function isRaffleSnapshot(value: unknown): value is AdminRaffleSnapshot {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const snapshot = value as { attendees?: unknown; excluded_blank_count?: unknown };
+  return typeof snapshot.excluded_blank_count === "number"
+    && Number.isInteger(snapshot.excluded_blank_count)
+    && snapshot.excluded_blank_count >= 0
+    && Array.isArray(snapshot.attendees)
+    && snapshot.attendees.every((attendee) => {
+      if (typeof attendee !== "object" || attendee === null || Array.isArray(attendee)) return false;
+      const entry = attendee as { id?: unknown; name?: unknown };
+      return typeof entry.id === "string"
+        && UUID_PATTERN.test(entry.id)
+        && typeof entry.name === "string";
+    });
+}
+
+export async function getAdminRaffleAttendees(
+  client: QueryClient,
+): Promise<AdminRaffleSnapshot> {
+  const snapshot = await callRpc<unknown>(client, "admin_get_raffle_attendees");
+  if (!isRaffleSnapshot(snapshot)) throw new Error("Malformed raffle attendee snapshot");
+  return snapshot;
 }
 
 export async function getAdminNotifications(

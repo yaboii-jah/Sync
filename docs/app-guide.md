@@ -24,8 +24,9 @@
    - 5.8 [Alerts Feed](#58-alerts-feed)
    - 5.9 [Connect Page (QR)](#59-connect-page--the-qr-networking-card)
    - 5.10 [Photo Booth](#510-photo-booth--three-shot-story-strip)
-   - 5.11 [More Page (Directory)](#511-more-page--directory-and-quick-links)
-   - 5.12 [Account Settings](#512-account-settings)
+    - 5.11 [More Page (Directory)](#511-more-page--directory-and-quick-links)
+    - 5.12 [Account Settings](#512-account-settings)
+    - 5.13 [Admin Raffle Export](#513-admin-raffle-export)
 6. [The Database in Plain English](#6-the-database-in-plain-english)
 7. [The Security Model (RLS)](#7-the-security-model--row-level-security)
 8. [The Automation (pg_cron)](#8-the-automation--the-minute-job-that-runs-the-event)
@@ -455,6 +456,18 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 **Under the hood:** the `updateProfile` server action validates the name and complete social-link set through the shared normalizers, updates **your own** profile rows, then calls `revalidatePath()` on `/home`, `/connect`, `/settings`, `/more` so Next.js re-renders any cached page that shows your data. The page also shows current-device push status: enabling requests permission and stores the browser subscription, while disabling unsubscribes the browser and removes its own subscription row. Unsupported or denied browsers show guidance instead of an actionable toggle. A shared history-aware Back button returns through in-app history and falls back to `/home`.
 
 **Files:** `app/(app)/settings/page.tsx`, `app/(app)/settings/actions.ts`, `components/settings/settings-form.tsx`, `components/settings/notification-settings.tsx`, `components/settings/settings-back-button.tsx`, `app/(app)/home/actions.ts`.
+
+---
+
+### 5.13 Admin Raffle Export
+
+**What an operator sees:** the protected Attendees page has an **Export raffle names** action. It opens a fresh preview containing one eligible attendee per line, ready to paste into Wheel of Names or download as a plain-text file.
+
+**Duplicate names:** distinct profiles keep distinct raffle chances. Names that match after case and whitespace normalization receive stable labels such as `Juan Dela Cruz #1` and `Juan Dela Cruz #2`. Those labels are clickable only inside the protected preview, where they open the existing attendee detail dialog to confirm the correct person. The copied/downloaded list contains labels only, never internal IDs.
+
+**Eligibility and privacy:** every non-admin profile with a usable name gets one entry; profiles with blank names are skipped and counted. Sync fetches this snapshot only when an admin opens the export workflow. The preview, copied text, and downloaded file contain displayed labels only, never internal IDs. The export is a read-only operation and does not persist or audit the snapshot.
+
+**Files:** `app/(admin)/admin/attendees/page.tsx`, `components/admin/attendee-directory.tsx`, `lib/raffle.ts`, `lib/supabase/queries/admin.ts`, `supabase/migrations/20260909125851_raffle_attendee_export.sql`.
 
 ---
 
