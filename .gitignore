@@ -43,3 +43,6 @@ env.download
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright CLI probe output
+.playwright-cli/

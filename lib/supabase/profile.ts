@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "./server";
-import { getAuthenticatedClaims } from "./auth";
+import { getRequestAuth } from "./request-auth";
 import type { Tables } from "./database.types";
 
 export type Profile = Tables<"profiles">;
@@ -16,8 +15,7 @@ export interface AuthenticatedProfile {
 }
 
 export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | null> {
-  const supabase = await createClient();
-  const claims = await getAuthenticatedClaims(supabase);
+  const { supabase, claims } = await getRequestAuth();
   if (!claims) return null;
 
   const user: AuthenticatedUser = {

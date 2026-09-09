@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/queries/admin";
 import { formatManilaTime, formatRelativeTime } from "@/lib/format";
 import { primaryLinkClass } from "@/components/ui/link-button";
+import { MetricCards } from "@/components/admin/metric-cards";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -64,26 +65,7 @@ export default async function AdminDashboardPage() {
         </Alert>
       ) : null}
 
-      <section className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={metric.label}>
-              <Card.Content className="py-5">
-                <div className="flex items-center justify-between gap-3">
-                  <Typography type="body-sm" color="muted">
-                    {metric.label}
-                  </Typography>
-                  <Icon className="text-muted size-5" aria-hidden />
-                </div>
-                <p className="mt-3 text-3xl font-semibold tabular-nums">
-                  {metric.value}
-                </p>
-              </Card.Content>
-            </Card>
-          );
-        })}
-      </section>
+      <MetricCards metrics={metrics} className="mt-8" />
 
       <section className="mt-8 grid gap-4 xl:grid-cols-2">
         <Card>
