@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -811,6 +811,7 @@ export type Database = {
         Args: { target_notification_id: string }
         Returns: Json
       }
+      admin_get_raffle_attendees: { Args: never; Returns: Json }
       admin_list_audit: {
         Args: { result_limit?: number; result_offset?: number }
         Returns: {

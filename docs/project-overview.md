@@ -98,6 +98,7 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
 - Manual Start, End, and Resume Auto controls persist against schedule automation; manual timestamps become the attendee-facing live state
 - Searchable read-only attendee directory, notification history, delivery results, and immutable mutation audit log
+- On-demand raffle-name export for every non-admin attendee profile: names only, one line per profile, with numbered duplicate-name entries that stay privately traceable in the admin workspace
 - `profiles.pass_type` remains dormant and is not used for targeting, authorization, filtering, or dashboard metrics
 
 ### Platform
