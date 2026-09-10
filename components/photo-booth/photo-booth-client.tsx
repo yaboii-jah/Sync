@@ -11,14 +11,91 @@ import {
   SwitchCamera,
 } from "lucide-react";
 
-const FRAME_URL = "/assets/event-frame-source.png";
 const OUTPUT_WIDTH = 1080;
 const OUTPUT_HEIGHT = 1920;
-const SLOT_LEFT = 72;
-const SLOT_WIDTH = 936;
-const SLOT_HEIGHT = 500;
-const SLOT_TOPS = [96, 628, 1160] as const;
-const SLOT_BORDER = 8;
+const FRAME_SOURCE_WIDTH = 941;
+const FRAME_SOURCE_HEIGHT = 1672;
+
+type PhotoSlot = { left: number; top: number; width: number; height: number };
+type FrameOverlay = PhotoSlot & { src: string };
+
+const FRAME_1_SLOTS: readonly PhotoSlot[] = [
+  { left: 124, top: 99, width: 822, height: 459 },
+  { left: 131, top: 641, width: 822, height: 459 },
+  { left: 131, top: 1182, width: 822, height: 459 },
+];
+const FRAME_2_SLOTS: readonly PhotoSlot[] = [
+  { left: 124, top: 99, width: 822, height: 459 },
+  { left: 131, top: 641, width: 822, height: 459 },
+  { left: 131, top: 1182, width: 822, height: 459 },
+];
+const FRAME_2_MASCOT_OVERLAYS: readonly FrameOverlay[] = [
+  {
+    src: "/assets/event-frame-2-top-overlay.png",
+    left: 790,
+    top: 330,
+    width: 142,
+    height: 250,
+  },
+  {
+    src: "/assets/event-frame-2-left-overlay.png",
+    left: 0,
+    top: 800,
+    width: 190,
+    height: 235,
+  },
+];
+const FRAME_2_OVERLAYS: readonly FrameOverlay[] = [
+  ...FRAME_2_MASCOT_OVERLAYS,
+  {
+    src: "/assets/event-frame-2-title-overlay.png",
+    left: 190,
+    top: 1455,
+    width: 560,
+    height: 135,
+  },
+  {
+    src: "/assets/event-frame-2-date-overlay.png",
+    left: 370,
+    top: 1612,
+    width: 200,
+    height: 50,
+  },
+];
+const FRAME_1_OVERLAYS: readonly FrameOverlay[] = [
+  ...FRAME_2_MASCOT_OVERLAYS,
+  {
+    src: "/assets/event-frame-1-date-overlay.png",
+    left: 380,
+    top: 1632,
+    width: 180,
+    height: 36,
+  },
+];
+
+const FRAME_OPTIONS = [
+  {
+    id: "frame-1",
+    label: "Frame 1",
+    src: "/assets/event-frame-source.png",
+    slots: FRAME_1_SLOTS,
+    slotBorder: 6,
+    slotBorderColor: "#003c70",
+    overlays: FRAME_1_OVERLAYS,
+  },
+  {
+    id: "frame-2",
+    label: "Frame 2",
+    src: "/assets/event-frame-source-2.png",
+    slots: FRAME_2_SLOTS,
+    slotBorder: 6,
+    slotBorderColor: "#003c70",
+    overlays: FRAME_2_OVERLAYS,
+  },
+] as const;
+type FrameId = (typeof FRAME_OPTIONS)[number]["id"];
+
+const DEFAULT_FRAME_ID: FrameId = "frame-1";
 
 type CameraFacing = "user" | "environment";
 type BoothStage = "intro" | "starting" | "capture" | "countdown" | "composing" | "review";
@@ -34,6 +111,10 @@ function copySlots(slots: SlotPhotos): SlotPhotos {
 
 function hasCompletedPhotos(slots: SlotPhotos): slots is CompletedPhotos {
   return slots.every((slot): slot is string => slot !== null);
+}
+
+function getFrame(frameId: FrameId) {
+  return FRAME_OPTIONS.find((frame) => frame.id === frameId) ?? FRAME_OPTIONS[0];
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -108,6 +189,7 @@ function getCameraError(error: unknown): string {
 
 interface PhotoStripProps {
   slots: SlotPhotos;
+  frameId: FrameId;
   activeSlot?: number;
   cameraFacing?: CameraFacing;
   countdown?: number | null;
@@ -118,6 +200,7 @@ interface PhotoStripProps {
 
 function PhotoStrip({
   slots,
+  frameId,
   activeSlot,
   cameraFacing,
   countdown,
@@ -125,60 +208,132 @@ function PhotoStrip({
   showCamera,
   videoRef,
 }: PhotoStripProps) {
+  const frame = getFrame(frameId);
+
   return (
     <div className="relative aspect-[9/16] w-full overflow-hidden rounded-xl bg-surface-secondary">
-      <img src={FRAME_URL} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
-      {slots.map((slot, index) => (
-        <div
-          key={index}
-          className={`absolute overflow-hidden border-[3px] border-white bg-white ${
-            activeSlot === index ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""
-          }`}
+      <img src={frame.src} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
+      {slots.map((photo, index) => {
+        const slot = frame.slots[index];
+        const border = frame.slotBorder;
+        const outerWidth = slot.width + border * 2;
+        const outerHeight = slot.height + border * 2;
+
+        return (
+          <div
+            key={index}
+            className={`absolute overflow-hidden ${
+              activeSlot === index ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""
+            }`}
+            style={{
+              left: `${((slot.left - border) / OUTPUT_WIDTH) * 100}%`,
+              top: `${((slot.top - border) / OUTPUT_HEIGHT) * 100}%`,
+              width: `${(outerWidth / OUTPUT_WIDTH) * 100}%`,
+              height: `${(outerHeight / OUTPUT_HEIGHT) * 100}%`,
+              backgroundColor: frame.slotBorderColor,
+            }}
+          >
+            <div
+              className="absolute overflow-hidden bg-white"
+              style={{
+                left: `${(border / outerWidth) * 100}%`,
+                top: `${(border / outerHeight) * 100}%`,
+                width: `${(slot.width / outerWidth) * 100}%`,
+                height: `${(slot.height / outerHeight) * 100}%`,
+              }}
+            >
+              {activeSlot === index && showCamera && videoRef ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className={`size-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+                />
+              ) : photo ? (
+                <img
+                  src={photo}
+                  alt={`Photo ${index + 1}`}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <span className="text-muted flex size-full items-center justify-center text-sm font-medium">
+                  Photo {index + 1}
+                </span>
+              )}
+              {activeSlot === index && countdown ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                  <span className="text-7xl font-bold tabular-nums text-white">{countdown}</span>
+                </div>
+              ) : null}
+              {activeSlot === index && isComposing ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35 px-3 text-center">
+                  <span className="text-sm font-medium text-white">Preparing your photo</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        );
+      })}
+      {frame.overlays.map((overlay) => (
+        <img
+          key={overlay.src}
+          src={overlay.src}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute z-20"
           style={{
-            left: "6.6667%",
-            top: `${(SLOT_TOPS[index] / OUTPUT_HEIGHT) * 100}%`,
-            width: "86.6667%",
-            height: `${(SLOT_HEIGHT / OUTPUT_HEIGHT) * 100}%`,
+            left: `${(overlay.left / FRAME_SOURCE_WIDTH) * 100}%`,
+            top: `${(overlay.top / FRAME_SOURCE_HEIGHT) * 100}%`,
+            width: `${(overlay.width / FRAME_SOURCE_WIDTH) * 100}%`,
+            height: `${(overlay.height / FRAME_SOURCE_HEIGHT) * 100}%`,
           }}
-        >
-          {activeSlot === index && showCamera && videoRef ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className={`size-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
-            />
-          ) : slot ? (
-            <img
-              src={slot}
-              alt={`Photo ${index + 1}`}
-              className="size-full object-cover"
-            />
-          ) : (
-            <span className="text-muted flex size-full items-center justify-center text-sm font-medium">
-              Photo {index + 1}
-            </span>
-          )}
-          {activeSlot === index && countdown ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-              <span className="text-7xl font-bold tabular-nums text-white">{countdown}</span>
-            </div>
-          ) : null}
-          {activeSlot === index && isComposing ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/35 px-3 text-center">
-              <span className="text-sm font-medium text-white">Preparing your photo</span>
-            </div>
-          ) : null}
-        </div>
+        />
       ))}
     </div>
+  );
+}
+
+function FrameSelector({
+  selectedFrameId,
+  onChange,
+}: {
+  selectedFrameId: FrameId;
+  onChange: (frameId: FrameId) => void;
+}) {
+  return (
+    <Card variant="secondary" className="p-3">
+      <Card.Content className="gap-3">
+        <div>
+          <Typography type="body-sm" weight="medium">
+            Choose a frame
+          </Typography>
+          <Typography type="body-xs" color="muted">
+            Select a look before capture or while reviewing.
+          </Typography>
+        </div>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Choose a photo frame">
+          {FRAME_OPTIONS.map((frame) => (
+            <Button
+              key={frame.id}
+              variant={selectedFrameId === frame.id ? "primary" : "secondary"}
+              className="min-w-0"
+              aria-pressed={selectedFrameId === frame.id}
+              onPress={() => onChange(frame.id)}
+            >
+              {frame.label}
+            </Button>
+          ))}
+        </div>
+      </Card.Content>
+    </Card>
   );
 }
 
 export function PhotoBoothClient() {
   const [stage, setStage] = useState<BoothStage>("intro");
   const [slots, setSlots] = useState<SlotPhotos>(EMPTY_SLOTS);
+  const [selectedFrameId, setSelectedFrameId] = useState<FrameId>(DEFAULT_FRAME_ID);
   const [selectedSlot, setSelectedSlot] = useState(0);
   const [cameraFacing, setCameraFacing] = useState<CameraFacing>("user");
   const [cameraDevices, setCameraDevices] = useState<CameraDevice[]>([]);
@@ -247,17 +402,25 @@ export function PhotoBoothClient() {
     if (videoRef.current) videoRef.current.srcObject = null;
   }
 
-  async function composeStrip(completedSlots: CompletedPhotos) {
+  async function composeStrip(
+    completedSlots: CompletedPhotos,
+    frameId: FrameId = selectedFrameId,
+  ) {
     const requestId = compositionRequestRef.current + 1;
     compositionRequestRef.current = requestId;
+    replaceResult(null);
     setStage("composing");
     setError(null);
 
     try {
+      const selectedFrame = getFrame(frameId);
       const [frame, ...photos] = await Promise.all([
-        loadImage(FRAME_URL),
+        loadImage(selectedFrame.src),
         ...completedSlots.map((slot) => loadImage(slot)),
       ]);
+      const overlays = await Promise.all(
+        selectedFrame.overlays.map((overlay) => loadImage(overlay.src)),
+      );
       const canvas = document.createElement("canvas");
       canvas.width = OUTPUT_WIDTH;
       canvas.height = OUTPUT_HEIGHT;
@@ -268,19 +431,32 @@ export function PhotoBoothClient() {
       context.imageSmoothingQuality = "high";
       drawCover(context, frame, frame.width, frame.height, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-      SLOT_TOPS.forEach((top, index) => {
+      selectedFrame.slots.forEach((slot, index) => {
         const photo = photos[index];
-        context.fillStyle = "#ffffff";
-        context.fillRect(
-          SLOT_LEFT - SLOT_BORDER,
-          top - SLOT_BORDER,
-          SLOT_WIDTH + SLOT_BORDER * 2,
-          SLOT_HEIGHT + SLOT_BORDER * 2,
-        );
-        drawCover(context, photo, photo.width, photo.height, SLOT_LEFT, top, SLOT_WIDTH, SLOT_HEIGHT);
+        if (selectedFrame.slotBorder) {
+          context.fillStyle = selectedFrame.slotBorderColor;
+          context.fillRect(
+            slot.left - selectedFrame.slotBorder,
+            slot.top - selectedFrame.slotBorder,
+            slot.width + selectedFrame.slotBorder * 2,
+            slot.height + selectedFrame.slotBorder * 2,
+          );
+        }
+        drawCover(context, photo, photo.width, photo.height, slot.left, slot.top, slot.width, slot.height);
       });
 
-      const result = URL.createObjectURL(await canvasToJpeg(canvas, 0.92));
+      selectedFrame.overlays.forEach((overlay, index) => {
+        const image = overlays[index];
+        context.drawImage(
+          image,
+          (overlay.left / FRAME_SOURCE_WIDTH) * OUTPUT_WIDTH,
+          (overlay.top / FRAME_SOURCE_HEIGHT) * OUTPUT_HEIGHT,
+          (overlay.width / FRAME_SOURCE_WIDTH) * OUTPUT_WIDTH,
+          (overlay.height / FRAME_SOURCE_HEIGHT) * OUTPUT_HEIGHT,
+        );
+      });
+
+      const result = URL.createObjectURL(await canvasToJpeg(canvas, 0.95));
       if (!isMountedRef.current || compositionRequestRef.current !== requestId) {
         URL.revokeObjectURL(result);
         return;
@@ -494,6 +670,15 @@ export function PhotoBoothClient() {
     link.click();
   }
 
+  function handleFrameChange(frameId: FrameId) {
+    if (frameId === selectedFrameId) return;
+
+    setSelectedFrameId(frameId);
+    if (stage === "review" && hasCompletedPhotos(slotsRef.current)) {
+      void composeStrip(slotsRef.current, frameId);
+    }
+  }
+
   useEffect(() => {
     const video = videoRef.current;
     const stream = streamRef.current;
@@ -557,6 +742,7 @@ export function PhotoBoothClient() {
   const completedCount = slots.filter((slot) => slot !== null).length;
   const cameraStage = stage === "capture" || stage === "countdown" || stage === "composing";
   const showCamera = cameraStage && cameraReady;
+  const canSelectFrame = stage === "intro" || stage === "review";
 
   return (
     <div className="flex flex-col gap-4">
@@ -569,6 +755,10 @@ export function PhotoBoothClient() {
         </Alert>
       ) : null}
 
+      {canSelectFrame ? (
+        <FrameSelector selectedFrameId={selectedFrameId} onChange={handleFrameChange} />
+      ) : null}
+
       {stage === "review" ? (
         <Card>
           <Card.Content className="flex flex-col gap-4 p-3">
@@ -579,7 +769,7 @@ export function PhotoBoothClient() {
                 className="w-full rounded-xl"
               />
             ) : (
-              <PhotoStrip slots={slots} />
+              <PhotoStrip frameId={selectedFrameId} slots={slots} />
             )}
             <div className="px-1">
               <Typography type="body-sm" weight="medium">
@@ -597,6 +787,7 @@ export function PhotoBoothClient() {
         <Card>
           <Card.Content className="flex flex-col gap-4 p-3">
             <PhotoStrip
+              frameId={selectedFrameId}
               slots={slots}
               activeSlot={selectedSlot}
               cameraFacing={cameraFacing}

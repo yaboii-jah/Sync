@@ -72,10 +72,10 @@ The application uses the event's dark AWS Student Community Day visual identity 
 - Link to the native app feedback form
 
 ### Photo Booth
-- An authenticated, local-only three-shot booth reached from More
+- An authenticated, local-only three-shot booth reached from More with two selectable event frames
 - Front camera by default with a front/rear switch where supported, plus an image-picker fallback
 - Three separately triggered three-second countdown captures arranged in a 9:16 event-branded story strip
-- High-quality JPEG download; attendees can retake an individual slot without losing the other two
+- High-quality JPEG download; attendees can switch frames during review and retake an individual slot without losing the other two
 - Camera footage and source/result images remain in browser memory only and are never uploaded or persisted
 
 ### Account Settings
