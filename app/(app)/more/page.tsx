@@ -4,7 +4,6 @@ import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getSpeakersSponsors } from "@/lib/supabase/queries/directory";
 import { getQuickLinks } from "@/lib/supabase/queries/quick-links";
-import { isPhotoBoothEnabled } from "@/lib/feature-flags";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { DirectoryClient } from "@/components/more/directory-client";
@@ -22,7 +21,6 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
-  const photoBoothEnabled = isPhotoBoothEnabled();
   const speakers = people.filter((person) => person.role === "speaker");
 
   return (
@@ -36,10 +34,7 @@ export default async function MorePage() {
             <Typography.Heading level={2} className="text-base">
               Quick links
             </Typography.Heading>
-            <QuickLinksClient
-              quickLinks={quickLinks}
-              photoBoothEnabled={photoBoothEnabled}
-            />
+            <QuickLinksClient quickLinks={quickLinks} />
           </section>
         ) : null}
 

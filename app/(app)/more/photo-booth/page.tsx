@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
-import { currentUserIsAdmin } from "@/lib/supabase/admin-auth";
-import { isPhotoBoothEnabled } from "@/lib/feature-flags";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { PhotoBoothClient } from "@/components/photo-booth/photo-booth-client";
@@ -13,10 +10,6 @@ export const metadata: Metadata = {
 };
 
 export default async function PhotoBoothPage() {
-  if (!isPhotoBoothEnabled() && !(await currentUserIsAdmin())) {
-    redirect("/more");
-  }
-
   await requireCompleteProfile();
 
   return (
