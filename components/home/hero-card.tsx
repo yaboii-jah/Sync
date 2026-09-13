@@ -6,11 +6,7 @@ import type {
   EventInfo,
   SessionWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
-import {
-  formatManilaDate,
-  formatManilaTime,
-  formatTimeRange,
-} from "@/lib/format";
+import { formatEventDate, formatEventTime, formatEventTimeRange } from "@/lib/format";
 import { getLiveSessions, getNextSessions } from "@/lib/program-flow";
 
 interface HeroCardProps {
@@ -25,7 +21,7 @@ const heroSurface =
   "event-hero squircle relative overflow-hidden rounded-[28px] p-5 sm:p-6";
 const heroTitle = "text-foreground text-2xl font-semibold tracking-tight";
 const heroMuted = "text-muted";
-const fallbackVenue = "Asia Pacific College";
+const fallbackVenue = "Venue TBA";
 
 /**
  * Google Maps search for the event venue. The name is percent-encoded, so a
@@ -73,11 +69,13 @@ function HeroSessionItem({
   session,
   now,
   live,
+  timeZone,
   onOpenSession,
 }: {
   session: SessionWithSpeakers;
   now: number;
   live: boolean;
+  timeZone: string;
   onOpenSession?: (session: SessionWithSpeakers) => void;
 }) {
   const sessionStart = new Date(session.start_time).getTime();
@@ -97,7 +95,7 @@ function HeroSessionItem({
         {session.title}
       </Typography>
       <Typography type="body-xs" className={`tabular-nums ${heroMuted}`}>
-        {formatTimeRange(session.start_time, session.end_time)}
+        {formatEventTimeRange(session.start_time, session.end_time, timeZone)}
         {" · "}
         {session.room ?? "TBA"}
       </Typography>
@@ -124,7 +122,7 @@ function HeroSessionItem({
               {remainingLabel(sessionEnd - now)}
             </span>
             <span className={`text-xs ${heroMuted}`}>
-              ends {formatManilaTime(session.end_time)}
+              ends {formatEventTime(session.end_time, timeZone)}
             </span>
           </div>
           {session.status_override && session.actual_started_at ? (
@@ -133,7 +131,7 @@ function HeroSessionItem({
               {new Intl.DateTimeFormat("en-PH", {
                 hour: "numeric",
                 minute: "2-digit",
-                timeZone: "Asia/Manila",
+                timeZone,
               }).format(new Date(session.actual_started_at))}
             </Typography>
           ) : null}
@@ -208,6 +206,7 @@ export function HeroCard({
                 session={session}
                 now={now}
                 live
+                timeZone={event.timezone}
                 onOpenSession={onOpenSession}
               />
             </div>
@@ -234,6 +233,7 @@ export function HeroCard({
                 session={session}
                 now={now}
                 live={false}
+                timeZone={event.timezone}
                 onOpenSession={onOpenSession}
               />
             </div>
@@ -277,7 +277,7 @@ export function HeroCard({
       </Card.Header>
         <Card.Content className="relative z-10 pt-4">
         <Typography type="body-xs" className={heroMuted}>
-          {formatManilaDate(event.starts_at)}
+          {formatEventDate(event.starts_at, event.timezone)}
         </Typography>
         <div
           className="grid grid-cols-4 gap-2"

@@ -6,6 +6,7 @@ import { getAuthenticatedClaims } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { StoredPushSubscription } from "@/lib/push";
 import type { BookmarkConflict } from "@/lib/program-flow";
+import { eventHomePath, normalizeEventSlug } from "@/lib/events/routing";
 
 export interface ToggleBookmarkResult {
   error?: string;
@@ -14,10 +15,15 @@ export interface ToggleBookmarkResult {
 }
 
 export async function toggleBookmark(
+  eventId: string,
   sessionId: string,
+  eventSlug?: string,
 ): Promise<ToggleBookmarkResult> {
   const supabase = await createClient();
-  if (!isUuid(sessionId)) return { error: "Invalid session" };
+  if (!isUuid(eventId) || !isUuid(sessionId)) return { error: "Invalid session" };
+  if (!(await sessionBelongsToEvent(supabase, eventId, sessionId))) {
+    return { error: "Session not found" };
+  }
 
   const { data, error } = await supabase.rpc("toggle_my_flow_bookmark", {
     target_session_id: sessionId,
@@ -38,7 +44,7 @@ export async function toggleBookmark(
   const result = parseBookmarkResult(data);
   if (!result) return { error: "Could not update your schedule" };
 
-  revalidatePath("/home");
+  revalidateEventHome(eventSlug);
   return result;
 }
 
@@ -94,13 +100,18 @@ function parseSeatResult(value: unknown): SeatActionResult | null {
 }
 
 async function changeSeat(
+  eventId: string,
   sessionId: string,
+  eventSlug: string | undefined,
   rpc: "claim_session_seat" | "release_session_seat",
   fallbackError: string,
 ): Promise<SeatActionResult> {
-  if (!isUuid(sessionId)) return { error: "Invalid session" };
+  if (!isUuid(eventId) || !isUuid(sessionId)) return { error: "Invalid session" };
 
   const supabase = await createClient();
+  if (!(await sessionBelongsToEvent(supabase, eventId, sessionId))) {
+    return { error: "Session not found" };
+  }
   const { data, error } = await supabase.rpc(rpc, {
     target_session_id: sessionId,
   });
@@ -110,19 +121,23 @@ async function changeSeat(
   const result = parseSeatResult(data);
   if (!result) return { error: fallbackError };
 
-  revalidatePath("/home");
+  revalidateEventHome(eventSlug);
   return result;
 }
 
-export async function claimSeat(sessionId: string): Promise<SeatActionResult> {
-  return changeSeat(sessionId, "claim_session_seat", "Could not take that seat");
+export async function claimSeat(eventId: string, sessionId: string, eventSlug?: string): Promise<SeatActionResult> {
+  return changeSeat(eventId, sessionId, eventSlug, "claim_session_seat", "Could not take that seat");
 }
 
 export async function releaseSeat(
+  eventId: string,
   sessionId: string,
+  eventSlug?: string,
 ): Promise<SeatActionResult> {
   return changeSeat(
+    eventId,
     sessionId,
+    eventSlug,
     "release_session_seat",
     "Could not release that seat",
   );
@@ -250,6 +265,21 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
   );
+}
+
+async function sessionBelongsToEvent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  eventId: string,
+  sessionId: string,
+): Promise<boolean> {
+  const result = await supabase.from("sessions").select("id").eq("id", sessionId).eq("event_id", eventId).maybeSingle();
+  return !result.error && result.data !== null;
+}
+
+function revalidateEventHome(eventSlug?: string): void {
+  revalidatePath("/home");
+  const slug = eventSlug && normalizeEventSlug(eventSlug);
+  if (slug) revalidatePath(eventHomePath(slug));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-14",
+  "projectType": "existing Next.js event platform",
+  "preserved": {
+    "font": "Geist with existing local Perandory retained for the legacy tenant",
+    "palette": "legacy AWS tokens remain unchanged outside .tenant-platform",
+    "framework": "Next.js 16 App Router, Tailwind CSS 4, React Aria primitives",
+    "spacing": "existing 4px-derived scale"
+  },
+  "introduced": {
+    "macrostructure": "Index-First",
+    "theme": "Cobalt adapted to Geist",
+    "navigation": "N9 edge-aligned minimal",
+    "footer": "Ft2 inline rule"
+  }
+}

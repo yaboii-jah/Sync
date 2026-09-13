@@ -5,6 +5,8 @@ import { getSafeInternalPath } from "@/lib/auth-redirect";
 import { getAuthenticatedClaims } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SignInButton } from "@/components/auth/sign-in-button";
+import { PlatformLanding } from "@/components/platform/platform-landing";
+import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
 
 interface LandingPageProps {
   searchParams: Promise<{
@@ -56,7 +58,11 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
 
   const supabase = await createClient();
   const claims = await getAuthenticatedClaims(supabase);
-  if (claims) redirect("/home");
+  const multiTenantEnabled = isMultiTenantPlatformEnabled();
+  if (claims) redirect(multiTenantEnabled ? "/events" : "/home");
+  if (multiTenantEnabled) {
+    return <PlatformLanding next={next ? getSafeInternalPath(next) : undefined} error={error} />;
+  }
 
   return (
     <main

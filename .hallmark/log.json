@@ -1,0 +1,11 @@
+[
+  {
+    "date": "2026-09-14",
+    "macrostructure": "Index-First",
+    "theme": "Cobalt",
+    "enrichment": "none",
+    "nav": "N9",
+    "footer": "Ft2",
+    "brief": "A neutral event index, public event page, and scoped attendee route for the feature-flagged multi-tenant platform."
+  }
+]

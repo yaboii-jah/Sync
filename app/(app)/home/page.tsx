@@ -6,26 +6,33 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getBookmarkedSessionIds,
   getClaimedSessionIds,
-  getEvent,
+  getEventById,
   getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { AppHeader } from "@/components/app-header";
 import { HomeClient } from "@/components/home/home-client";
 import { PushGate } from "@/components/push/push-gate";
+import { getUserEvents } from "@/lib/supabase/queries/events";
+import { selectPreferredEvent } from "@/lib/events/routing";
+import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
+import { redirect } from "next/navigation";
 
 function getServerNow(): number {
   return Date.now();
 }
 
 export default async function HomePage() {
-  await requireCompleteProfile();
+  const { user } = await requireCompleteProfile();
+  if (isMultiTenantPlatformEnabled()) redirect("/events");
 
   const supabase = await createClient();
+  const preferredEvent = selectPreferredEvent(await getUserEvents(supabase, user.id));
+  const eventId = preferredEvent?.id;
   const [event, sessions, bookmarks, claims] = await Promise.all([
-    getEvent(supabase),
-    getPublishedSessionsWithSpeakers(supabase),
-    getBookmarkedSessionIds(supabase),
-    getClaimedSessionIds(supabase),
+    eventId ? getEventById(supabase, eventId) : Promise.resolve(null),
+    eventId ? getPublishedSessionsWithSpeakers(supabase, eventId) : Promise.resolve([]),
+    eventId ? getBookmarkedSessionIds(supabase, eventId) : Promise.resolve([]),
+    eventId ? getClaimedSessionIds(supabase, eventId) : Promise.resolve([]),
   ]);
   const initialNow = getServerNow();
 
@@ -43,6 +50,7 @@ export default async function HomePage() {
               initialBookmarks={bookmarks}
               initialClaims={claims}
               initialNow={initialNow}
+              eventSlug={event.slug}
             />
           </div>
         ) : (

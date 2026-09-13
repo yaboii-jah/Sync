@@ -8,7 +8,7 @@ Convert Sync from the completed AWS Student Community Day Mega Manila 2026 compa
 
 ## Current phase
 
-Phase 1 — tenant foundation, audited operations, and the event-program data boundary are locally verified; all three migrations remain unapplied remotely.
+Phase 1 — tenant foundation, audited operations, tenant-scoped program data, and the first event-context application routes are locally verified; all three migrations remain unapplied remotely.
 
 ## Completed
 
@@ -67,11 +67,22 @@ Phase 1 — tenant foundation, audited operations, and the event-program data bo
 - Added owner/admin/support speaker and link RPCs, session quotas, idempotency, suspension behavior, archived attendee reads, and Realtime publication for speaker/link changes.
 - Replayed the viable migration chain from scratch, regenerated `lib/supabase/database.types.ts`, and added 38 tenant-program pgTAP assertions.
 
+### 2026-09-14 — Event-context routing and attendee vertical slice
+
+- Added a feature-flagged `/events` member index, unlisted public `/e/[slug]` program page with explicit joining, and authenticated `/e/[slug]/home` attendee route.
+- Replaced implicit first-event application reads with explicit event IDs, including sessions, bookmarks, seat claims, and legacy route selection.
+- Bound bookmark and seat mutations to a validated event/session pair before invoking database RPCs, preventing route-context confusion across tenants.
+- Added tenant-filtered Realtime subscriptions for event program tables; seat count changes continue through the scoped sessions subscription.
+- Added reusable event access/public-program queries, deterministic event selection, slug/path helpers, event-time-zone display helpers, and four routing tests.
+- Added a generic Sync landing experience and metadata behind the server-only flag while preserving the archived AWS presentation when the flag is disabled.
+- Added scoped Cobalt design tokens and Hallmark design memory for the new platform surfaces; the legacy tenant theme remains unchanged.
+
 ## Verification evidence
 
-- `npm test`: 38 tests passed.
+- `npm test`: 42 tests passed.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
 - `npm run build`: passed on Next.js 16.3.2.
+- `npx tsc --noEmit`: passed after the event-context routing unit.
 - `npx supabase db push --linked --dry-run`: recognized the foundation, audited-operations, and tenant-program migrations in order and did not mutate the linked project.
 - `npx supabase db lint --local --level warning`: no schema errors or warnings.
 - `git diff --check`: passed.
@@ -79,20 +90,20 @@ Phase 1 — tenant foundation, audited operations, and the event-program data bo
 
 ## In progress
 
-- Event-scoped application queries and routes are the next prerequisite for enabling multi-event creation.
+- Event owner/admin management routes and event creation remain the next prerequisite for enabling the multi-tenant flag.
 
 ## Next implementation unit
 
-1. Add event selection plus event-scoped application queries, Realtime filters, and route acceptance coverage behind the disabled feature flag.
-2. Replace or retire the legacy global `admin_get_dashboard` path before any multi-event route can consume it.
-3. Apply all three verified Phase 1 migrations to a preview/staging project before the linked production project.
+1. Add `/manage/[slug]` owner/admin routes and audited event creation using the existing tenant-operation RPCs.
+2. Replace or retire the legacy global `admin_get_dashboard` path before any multi-event management route can consume it.
+3. Add browser-level route acceptance for two simultaneous tenants, then apply all three verified Phase 1 migrations to preview/staging before production.
 
 ## Known migration risks
 
 - The historical migration chain contains a duplicate social-profile table creation around `20260902120000_social_profiles.sql`; do not edit applied migrations.
 - Remote `merch_*` objects are not represented in the intended product model and must not be deleted or adopted without an explicit follow-up decision.
 - Supabase migration squashing omits some DML, cron, Storage bucket, and secret configuration; a future baseline requires a fresh reset test and manual review.
-- Current production routes and data remain single-event until the feature flag and scoped route acceptance suite are complete.
+- Current production behavior remains single-event while `MULTI_TENANT_PLATFORM_ENABLED` is disabled; the new routes are locally implemented but not yet enabled.
 
 ## Core acceptance gate
 

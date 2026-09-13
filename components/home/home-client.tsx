@@ -12,10 +12,10 @@ import type {
 import {
   getBookmarkedSessionIds,
   getClaimedSessionIds,
-  getEvent,
+  getEventById,
   getPublishedSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
-import { formatManilaDate, formatManilaTime } from "@/lib/format";
+import { formatEventDate, formatEventTime } from "@/lib/format";
 import {
   claimSeat,
   releaseSeat,
@@ -51,6 +51,8 @@ interface HomeClientProps {
   initialClaims: string[];
   /** Server-captured clock value used for the first hydrated render. */
   initialNow: number;
+  eventSlug?: string;
+  showVenueMap?: boolean;
 }
 
 export function HomeClient({
@@ -59,6 +61,8 @@ export function HomeClient({
   initialBookmarks,
   initialClaims,
   initialNow,
+  eventSlug,
+  showVenueMap = true,
 }: HomeClientProps) {
   const [event, setEvent] = useState(initialEvent);
   const [sessions, setSessions] = useState(initialSessions);
@@ -85,10 +89,10 @@ export function HomeClient({
     const client = createClient();
     const [nextEvent, nextSessions, nextBookmarks, nextClaims] =
       await Promise.all([
-        getEvent(client),
-        getPublishedSessionsWithSpeakers(client),
-        getBookmarkedSessionIds(client),
-        getClaimedSessionIds(client),
+        getEventById(client, event.id),
+        getPublishedSessionsWithSpeakers(client, event.id),
+        getBookmarkedSessionIds(client, event.id),
+        getClaimedSessionIds(client, event.id),
       ]);
 
     if (nextEvent) setEvent(nextEvent);
@@ -97,7 +101,7 @@ export function HomeClient({
     setClaims(new Set(nextClaims));
   }
 
-  useProgramFlowRealtime(() => {
+  useProgramFlowRealtime(event.id, () => {
     void startTransition(() => {
       void refetchProgramFlow();
     });
@@ -117,7 +121,7 @@ export function HomeClient({
     });
 
     startTransition(async () => {
-      const result: ToggleBookmarkResult = await toggleBookmark(sessionId);
+      const result: ToggleBookmarkResult = await toggleBookmark(event.id, sessionId, eventSlug);
       if (result.error) {
         toast("Could not update your flow", "error");
         setBookmarks((previous) => {
@@ -161,8 +165,8 @@ export function HomeClient({
     startTransition(async () => {
       const result =
         action === "claim"
-          ? await claimSeat(sessionId)
-          : await releaseSeat(sessionId);
+          ? await claimSeat(event.id, sessionId, eventSlug)
+          : await releaseSeat(event.id, sessionId, eventSlug);
 
       if (result.error) {
         toast(result.error, "error");
@@ -233,7 +237,7 @@ export function HomeClient({
                   color="muted"
                   className="pb-1 font-semibold"
                 >
-                  {formatManilaDate(group.startTime)}
+                  {formatEventDate(group.startTime, event.timezone)}
                 </Typography>
               ) : null}
               <div className="flex items-center justify-between gap-3 pb-2">
@@ -242,7 +246,7 @@ export function HomeClient({
                     live ? "text-success" : "text-foreground"
                   }`}
                 >
-                  {formatManilaTime(group.startTime)}
+                  {formatEventTime(group.startTime, event.timezone)}
                 </span>
                 <div className="flex items-center gap-2">
                   {group.sessions.length > 1 ? (
@@ -306,7 +310,7 @@ export function HomeClient({
             now={now}
             onOpenSession={(target) => setActiveSessionId(target.id)}
           />
-          <VenueMap />
+          {showVenueMap ? <VenueMap /> : null}
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">
@@ -320,7 +324,7 @@ export function HomeClient({
             </Typography.Heading>
           </div>
           <Typography type="body-sm" color="muted" className="mt-1">
-            {formatManilaDate(event.starts_at)}
+            {formatEventDate(event.starts_at, event.timezone)}
           </Typography>
           <Tabs
             className="mt-4"

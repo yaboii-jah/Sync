@@ -13,8 +13,13 @@ export interface SpeakerLite {
 
 export interface EventInfo {
   id: string;
+  slug: string;
   name: string;
   theme: string;
+  theme_preset: string;
+  accent_color: string;
+  timezone: string;
+  lifecycle: string;
   venue: string | null;
   starts_at: string;
   ends_at: string;
@@ -88,14 +93,14 @@ function toSessionWithSpeakers(row: SessionRow): SessionWithSpeakers {
   };
 }
 
-export async function getEvent(
+export async function getEventById(
   client: QueryClient,
+  eventId: string,
 ): Promise<EventInfo | null> {
   const { data, error } = await client
     .from("events")
-    .select("id, name, theme, venue, starts_at, ends_at, status")
-    .order("starts_at")
-    .limit(1)
+    .select("id, slug, name, theme, theme_preset, accent_color, timezone, lifecycle, venue, starts_at, ends_at, status")
+    .eq("id", eventId)
     .maybeSingle();
 
   if (error) throw error;
@@ -104,9 +109,10 @@ export async function getEvent(
 
 async function getSessionsWithSpeakersInternal(
   client: QueryClient,
+  eventId: string,
   publishedOnly: boolean,
 ): Promise<SessionWithSpeakers[]> {
-  const baseQuery = client.from("sessions").select(SESSION_SELECT);
+  const baseQuery = client.from("sessions").select(SESSION_SELECT).eq("event_id", eventId);
   const query = publishedOnly
     ? baseQuery.eq("published", true)
     : baseQuery;
@@ -125,19 +131,22 @@ async function getSessionsWithSpeakersInternal(
 /** Admin-only callers use this to retain visibility of unpublished drafts. */
 export async function getSessionsWithSpeakers(
   client: QueryClient,
+  eventId: string,
 ): Promise<SessionWithSpeakers[]> {
-  return getSessionsWithSpeakersInternal(client, false);
+  return getSessionsWithSpeakersInternal(client, eventId, false);
 }
 
 /** Attendee surfaces must filter explicitly because admins can read drafts. */
 export async function getPublishedSessionsWithSpeakers(
   client: QueryClient,
+  eventId: string,
 ): Promise<SessionWithSpeakers[]> {
-  return getSessionsWithSpeakersInternal(client, true);
+  return getSessionsWithSpeakersInternal(client, eventId, true);
 }
 
 async function getSessionByIdInternal(
   client: QueryClient,
+  eventId: string,
   sessionId: string,
   publishedOnly: boolean,
 ): Promise<SessionWithSpeakers | null> {
@@ -146,6 +155,7 @@ async function getSessionByIdInternal(
     ? baseQuery.eq("published", true)
     : baseQuery;
   const { data, error } = await query
+    .eq("event_id", eventId)
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -156,22 +166,25 @@ async function getSessionByIdInternal(
 
 export async function getSessionById(
   client: QueryClient,
+  eventId: string,
   sessionId: string,
 ): Promise<SessionWithSpeakers | null> {
-  return getSessionByIdInternal(client, sessionId, false);
+  return getSessionByIdInternal(client, eventId, sessionId, false);
 }
 
 export async function getPublishedSessionById(
   client: QueryClient,
+  eventId: string,
   sessionId: string,
 ): Promise<SessionWithSpeakers | null> {
-  return getSessionByIdInternal(client, sessionId, true);
+  return getSessionByIdInternal(client, eventId, sessionId, true);
 }
 
 export async function getBookmarkedSessionIds(
   client: QueryClient,
+  eventId: string,
 ): Promise<string[]> {
-  const { data, error } = await client.from("my_flow_bookmarks").select("session_id");
+  const { data, error } = await client.from("my_flow_bookmarks").select("session_id").eq("event_id", eventId);
 
   if (error) throw error;
   return (data ?? []).map((row) => row.session_id);
@@ -184,10 +197,12 @@ export async function getBookmarkedSessionIds(
  */
 export async function getClaimedSessionIds(
   client: QueryClient,
+  eventId: string,
 ): Promise<string[]> {
   const { data, error } = await client
     .from("session_seat_claims")
-    .select("session_id");
+    .select("session_id, sessions!inner(event_id)")
+    .eq("sessions.event_id", eventId);
 
   if (error) throw error;
   return (data ?? []).map((row) => row.session_id);

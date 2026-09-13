@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { ServiceWorkerRegistration } from "@/components/push/service-worker-registration";
 import { Providers } from "./providers";
@@ -8,6 +8,11 @@ import "./globals.css";
 /* Event typefaces are mapped to the shared UI tokens in globals.css. */
 const geist = Geist({
   variable: "--font-geist",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -20,17 +25,17 @@ const perandory = localFont({
 export const metadata: Metadata = {
   title: "Sync",
   description:
-    "The AWS Student Community Day Mega Manila 2026 companion for the live schedule, session alerts, and attendee networking.",
+    "A focused event companion for schedules, live updates, and attendee connection.",
   openGraph: {
     type: "website",
     siteName: "Sync",
-    title: "Sync — AWS Student Community Day Mega Manila 2026",
+    title: "Sync — Flawless event flow",
     description:
       "Your event day, in one place: the live schedule, session alerts, and attendee networking.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sync — AWS Student Community Day Mega Manila 2026",
+    title: "Sync — Flawless event flow",
     description:
       "Your event day, in one place: the live schedule, session alerts, and attendee networking.",
   },
@@ -61,7 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${perandory.variable} dark h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${perandory.variable} dark h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <Providers>{children}</Providers>

@@ -2,13 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getAuthenticatedClaims } from "./lib/supabase/auth";
 import { getSupabaseEnv } from "./lib/supabase/env";
+import { isMultiTenantPlatformEnabled } from "./lib/feature-flags";
 
 const PUBLIC_PATHS = ["/", "/login", "/c"];
 
-function isPublicPath(pathname: string): boolean {
+function isPublicPath(pathname: string, multiTenantEnabled: boolean): boolean {
   return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
+  ) || (multiTenantEnabled && (pathname === "/e" || pathname.startsWith("/e/")));
 }
 
 export async function proxy(request: NextRequest) {
@@ -40,8 +41,9 @@ export async function proxy(request: NextRequest) {
   setPrivateNoStore(response);
 
   const { pathname } = request.nextUrl;
+  const multiTenantEnabled = isMultiTenantPlatformEnabled();
 
-  if (!claims && !isPublicPath(pathname)) {
+  if (!claims && !isPublicPath(pathname, multiTenantEnabled)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
     /*
@@ -56,7 +58,7 @@ export async function proxy(request: NextRequest) {
 
   if (claims && (pathname === "/" || pathname === "/login")) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/home";
+    redirectUrl.pathname = multiTenantEnabled ? "/events" : "/home";
     redirectUrl.search = "";
     return setPrivateNoStore(redirectWithCookies(redirectUrl, response));
   }

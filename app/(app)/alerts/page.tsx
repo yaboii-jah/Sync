@@ -5,14 +5,20 @@ import { getBookmarkedSessionIds } from "@/lib/supabase/queries/program-flow";
 import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { AlertsClient } from "@/components/alerts/alerts-client";
+import { getUserEvents } from "@/lib/supabase/queries/events";
+import { selectPreferredEvent } from "@/lib/events/routing";
+import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
+import { redirect } from "next/navigation";
 
 export default async function AlertsPage() {
-  await requireCompleteProfile();
+  const { user } = await requireCompleteProfile();
+  if (isMultiTenantPlatformEnabled()) redirect("/events");
 
   const supabase = await createClient();
+  const event = selectPreferredEvent(await getUserEvents(supabase, user.id));
   const [notifications, bookmarks] = await Promise.all([
     getNotifications(supabase),
-    getBookmarkedSessionIds(supabase),
+    event ? getBookmarkedSessionIds(supabase, event.id) : Promise.resolve([]),
   ]);
 
   return (
@@ -26,6 +32,8 @@ export default async function AlertsPage() {
         <AlertsClient
           initialNotifications={notifications}
           initialBookmarkedIds={bookmarks}
+          eventId={event?.id ?? null}
+          eventSlug={event?.slug}
         />
       </div>
     </main>

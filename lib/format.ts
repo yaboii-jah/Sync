@@ -1,18 +1,5 @@
 export const EVENT_TIME_ZONE = "Asia/Manila";
 
-const TIME_FORMAT = new Intl.DateTimeFormat("en-PH", {
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: EVENT_TIME_ZONE,
-});
-
-const DATE_FORMAT = new Intl.DateTimeFormat("en-PH", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  timeZone: EVENT_TIME_ZONE,
-});
-
 const MANILA_DATE_TIME_INPUT_FORMAT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "2-digit",
@@ -41,11 +28,36 @@ export function formatRelativeTime(iso: string, now: number = Date.now()): strin
 export type DisplayStatus = "not_started" | "ongoing" | "finished";
 
 export function formatManilaTime(iso: string): string {
-  return TIME_FORMAT.format(new Date(iso));
+  return formatEventTime(iso, EVENT_TIME_ZONE);
 }
 
 export function formatManilaDate(iso: string): string {
-  return DATE_FORMAT.format(new Date(iso));
+  return formatEventDate(iso, EVENT_TIME_ZONE);
+}
+
+export function formatEventTime(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(iso));
+}
+
+export function formatEventDate(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    timeZone,
+  }).format(new Date(iso));
+}
+
+export function formatEventTimeRange(
+  startIso: string,
+  endIso: string,
+  timeZone: string,
+): string {
+  return `${formatEventTime(startIso, timeZone)} – ${formatEventTime(endIso, timeZone)}`;
 }
 
 /** Format an instant for an event-time `datetime-local` input in Manila time. */
@@ -92,7 +104,7 @@ export function parseManilaDateTimeInput(value: string): string | null {
 }
 
 export function formatTimeRange(startIso: string, endIso: string): string {
-  return `${TIME_FORMAT.format(new Date(startIso))} – ${TIME_FORMAT.format(new Date(endIso))}`;
+  return formatEventTimeRange(startIso, endIso, EVENT_TIME_ZONE);
 }
 
 export function displayStatus(

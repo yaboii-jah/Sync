@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../tokens.css";
 
 /*
  * AWS Student Community Day theme tokens. Local primitives consume these

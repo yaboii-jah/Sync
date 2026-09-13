@@ -1,0 +1,81 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S4 R5 V5 */
+/* Hallmark · macrostructure: Index-First · genre: modern-minimal · theme: Cobalt · enrichment: none · nav: N9 · footer: Ft2 · contrast: pass (40–41) · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49) · icons: pass (30) · mobile: pass (34, 49, 50–57) */
+:root {
+  --platform-paper: oklch(98.5% 0.006 255);
+  --platform-paper-2: oklch(96% 0.012 255);
+  --platform-paper-3: oklch(92% 0.02 255);
+  --platform-ink: oklch(20% 0.035 260);
+  --platform-ink-2: oklch(35% 0.04 260);
+  --platform-neutral: oklch(43% 0.025 260);
+  --platform-rule: oklch(84% 0.025 255);
+  --platform-cobalt: oklch(47% 0.2 263);
+  --platform-cobalt-deep: oklch(36% 0.18 263);
+  --platform-accent-ink: oklch(98% 0.005 255);
+  --platform-focus: oklch(20% 0.035 260);
+  --platform-focus-inverse: oklch(98.5% 0.006 255);
+  --platform-success: oklch(43% 0.12 150);
+  --platform-error: oklch(48% 0.18 27);
+  --platform-radius-sm: 0.375rem;
+  --platform-radius-md: 0.625rem;
+  --platform-shadow: 0 1px 2px color-mix(in oklch, var(--platform-ink) 8%, transparent);
+  --platform-duration: 140ms;
+  --platform-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tenant-platform {
+  color-scheme: light;
+  --background: var(--platform-paper);
+  --foreground: var(--platform-ink);
+  --surface: var(--platform-paper);
+  --surface-secondary: var(--platform-paper-2);
+  --surface-tertiary: var(--platform-paper-3);
+  --overlay: var(--platform-paper);
+  --muted: var(--platform-neutral);
+  --default: var(--platform-paper-2);
+  --accent: var(--platform-cobalt);
+  --accent-foreground: var(--platform-accent-ink);
+  --field-background: var(--platform-paper);
+  --field-foreground: var(--platform-ink);
+  --field-placeholder: var(--platform-neutral);
+  --field-border: var(--platform-rule);
+  --success: var(--platform-success);
+  --warning: var(--platform-focus);
+  --danger: var(--platform-error);
+  --border: var(--platform-rule);
+  --separator: var(--platform-rule);
+  --focus: var(--platform-focus);
+  --link: var(--platform-cobalt-deep);
+  --surface-shadow: var(--platform-shadow);
+  min-height: 100dvh;
+  background: var(--platform-paper);
+  color: var(--platform-ink);
+  font-family: var(--font-geist), sans-serif;
+}
+
+.platform-frame { width: min(100%, 76rem); margin-inline: auto; padding-inline: clamp(1rem, 4vw, 3rem); }
+.platform-display { min-width: 0; overflow-wrap: anywhere; font-size: clamp(2.25rem, 7vw, 5.75rem); font-weight: 650; letter-spacing: -0.055em; line-height: 0.94; }
+.platform-kicker { font-family: var(--font-geist-mono), monospace; font-size: 0.75rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--platform-cobalt-deep); }
+.platform-rule { border-color: var(--platform-rule); }
+.platform-link, .platform-button { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--platform-radius-sm); white-space: nowrap; font-weight: 650; transition: background-color var(--platform-duration) var(--platform-ease), color var(--platform-duration) var(--platform-ease), transform var(--platform-duration) var(--platform-ease); }
+.platform-link { color: var(--platform-cobalt-deep); }
+.platform-button { padding-inline: 1rem; background: var(--platform-cobalt); color: var(--platform-accent-ink); border: 1px solid var(--platform-cobalt); }
+.platform-button:disabled, .platform-link[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.platform-link:focus-visible { outline: 2px solid var(--platform-focus); outline-offset: 2px; }
+.platform-button:focus-visible { outline: 2px solid var(--platform-focus-inverse); outline-offset: 2px; box-shadow: 0 0 0 4px var(--platform-focus); }
+.platform-button:active, .platform-link:active { transform: translateY(1px); }
+.platform-button[data-state="error"] { border-color: var(--platform-error); }
+.platform-button[data-state="success"] { border-color: var(--platform-success); }
+.platform-card { border-block-start: 1px solid var(--platform-rule); padding-block: 1.25rem; }
+
+@media (hover: hover) and (pointer: fine) {
+  .platform-link:hover { color: var(--platform-cobalt); }
+  .platform-button:hover { background: var(--platform-cobalt-deep); }
+}
+
+@media (min-width: 40rem) {
+  .platform-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-link, .platform-button { transition: none; }
+}

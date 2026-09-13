@@ -35,6 +35,8 @@ import {
 interface AlertsClientProps {
   initialNotifications: NotificationRow[];
   initialBookmarkedIds: string[];
+  eventId: string | null;
+  eventSlug?: string;
 }
 
 const TYPE_META: Record<
@@ -62,6 +64,8 @@ function typeMeta(type: string) {
 export function AlertsClient({
   initialNotifications,
   initialBookmarkedIds,
+  eventId,
+  eventSlug,
 }: AlertsClientProps) {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [bookmarks, setBookmarks] = useState<Set<string>>(
@@ -91,7 +95,7 @@ export function AlertsClient({
     setNotifications(await getNotifications(client));
   }
 
-  useRealtimeRefetch(["notifications"], () => {
+  useRealtimeRefetch([{ table: "notifications" }], () => {
     void refetchNotifications();
   });
 
@@ -101,10 +105,11 @@ export function AlertsClient({
    * is how `openLinkedSession` tells a missing session from a loaded one.
    */
   async function loadSessionWithSeats(sessionId: string) {
+    if (!eventId) return null;
     const client = createClient();
     const [session, claimedIds] = await Promise.all([
-      getPublishedSessionById(client, sessionId),
-      getClaimedSessionIds(client),
+      getPublishedSessionById(client, eventId, sessionId),
+      getClaimedSessionIds(client, eventId),
     ]);
 
     setClaims(new Set(claimedIds));
@@ -141,7 +146,8 @@ export function AlertsClient({
     });
 
     void (async () => {
-      const result: ToggleBookmarkResult = await toggleBookmark(sessionId);
+      if (!eventId) return;
+      const result: ToggleBookmarkResult = await toggleBookmark(eventId, sessionId, eventSlug);
       if (result.error) {
         toast("Could not update your flow", "error");
         setBookmarks((previous) => {
@@ -177,14 +183,14 @@ export function AlertsClient({
    * and the open session is re-read once the server has decided.
    */
   function changeSeat(sessionId: string, action: "claim" | "release") {
-    if (seatPendingId) return;
+    if (seatPendingId || !eventId) return;
     setSeatPendingId(sessionId);
 
     void (async () => {
       const result =
         action === "claim"
-          ? await claimSeat(sessionId)
-          : await releaseSeat(sessionId);
+          ? await claimSeat(eventId, sessionId, eventSlug)
+          : await releaseSeat(eventId, sessionId, eventSlug);
 
       if (result.error) {
         toast(result.error, "error");

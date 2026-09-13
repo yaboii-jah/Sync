@@ -5,9 +5,14 @@ import { createClient } from "@/lib/supabase/client";
 
 const REFETCH_DEBOUNCE_MS = 250;
 
-export function useRealtimeRefetch(tables: string[], onChange: () => void) {
+export interface RealtimeTableSubscription {
+  table: string;
+  filter?: string;
+}
+
+export function useRealtimeRefetch(subscriptions: RealtimeTableSubscription[], onChange: () => void) {
   const onChangeRef = useRef(onChange);
-  const tableKey = tables.join(",");
+  const subscriptionKey = JSON.stringify(subscriptions);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -36,11 +41,12 @@ export function useRealtimeRefetch(tables: string[], onChange: () => void) {
       await supabase.auth.getSession();
       if (cancelled) return;
 
-      channel = supabase.channel("realtime:" + tableKey);
-      for (const table of tables) {
+      const parsed = JSON.parse(subscriptionKey) as RealtimeTableSubscription[];
+      channel = supabase.channel("realtime:" + subscriptionKey);
+      for (const subscription of parsed) {
         channel = channel.on(
           "postgres_changes",
-          { event: "*", schema: "public", table },
+          { event: "*", schema: "public", table: subscription.table, ...(subscription.filter ? { filter: subscription.filter } : {}) },
           scheduleRefetch,
         );
       }
@@ -54,6 +60,5 @@ export function useRealtimeRefetch(tables: string[], onChange: () => void) {
       if (timeout != null) clearTimeout(timeout);
       if (channel) void supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableKey]);
+  }, [subscriptionKey]);
 }

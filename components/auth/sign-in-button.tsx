@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export function SignInButton({ next }: { next?: string }) {
+export function SignInButton({ next, variant = "legacy" }: { next?: string; variant?: "legacy" | "platform" }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
 
@@ -39,7 +39,8 @@ export function SignInButton({ next }: { next?: string }) {
         type="button"
         onClick={() => void startSignIn()}
         disabled={pending}
-        className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:cursor-wait disabled:opacity-70 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
+        className={variant === "platform" ? "platform-button" : "rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:cursor-wait disabled:opacity-70 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"}
+        data-state={error ? "error" : pending ? "loading" : "default"}
       >
         {pending ? "Opening Google..." : "Sign in with Google"}
       </button>
