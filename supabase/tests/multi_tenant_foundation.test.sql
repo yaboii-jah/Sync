@@ -175,8 +175,8 @@ select is(
 
 select is(
   (select count(*)::integer from public.event_memberships),
-  4,
-  'a super admin can inspect memberships across events'
+  0,
+  'a super admin has no blanket membership PII access'
 );
 
 select is(

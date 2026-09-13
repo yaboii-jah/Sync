@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -7,11 +7,6 @@
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -115,105 +110,255 @@ export type Database = {
           },
         ]
       }
-      events: {
+      event_admin_invitations: {
         Row: {
-          ends_at: string
+          accepted_at: string | null
+          accepted_by_membership_id: string | null
+          created_at: string
+          email: string
+          event_id: string
+          expires_at: string
           id: string
-          name: string
-          starts_at: string
-          status: string
-          theme: string
-          venue: string | null
-        }
-        Insert: {
-          ends_at: string
-          id?: string
-          name: string
-          starts_at: string
-          status?: string
-          theme: string
-          venue?: string | null
-        }
-        Update: {
-          ends_at?: string
-          id?: string
-          name?: string
-          starts_at?: string
-          status?: string
-          theme?: string
-          venue?: string | null
-        }
-        Relationships: []
-      }
-      merch_attendees: {
-        Row: {
-          claim_method: string | null
-          claimed_at: string | null
-          claimed_by: string | null
-          extra: Json
-          first_name: string
-          id: string
-          last_name: string
-          note: string | null
+          invited_by_membership_id: string
+          request_id: string
+          revoked_at: string | null
+          token_hash: string
           updated_at: string
         }
         Insert: {
-          claim_method?: string | null
-          claimed_at?: string | null
-          claimed_by?: string | null
-          extra?: Json
-          first_name?: string
-          id: string
-          last_name: string
-          note?: string | null
+          accepted_at?: string | null
+          accepted_by_membership_id?: string | null
+          created_at?: string
+          email: string
+          event_id: string
+          expires_at?: string
+          id?: string
+          invited_by_membership_id: string
+          request_id: string
+          revoked_at?: string | null
+          token_hash: string
           updated_at?: string
         }
         Update: {
-          claim_method?: string | null
-          claimed_at?: string | null
-          claimed_by?: string | null
-          extra?: Json
-          first_name?: string
+          accepted_at?: string | null
+          accepted_by_membership_id?: string | null
+          created_at?: string
+          email?: string
+          event_id?: string
+          expires_at?: string
           id?: string
-          last_name?: string
-          note?: string | null
+          invited_by_membership_id?: string
+          request_id?: string
+          revoked_at?: string | null
+          token_hash?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "event_admin_invitations_acceptor_fkey"
+            columns: ["event_id", "accepted_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+          {
+            foreignKeyName: "event_admin_invitations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_admin_invitations_inviter_fkey"
+            columns: ["event_id", "invited_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+        ]
       }
-      merch_scan_log: {
+      event_audit_log: {
         Row: {
-          at: string
-          attendee_id: string | null
-          attendee_name: string | null
-          detail: string | null
-          device: string
-          outcome: string
-          raw: string | null
-          received_at: string
-          uid: string
+          action: string
+          actor_membership_id: string | null
+          actor_user_id: string | null
+          created_at: string
+          details: Json
+          event_id: string
+          id: number
+          reason: string | null
+          request_id: string
+          target_entity_id: string | null
+          target_entity_type: string
         }
         Insert: {
-          at: string
-          attendee_id?: string | null
-          attendee_name?: string | null
-          detail?: string | null
-          device: string
-          outcome: string
-          raw?: string | null
-          received_at?: string
-          uid: string
+          action: string
+          actor_membership_id?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_id: string
+          id?: never
+          reason?: string | null
+          request_id: string
+          target_entity_id?: string | null
+          target_entity_type: string
         }
         Update: {
-          at?: string
-          attendee_id?: string | null
-          attendee_name?: string | null
-          detail?: string | null
-          device?: string
-          outcome?: string
-          raw?: string | null
-          received_at?: string
-          uid?: string
+          action?: string
+          actor_membership_id?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_id?: string
+          id?: never
+          reason?: string | null
+          request_id?: string
+          target_entity_id?: string | null
+          target_entity_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_audit_log_actor_membership_fkey"
+            columns: ["event_id", "actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+          {
+            foreignKeyName: "event_audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_memberships: {
+        Row: {
+          created_at: string
+          display_name_snapshot: string
+          email_snapshot: string | null
+          ended_at: string | null
+          event_id: string
+          id: string
+          joined_at: string
+          role: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name_snapshot?: string
+          email_snapshot?: string | null
+          ended_at?: string | null
+          event_id: string
+          id?: string
+          joined_at?: string
+          role: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name_snapshot?: string
+          email_snapshot?: string | null
+          ended_at?: string | null
+          event_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_memberships_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          accent_color: string
+          archived_at: string | null
+          cover_path: string | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          ever_published: boolean
+          id: string
+          lifecycle: string
+          logo_path: string | null
+          name: string
+          published_at: string | null
+          slug: string
+          starts_at: string
+          status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
+          theme: string
+          theme_preset: string
+          timezone: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          accent_color?: string
+          archived_at?: string | null
+          cover_path?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          ever_published?: boolean
+          id?: string
+          lifecycle?: string
+          logo_path?: string | null
+          name: string
+          published_at?: string | null
+          slug: string
+          starts_at: string
+          status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
+          theme: string
+          theme_preset?: string
+          timezone?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          accent_color?: string
+          archived_at?: string | null
+          cover_path?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          ever_published?: boolean
+          id?: string
+          lifecycle?: string
+          logo_path?: string | null
+          name?: string
+          published_at?: string | null
+          slug?: string
+          starts_at?: string
+          status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
+          theme?: string
+          theme_preset?: string
+          timezone?: string
+          updated_at?: string
+          venue?: string | null
         }
         Relationships: []
       }
@@ -487,6 +632,146 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sessions"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          details: Json
+          event_id: string | null
+          id: number
+          request_id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_id?: string | null
+          id?: never
+          request_id: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_id?: string | null
+          id?: never
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_quota_overrides: {
+        Row: {
+          active_event_limit: number | null
+          branding_upload_bytes: number | null
+          event_admin_limit: number | null
+          event_session_limit: number | null
+          reason: string
+          updated_at: string
+          updated_by: string
+          user_id: string
+        }
+        Insert: {
+          active_event_limit?: number | null
+          branding_upload_bytes?: number | null
+          event_admin_limit?: number | null
+          event_session_limit?: number | null
+          reason: string
+          updated_at?: string
+          updated_by: string
+          user_id: string
+        }
+        Update: {
+          active_event_limit?: number | null
+          branding_upload_bytes?: number | null
+          event_admin_limit?: number | null
+          event_session_limit?: number | null
+          reason?: string
+          updated_at?: string
+          updated_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_super_admins: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deactivated_at: string | null
+          is_active: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          is_active?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          is_active?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_support_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          event_id: string
+          expires_at: string
+          id: string
+          reason: string
+          super_admin_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          event_id: string
+          expires_at: string
+          id?: string
+          reason: string
+          super_admin_user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          event_id?: string
+          expires_at?: string
+          id?: string
+          reason?: string
+          super_admin_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_support_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_support_sessions_super_admin_user_id_fkey"
+            columns: ["super_admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "platform_super_admins"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -771,6 +1056,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_event_admin_invitation: {
+        Args: { invitation_token_hash: string; mutation_request_id: string }
+        Returns: string
+      }
       admin_create_notification: {
         Args: {
           audience: string
@@ -915,8 +1204,28 @@ export type Database = {
         }
         Returns: string
       }
+      archive_event: {
+        Args: {
+          archive_reason: string
+          mutation_request_id: string
+          target_event_id: string
+        }
+        Returns: string
+      }
       claim_session_seat: { Args: { target_session_id: string }; Returns: Json }
       current_user_is_admin: { Args: never; Returns: boolean }
+      delete_untouched_draft_event: {
+        Args: {
+          deletion_reason: string
+          mutation_request_id: string
+          target_event_id: string
+        }
+        Returns: string
+      }
+      end_event_support_session: {
+        Args: { mutation_request_id: string; target_support_session_id: string }
+        Returns: string
+      }
       get_my_networking_scan_history: {
         Args: never
         Returns: {
@@ -946,52 +1255,36 @@ export type Database = {
           url: string
         }[]
       }
-      mark_alerts_read: { Args: never; Returns: undefined }
-      merch_claim_attendee: {
+      issue_event_admin_invitation: {
         Args: {
-          p_at: string
-          p_by: string
-          p_id: string
-          p_method: string
-          p_note: string
+          invitation_token_hash: string
+          invite_email: string
+          mutation_request_id: string
+          target_event_id: string
         }
-        Returns: {
-          claim_method: string | null
-          claimed_at: string | null
-          claimed_by: string | null
-          extra: Json
-          first_name: string
-          id: string
-          last_name: string
-          note: string | null
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "merch_attendees"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: string
       }
-      merch_revert_claim: {
-        Args: { p_by: string; p_id: string }
-        Returns: {
-          claim_method: string | null
-          claimed_at: string | null
-          claimed_by: string | null
-          extra: Json
-          first_name: string
-          id: string
-          last_name: string
-          note: string | null
-          updated_at: string
+      join_event: {
+        Args: { mutation_request_id: string; target_event_id: string }
+        Returns: string
+      }
+      leave_event: {
+        Args: { mutation_request_id: string; target_event_id: string }
+        Returns: string
+      }
+      mark_alerts_read: { Args: never; Returns: undefined }
+      moderate_event_attendee: {
+        Args: {
+          moderation_reason: string
+          mutation_request_id: string
+          next_status: string
+          target_membership_id: string
         }
-        SetofOptions: {
-          from: "*"
-          to: "merch_attendees"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: string
+      }
+      publish_event: {
+        Args: { mutation_request_id: string; target_event_id: string }
+        Returns: string
       }
       record_networking_card_scan: {
         Args: { card_token: string }
@@ -1001,7 +1294,23 @@ export type Database = {
         Args: { target_session_id: string }
         Returns: Json
       }
+      remove_event_admin: {
+        Args: {
+          mutation_request_id: string
+          removal_reason: string
+          target_membership_id: string
+        }
+        Returns: string
+      }
       retry_push_dispatches: { Args: never; Returns: undefined }
+      revoke_event_admin_invitation: {
+        Args: {
+          mutation_request_id: string
+          revocation_reason: string
+          target_invitation_id: string
+        }
+        Returns: string
+      }
       save_social_profiles:
         | {
             Args: {
@@ -1020,9 +1329,26 @@ export type Database = {
             }
             Returns: undefined
           }
+      set_event_suspension: {
+        Args: {
+          mutation_request_id: string
+          should_suspend: boolean
+          suspension_note: string
+          target_event_id: string
+        }
+        Returns: string
+      }
       set_networking_card_template: {
         Args: { p_template: number }
         Returns: undefined
+      }
+      start_event_support_session: {
+        Args: {
+          mutation_request_id: string
+          support_reason: string
+          target_event_id: string
+        }
+        Returns: string
       }
       submit_app_feedback: {
         Args: {
@@ -1036,6 +1362,14 @@ export type Database = {
       toggle_my_flow_bookmark: {
         Args: { target_session_id: string }
         Returns: Json
+      }
+      transfer_event_ownership: {
+        Args: {
+          mutation_request_id: string
+          next_owner_membership_id: string
+          target_event_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -1055,12 +1389,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1084,11 +1418,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1109,11 +1443,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1134,11 +1468,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1151,11 +1485,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
