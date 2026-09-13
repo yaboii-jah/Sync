@@ -95,7 +95,7 @@ select is(
          'admin_set_session_capacity'
        )
        and pg_proc.prosecdef
-       and pg_proc.proconfig @> array['search_path=']
+       and pg_proc.proconfig && array['search_path=', 'search_path=""']
   ),
   3,
   'all three seat functions are security definer with a pinned search path'

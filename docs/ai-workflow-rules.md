@@ -1,58 +1,52 @@
 # AI Workflow Rules
 
-## Approach
+## Required reading
 
-Build this project incrementally using a spec-driven workflow. `project-overview.md`, `architecture.md`, and `code-standards.md` define what to build, how to build it, and the constraints it must follow; `progress-tracker.md` tracks what's actually been done and what's still open. Always implement against these four files — do not infer or invent product behavior, system design, or conventions from scratch. If something isn't covered by them, that's a signal to update the relevant file first, not to guess and move on.
+Before architecture or implementation work, read in order:
 
-## Scoping Rules
+1. `docs/project-overview.md`
+2. `docs/architecture.md`
+3. `docs/ui-context.md`
+4. `docs/code-standards.md`
+5. `docs/ai-workflow-rules.md`
+6. `docs/progress-tracker.md`
 
-- Work on one feature unit at a time
-- Prefer small, verifiable increments over large
-  speculative changes
-- Do not combine unrelated system boundaries in a
-  single implementation step
+Read the relevant installed Next.js guide before changing framework APIs. For database work, follow the repository Supabase and Postgres skills before authoring SQL.
 
-## When to Split Work
+## Delivery method
 
-Split an implementation step if it combines:
+- Work in small, reversible feature units.
+- Update architecture, product scope, or standards documentation before implementing a decision that changes them.
+- Keep `MULTI_TENANT_PLATFORM_ENABLED` off by default until the core acceptance suite passes.
+- Preserve current production behavior while parallel tenant routes are incomplete.
+- Prefer additive migrations and compatibility adapters over destructive rewrites.
+- Do not silently absorb unknown remote database objects into the product model.
 
-- UI changes and Supabase schema or RLS policy changes (e.g. don't build a session card component in the same step as adding a column to `sessions`)
-- Realtime sync logic and Web Push delivery logic — these are two separate layers per `architecture.md` and should be built and verified independently
-- Any behavior not clearly defined in `project-overview.md` or `architecture.md` — most notably workshop registration beyond seat capacity (waitlists, payment, QR check-in) or admin capabilities beyond the approved event-operations scope
+## Required sequence
 
-If a change cannot be verified end to end quickly,
-the scope is too broad — split it.
+1. Define and document the unit.
+2. Inspect existing code, tests, migrations, and installed framework documentation.
+3. Implement the smallest complete vertical slice.
+4. Test successful, unauthorized, cross-tenant, inactive, and malformed cases as applicable.
+5. Run `npm run build`.
+6. Update `docs/progress-tracker.md` with evidence, decisions, and the next unit.
 
-## Handling Missing Requirements
+## Multi-tenant safeguards
 
-- Do not invent product behavior not defined in the
-  context files
-- If a requirement is ambiguous, resolve it in the
-  relevant context file before implementing
-- If a requirement is missing, add it as an open question
-  in `progress-tracker.md` before continuing
+- Never add an event-scoped UI before its database isolation model is defined.
+- Never trust client-provided event IDs, roles, ownership, or lifecycle state.
+- Every tenant query must be visibly scoped.
+- Anonymous access uses purpose-built published-event reads only.
+- Event admin and super-admin powers are separate and auditable.
+- Account deletion, membership removal, archive behavior, and ownership transfer must preserve historical integrity.
 
-## Protected Files
+## Documentation policy
 
-Do not modify the following unless explicitly instructed:
+- Active documents describe the current approved platform direction and current implementation state.
+- Event-specific historical documents live under `docs/archive/<event>/`.
+- Do not let completed-event branding or one-off operations become global requirements.
+- Record open implementation questions in the progress tracker rather than guessing silently.
 
-- Supabase-generated type definitions (e.g. `database.types.ts`) — regenerate from the schema via the Supabase CLI, don't hand-edit
-- Generated PWA icons and other generated assets — edit their source script/configuration and regenerate them rather than hand-editing generated output. `public/sw.js` is an exception: it is hand-authored source code and must be edited directly when service-worker behavior changes.
-- Any third-party library internals
+## Completion standard
 
-## Keeping Docs in Sync
-
-Update the relevant context file whenever implementation
-changes:
-
-- System architecture or boundaries
-- Storage model decisions
-- Code conventions or standards
-- Feature scope
-
-## Before Moving to the Next Unit
-
-1. The current unit works end to end within its defined scope
-2. No invariant defined in `architecture.md` was violated
-3. `progress-tracker.md` reflects the completed work
-4. `npm run build` passes
+A unit is complete only when its behavior works end to end, authorization boundaries are covered in proportion to risk, the build passes, and the progress tracker reflects reality. A feature flag does not excuse insecure or incomplete database behavior behind it.

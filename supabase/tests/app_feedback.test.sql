@@ -143,7 +143,7 @@ select ok(
      where pg_namespace.nspname = 'public'
        and pg_proc.proname = 'admin_list_feedback'
        and pg_proc.prosecdef
-       and pg_proc.proconfig @> array['search_path=']
+       and pg_proc.proconfig && array['search_path=', 'search_path=""']
   ),
   'the admin feedback function is a security definer with a pinned search path'
 );
@@ -156,7 +156,7 @@ select ok(
      where pg_namespace.nspname = 'public'
        and pg_proc.proname = 'submit_app_feedback'
        and not pg_proc.prosecdef
-       and pg_proc.proconfig @> array['search_path=']
+       and pg_proc.proconfig && array['search_path=', 'search_path=""']
   ),
   'the attendee feedback function preserves invoker RLS with a pinned search path'
 );

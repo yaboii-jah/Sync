@@ -1,4 +1,4 @@
-# Issues
+# Archived Issues
 
 - [x] The profile avatar menu no longer blocks page scrolling or outside interaction while open.
 

@@ -1,6 +1,6 @@
 # PRD — Home and hero UI defects
 
-Status: approved rev 1.0, 2026-09-07
+Status: archived after the 2026 event
 Owner: attendee experience
 Source: Playwright walkthrough of the running app on `http://localhost:3000`,
 signed in as a real attendee, at 390x844 (iPhone 15) and 1440x900.

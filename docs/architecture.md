@@ -1,62 +1,112 @@
-# Architecture Context
+# Architecture
 
-## Stack
+## System shape
 
-| Layer | Technology | Role |
-| --------- | --------------------------- | ------ |
-| Framework | Next.js | Pages, routing, server-side rendering, API routes |
-| UI primitives | Local components + React Aria Components | AWS SCD visual system with accessible client interactions and server-safe display primitives |
-| Backend / DB | Supabase (Postgres) | Database, Auth, Realtime, Row Level Security |
-| Auth | Supabase Auth — `google` | Sign in with Google (OpenID Connect). Supplies `name` and `picture`, which `handle_new_user` already reads |
-| Installable PWA | Hand-authored static service worker (`public/sw.js`) + web manifest | Static icon/manifest caching, Web Push, and home-screen install. Authenticated routes and Next.js route data are never cached. (Note: `next-pwa`/`@serwist/next` are webpack plugins and incompatible with Next 16's default Turbopack builds — do not reintroduce them) |
-| Push Delivery | Web Push API — pg_cron → `notifications` INSERT → pg_net webhook → `send-push` Edge Function → FCM/Web Push | Notifications when the app isn't open |
-| Hosting (typical pairing, not yet finalized) | Vercel (frontend) + Supabase Cloud (backend) | Deployment |
+Sync is a Next.js App Router PWA backed by Supabase Auth, Postgres, Storage, and Realtime. Resend is used for transactional email. The application uses one shared database schema with strict row-level tenant isolation.
 
-## System Boundaries
+The migration is additive and feature flagged by the server-only `MULTI_TENANT_PLATFORM_ENABLED` environment variable. Existing production routes remain available until the new tenant paths pass acceptance testing.
 
-- `app/` — Next.js routes for attendee screens, including the authenticated `/more/photo-booth` local capture route (feature-flagged for attendees) and `/more/feedback` submission route; a public `/c/[token]` networking-card route outside the attendee shell; and a separate `/admin` route group with its own responsive operations shell. Admin routes cover the dashboard, immediate notification composer/history/delivery results, session create/edit/publish/delete and override controls, read-only attendee search and feedback review, and mutation audit history.
-- Root `proxy.ts` — Next.js 16's renamed middleware convention; refreshes Supabase sessions and gates routes. `/auth/*` (OAuth callback), `/`, `/login`, and `/c/*` are exempt from gating; proxy redirects must strip query params so OAuth codes can't leak into `/login`
-- `lib/supabase/` — Supabase client setup, generated database types, and typed queries/mutations for program flow, directory, quick links, notifications, feedback, and profiles
-- `lib/seats.ts` — the single pure reading of a session's seats. The attendee badge, the seat button and the admin console's preview all render from it, so none of them re-derives fullness on its own; it is unit-tested in `lib/seats.test.ts` under Vitest (`npm test`)
-- `components/` — Shared UI building blocks: session cards, live status badges, QR networking card and local-only QR scanner (supports LinkedIn, Instagram, Facebook, GitHub), a browser-only three-shot photo booth, speaker lineup + bio modal, desktop top navigation / side rail, and mobile bottom tab navigation
-- `public/sw.js` + `public/manifest.webmanifest` + `public/icons/` + `public/assets/` — hand-authored service worker (static PWA asset caching + push/notification-click handlers), PWA manifest, generated identity icons, and the committed Photo Booth event-background/frame assets; authenticated pages and Next.js route data are deliberately excluded from caches, and the service worker is source code, never build-generated
+## Route boundaries
 
-## Storage Model
+- `/` — generic Sync platform landing page
+- `/events` — signed-in event hub
+- `/e/[slug]` — published public event page
+- `/e/[slug]/home`, `/alerts`, `/connect`, `/more`, `/settings`, `/photo-booth` — attendee routes
+- `/manage/[slug]/*` — event owner/admin workspace
+- `/super-admin/*` — platform operations
+- `/settings` — global account settings
+- `/auth/confirm` — email magic-link PKCE exchange
 
-- **Database (Supabase Postgres)**: attendee content plus the finalized event theme and parallel schedule, an admin allowlist, recipient snapshots, durable push dispatch/delivery results, session publication and override metadata, and append-only admin audit events. Session/event statuses normally derive from schedule times every minute; a Start or End override is authoritative until an admin resumes automatic mode. Unpublished sessions are drafts hidden from attendee reads and skipped by schedule automation. Notifications snapshot recipients transactionally so feed visibility, history, and push delivery use the same audience. Admin mutations run through narrowly granted, idempotent database functions that verify `auth.uid()` against the allowlist and append audit data in the same transaction. `profiles.pass_type` remains dormant with its existing default and is not an application capability.
-- **Alerts and push delivery**: attendees can select only notifications for which they have a `notification_recipients` row. Schedule status synchronization does not create attendee notifications; audited manual Start/End actions and admin broadcasts snapshot every profile or selected profile IDs. A durable dispatch is claimed idempotently by the Edge Function, which loads canonical recipients, records per-device push-service acceptance/failure, records recipients with no subscription in aggregate results, and prunes 404/410 endpoints. Historical automatic rows remain read-only history. “Delivered” in admin UI means accepted by the push service, not confirmed display on a device.
-- **Networking cards**: one `networking_cards` row per profile, created by trigger, holding a stable high-entropy `public_token` and an `is_public` implementation flag derived transactionally from whether links exist. Links live in `social_profiles`, one row per supported network per attendee, each constrained to an approved profile or platform-native share URL. The QR always encodes `/c/<public_token>`; profile edits do not change it. Saving at least one link activates the card, while clearing the last link disables every existing QR copy without changing the code. The Connect scanner decodes camera frames or a selected screenshot in browser memory, accepts only `/c/<UUID>` paths, and navigates locally rather than following arbitrary QR URLs. The scanner route is public bearer access, returns data only through the narrow `get_public_networking_card` function, and is marked `noindex`; direct anonymous table access remains revoked. An authenticated owner may use `/c/<public_token>?preview=1` to inspect the same card view when links exist. When a signed-in attendee opens another active card, `networking_scan_history` upserts only that attendee's `(scanner_id, scanned_user_id)` row with the canonical `/c/<public_token>` path and latest scan time. History is queried only through owner-checked functions and has no event-wide read path.
-- **Blob/File Storage**: not needed — profile photos come directly from Google OIDC metadata as external URLs; speaker/sponsor photos can stay as external URLs or move to Supabase Storage later if that becomes necessary. Photo Booth uses committed static frame/background, transparent mascot-source/foreground-overlay, and Frame 1 date-overlay assets plus browser `MediaStream`/canvas/object-URL memory only: camera frames, selected fallback images, slot photos, and JPEG results are never uploaded or persisted.
-- **Workshop seats**: a session with a seat limit carries `capacity`, `reserved_seats`, `claimed_seats` and `seats_closed`; a null `capacity` means no seat limit and is the state of every non-workshop row, which renders exactly as it did before. The two seat counters have one writer each and never overwrite one another — `reserved_seats` is the off-app organiser registration count and the only seat number an admin edits, while `claimed_seats` mirrors `session_seat_claims` and moves only inside `claim_session_seat` / `release_session_seat`. Taken seats are the sum, a check constraint keeps that sum inside `capacity`, and the display clamps to capacity so disagreeing counters can never announce a room holding more than it seats. `seats_closed` presents the session as full whatever the counts say. A claim locks the session row for the transaction, so the last seat is sold once and the loser of the race is told it has gone; claiming is idempotent, and it saves the session to My Flow in the same transaction while releasing leaves the bookmark alone. Because a seat is also a My Flow save, a claim returns the same overlap details a manual bookmark does and warns without refusing. `admin_set_session_capacity` refuses any capacity below the seats attendees already hold, and refuses to clear the limit to null at all while any seat is held — so no seat edit can take a seat off an attendee, and an organiser who wants to stop new claims uses `seats_closed` instead.
-- **App feedback**: `app_feedback` stores an immutable identified submission with the submitter's profile ID, one of `bug`, `usability`, or `idea`, a trimmed 1-2,000-character message, a caller-generated request UUID, and `created_at`. A foreign key cascades profile deletion. Authenticated attendees have only a column-scoped insert grant and an own-user `WITH CHECK` policy; they cannot select, update, or delete feedback. The unique `(user_id, request_id)` constraint makes retries idempotent without exposing submission history. An allowlisted admin-only `admin_list_feedback` security-definer RPC returns at most the newest 100 rows with only attendee name/photo, category, message, and timestamp; it is the sole application read path.
-- **Raffle export**: an allowlisted admin may request a fresh read-only snapshot through `admin_get_raffle_attendees`. The database excludes allowlisted admins and whitespace-only names, and returns only a profile ID plus normalized display name for each remaining profile along with the blank-name exclusion count. The browser formats deterministic numbered duplicate labels, but only those labels leave Sync through clipboard/download; profile IDs remain transient admin-only lookup data and are never sent to the raffle site, persisted, or audited.
-- **Bookmark lifecycle**: attendees can bookmark only sessions that have not finished. The scheduled status job removes finished-session bookmark rows independently of attendee notification delivery; the UI filters them immediately from My Flow based on the device clock. Overlapping bookmarks are allowed; a conflict is any half-open interval overlap (`other.start_time < target.end_time` and `other.end_time > target.start_time`) and is derived from the current schedule rather than stored.
+Legacy routes such as `/home` and `/admin` resolve the user's most relevant event and redirect to a scoped route; otherwise they redirect to `/events`.
 
-## Auth and Access Model
+Next.js proxy logic is only an optimistic navigation gate. Every server action, route handler, and data-access leaf must authenticate and authorize independently.
 
-- Every user signs in via Supabase Auth using Google (OIDC) — no separate registration form. Social profile URLs (LinkedIn, Instagram, Facebook, GitHub) are optional networking data an attendee manages in Account Settings; Connect summarizes the configured networks, provides a preview of the active card, and displays its stable QR
-- Administrators use the same sign-in but gain operational access only through an out-of-band `admin_users` allowlist; attendee metadata and pass type never grant admin access
-- Each user's profile is a single row tied 1:1 to their auth identity — no shared or delegated ownership
-- Attendees have read-only access to published sessions, speakers/sponsors, and notifications, enforced via Row Level Security — not just app-level checks. Attendee query helpers also filter `published = true` because allowlisted admins may read drafts for operations. Anyone holding an active networking-card token may resolve only that card's name, photo, and selected links through a narrowly granted function
-- A user can only write to their own profile row, their own My Flow bookmarks, their own push subscriptions, their own alert read state, their own scan-history row, and their own app-feedback row through narrowly scoped paths — nothing else
-- Allowlisted admins can perform only the approved event-day mutations through audited database functions; general content management remains outside the app
+## Identity and authorization
 
-## Invariants
+- `auth.users` is the canonical global identity.
+- A global profile stores display name, avatar, and reusable social URLs.
+- Platform super admins are separate from event roles.
+- `event_memberships` stores tenant roles and status. It has its own primary key and a nullable `user_id` so account deletion can anonymize identity without destroying event history.
+- Each event has exactly one active owner. Ownership transfer is transactional and only targets an active admin.
+- Event admins enter through exact verified-email invitations that expire after seven days.
 
-1. Session, speaker/sponsor, and notification tables have no client-side write path — RLS enforces read-only access for attendees, with no app-level admin bypass
-2. Session status derives from schedule data unless an allowlisted administrator has set a persistent Start or End override; Resume Auto clears that override and recomputes from schedule
-3. A user can only ever modify their own profile row, their own My Flow bookmarks, their own push subscriptions, and their own alert read state — never another user's rows or any content table; the scheduled status job may remove finished-session bookmark rows as system cleanup
-4. Admin access is enforced in the database for every read and mutation; hiding `/admin` UI is never treated as authorization
-5. Pushes are triggered only by audited admin mutations after schedule automation has determined status; every push audience must match an immutable recipient snapshot
-6. Admin audit rows are append-only, and retries of the same mutation request cannot create duplicate notifications or status side effects
-7. Public networking access is bearer-token scoped: anonymous clients have no direct table grants, cards with no links and unknown cards are indistinguishable, and a card reveals only the owner's display name, photo, and explicitly saved social links
-8. The finalized event may have concurrent sessions; attendee schedule groups equal-start sessions, and the attendee hero and admin dashboard expose all published current or earliest-next choices rather than silently selecting one
-9. My Flow overlap warnings do not block a bookmark, and manual notification audiences remain explicit and independently snapshotted
-10. `datetime-local` admin inputs are interpreted as Asia/Manila wall-clock values and stored as explicit `timestamptz` instants; attendee and admin display formatters use the same event timezone
-11. Hard deletion is limited by the database to unpublished sessions whose effective status is `not_started`; published or started sessions remain in history and are unpublished instead
-12. An attendee-facing session lookup returns no unpublished session, including when the requester is an allowlisted admin; a linked historical alert therefore renders session details as unavailable rather than exposing a hidden draft
-13. Photo Booth never requests camera access before an attendee explicitly starts capture, and it stops all camera tracks when review begins, the document is hidden, or the booth unmounts; no booth image data has a server or database write path
-14. Networking scan history is attendee-private and deduplicated by scanner and scanned attendee; a card open can update only the authenticated scanner's own history, and the saved canonical card path remains the traceable destination
-15. Seat claims have no client-side write path: `session_seat_claims` grants select only, carries no insert/update/delete policy, and an attendee can read only their own row — a workshop's roster is never readable from the attendee app. Taken seats never exceed capacity, and an admin seat edit can never remove a seat an attendee is holding
-16. App feedback is immutable and submit-only for attendees: anonymous clients have no table or function access, an authenticated insert derives its owner from `auth.uid()` and enforces it with RLS, `(user_id, request_id)` deduplicates retries, and only the allowlisted admin feedback RPC can read submissions
-17. Raffle exports are an explicit on-demand admin-only bulk read: they exclude allowlisted admins and unusable names, expose no attendee data beyond names and transient private lookup IDs, and copy/download only the formatted raffle labels
+Membership statuses support active, left, removed, and blocked behavior. A removed attendee may rejoin; a blocked attendee may not. Leaving hides the person from active event views while preserving historical data.
+
+## Data domains
+
+### Global
+
+- Profiles and reusable social links
+- Push subscriptions tied to the user/device
+- Platform super-admin assignments
+- Account status and quota overrides
+- Platform feedback
+- Platform audit log and support sessions
+
+### Event scoped
+
+- Events, branding, memberships, and invitations
+- Sessions, speakers, tracks, venues, and bookmarks
+- Seat inventory and reservations
+- Event notification configuration, delivery, preferences, and read state
+- Event networking cards, card-link selections, and scan history
+- Event feedback and raffle state
+- Event audit records
+
+Every tenant-owned row has an `event_id`. Relationships that can cross tables use composite foreign keys including `event_id` where practical so invalid cross-event references fail at the database boundary.
+
+## Database security invariants
+
+1. Row Level Security is enabled on every Data API table.
+2. Grants are explicit; schema exposure alone never grants access.
+3. Anonymous access is limited to narrow read RPCs for published, non-suspended events.
+4. Private authorization helpers are not exposed, use `security definer` only when necessary, set `search_path = ''`, schema-qualify references, and revoke execution from public roles.
+5. Event writes verify active membership and role inside the database, not only in UI code.
+6. Sensitive mutations use audited RPCs with caller-provided request UUIDs for idempotency.
+7. Event staff only see event-relevant profile data: name, photo, verified email, membership/reachability status, and social links the attendee selected for that event.
+8. Super-admin support access requires a reason, creates an audit record, expires within 60 minutes, and is visibly represented. It is not silent impersonation.
+
+## Storage
+
+Branding objects live under event-scoped paths such as `events/{event_id}/branding/...`. Published branding may be publicly readable. Upload, replacement, and deletion require active owner/admin authorization. Storage policies check the path's event identifier. Upsert policies include the required `INSERT`, `SELECT`, and `UPDATE` permissions.
+
+Inputs may be at most 10 MB and are normalized into smaller delivery assets. Unsafe or unreadable uploads are rejected.
+
+## Event themes
+
+An event stores a logo, cover image, theme preset, and validated accent color. Initial presets are `daylight`, `midnight`, and `festival`. Status, destructive, warning, focus, and accessibility colors are platform-controlled. The legacy AWS event uses a private legacy theme unavailable to newly created events.
+
+## Time and localization
+
+- Each event stores an IANA timezone.
+- Schedule calculations, lifecycle labels, and notification timing use the event timezone.
+- Display language and date order follow the browser locale.
+- Events may span multiple calendar days.
+
+## Notifications and jobs
+
+Scheduled work must be set-based and limited to published, non-archived, non-suspended events. Schedule timing does not automatically create attendee notifications. Manual operational alerts remain event scoped and auditable. Free-tier email guards are enforced before enqueueing delivery.
+
+## Account deletion
+
+Self-service deletion anonymizes personal identity rather than deleting event history. A user must first transfer or archive owned active events. Profile fields, social links, auth identity, and active reachability are removed; membership, audit, and delivery records retain anonymous/tombstone references where required.
+
+## Migration strategy
+
+1. Add tenant foundations while the feature flag is off.
+2. Backfill the existing AWS event as an archived event, its current admin as owner and initial super admin, and existing non-admin profiles as attendees.
+3. Scope every existing feature table before allowing creation of multiple events. Advanced AWS-only features may initially remain read-only.
+4. Quarantine undocumented remote `merch_*` objects: document them and revoke client access, but do not integrate or delete them without a separate decision.
+5. Build and verify the scoped route tree in preview/staging.
+6. Enable the feature flag, redirect legacy paths, observe, then remove obsolete compatibility code.
+7. After stabilization, create a clean baseline for fresh environments. Supabase migration squashing must be reviewed because DML, cron jobs, Storage buckets, and secrets are not preserved automatically.
+
+The historical duplicate-table migration involving `20260902120000_social_profiles.sql` is not edited after application. It is addressed by the later verified baseline.
+
+## Performance baseline
+
+- Index all tenant foreign keys and common `(event_id, status/time)` access patterns.
+- Prefer set-based queries over per-row loops.
+- Paginate event rosters, audits, and delivery logs.
+- Keep Realtime subscriptions event scoped and opt-in.
+- Treat the initial free plan as a pilot; the design target is roughly 100 concurrent events and 10,000 active attendees after appropriate service upgrades.
