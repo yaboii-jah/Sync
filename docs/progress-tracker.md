@@ -77,9 +77,17 @@ Phase 1 — tenant foundation, audited operations, tenant-scoped program data, a
 - Added a generic Sync landing experience and metadata behind the server-only flag while preserving the archived AWS presentation when the flag is disabled.
 - Added scoped Cobalt design tokens and Hallmark design memory for the new platform surfaces; the legacy tenant theme remains unchanged.
 
+### 2026-09-14 — Live route smoke-test follow-up
+
+- Narrowed anonymous event access to exactly `/e/[slug]`; protected descendants now enter the authentication bounce with their complete pathname preserved.
+- Added regression coverage for always-public routes, feature-flagged public event pages, and protected event descendants.
+- Replaced inherited AWS social metadata assets with generated event-neutral Sync images and archived the original AWS image files alongside the legacy documentation.
+- Verified locally that the generic landing and a temporary published event return `200`, invalid and unknown event slugs return `404`, protected event home returns `307` with its encoded `next` path, and both social-image endpoints return PNG responses.
+- Removed the temporary local event fixture after verification; no remote data or migration state changed.
+
 ## Verification evidence
 
-- `npm test`: 42 tests passed.
+- `npm test`: 49 tests passed.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
 - `npm run build`: passed on Next.js 16.3.2.
 - `npx tsc --noEmit`: passed after the event-context routing unit.

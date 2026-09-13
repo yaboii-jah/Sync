@@ -3,14 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAuthenticatedClaims } from "./lib/supabase/auth";
 import { getSupabaseEnv } from "./lib/supabase/env";
 import { isMultiTenantPlatformEnabled } from "./lib/feature-flags";
-
-const PUBLIC_PATHS = ["/", "/login", "/c"];
-
-function isPublicPath(pathname: string, multiTenantEnabled: boolean): boolean {
-  return PUBLIC_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  ) || (multiTenantEnabled && (pathname === "/e" || pathname.startsWith("/e/")));
-}
+import { isPublicPath } from "./lib/public-paths";
 
 export async function proxy(request: NextRequest) {
   const { url, publishableKey } = getSupabaseEnv();
