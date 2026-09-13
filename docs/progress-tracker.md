@@ -8,7 +8,7 @@ Convert Sync from the completed AWS Student Community Day Mega Manila 2026 compa
 
 ## Current phase
 
-Phase 1 — tenant foundation and audited operations are locally verified; both migrations remain unapplied remotely.
+Phase 1 — tenant foundation, audited operations, and the event-program data boundary are locally verified; all three migrations remain unapplied remotely.
 
 ## Completed
 
@@ -58,25 +58,34 @@ Phase 1 — tenant foundation and audited operations are locally verified; both 
 - Enforced verified exact-email invitation acceptance, expiration/revocation state, owner admin quotas, valid publish time zones, suspension read-only behavior, and immutable audit history.
 - Replayed the full viable local migration chain from scratch and regenerated `lib/supabase/database.types.ts` from the verified local schema.
 
+### 2026-09-14 — Tenant-scoped event program locally verified
+
+- Added required `event_id` ownership to speakers, session-speaker links, and bookmarks, with composite foreign keys that reject cross-event relationships at the database boundary.
+- Replaced schedule, speaker, session-link, bookmark, and workshop-seat mutation paths with membership-aware, tenant-scoped authorization; administrative program mutations emit immutable audit records.
+- Added explicit speaker publication, enforced sessions within the event time window, retained free-text room labels, and kept normalized tracks and venues deferred.
+- Added a narrow anonymous `get_public_event_program` RPC that returns only published content for published, non-suspended events; program tables remain unavailable directly to anonymous clients.
+- Added owner/admin/support speaker and link RPCs, session quotas, idempotency, suspension behavior, archived attendee reads, and Realtime publication for speaker/link changes.
+- Replayed the viable migration chain from scratch, regenerated `lib/supabase/database.types.ts`, and added 38 tenant-program pgTAP assertions.
+
 ## Verification evidence
 
 - `npm test`: 38 tests passed.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
 - `npm run build`: passed on Next.js 16.3.2.
-- `npx supabase db push --linked --dry-run`: recognized the foundation and audited-operations migrations in order and did not mutate the linked project.
+- `npx supabase db push --linked --dry-run`: recognized the foundation, audited-operations, and tenant-program migrations in order and did not mutate the linked project.
 - `npx supabase db lint --local --level warning`: no schema errors or warnings.
 - `git diff --check`: passed.
-- `npx supabase test db`: all 147 pgTAP assertions passed, including 64 audited-operation and 19 tenant-foundation checks.
+- `npx supabase test db`: all 185 pgTAP assertions passed, including 38 tenant-program, 64 audited-operation, and 19 tenant-foundation checks.
 
 ## In progress
 
-- Schedule, speaker, session-link, and bookmark tenant scoping is the next prerequisite for event creation.
+- Event-scoped application queries and routes are the next prerequisite for enabling multi-event creation.
 
 ## Next implementation unit
 
-1. Scope schedule, speakers, session links, and bookmarks before exposing event creation.
-2. Add event-scoped application queries and route acceptance coverage behind the disabled feature flag.
-3. Apply both verified Phase 1 migrations to a preview/staging project before the linked production project.
+1. Add event selection plus event-scoped application queries, Realtime filters, and route acceptance coverage behind the disabled feature flag.
+2. Replace or retire the legacy global `admin_get_dashboard` path before any multi-event route can consume it.
+3. Apply all three verified Phase 1 migrations to a preview/staging project before the linked production project.
 
 ## Known migration risks
 

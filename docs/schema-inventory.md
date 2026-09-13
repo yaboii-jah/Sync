@@ -4,15 +4,15 @@
 
 | Legacy object | Current scope | Tenant migration destination |
 | --- | --- | --- |
-| `events` | Single event | Extend as the tenant root; retain derived `status` temporarily and add lifecycle/suspension/branding fields |
-| `sessions` | Has `event_id` | Add composite tenant constraints and scoped policies in the schedule unit |
-| `speakers_sponsors` | Global event content | Add `event_id` before multiple-event creation is enabled |
-| `session_speakers` | Indirectly scoped | Add explicit `event_id` and composite foreign keys |
-| `my_flow_bookmarks` | User + session | Add explicit `event_id` and require active membership |
+| `events` | Tenant root | Lifecycle, suspension, branding, ownership, and compatibility `status` fields are complete |
+| `sessions` | Tenant scoped | Composite tenant constraints, event-window enforcement, scoped policies, and audited RPCs are complete |
+| `speakers_sponsors` | Tenant scoped | Required `event_id`, explicit publication state, scoped policies, and audited RPCs are complete |
+| `session_speakers` | Tenant scoped | Required `event_id` and composite session/speaker foreign keys are complete |
+| `my_flow_bookmarks` | Tenant scoped | Required `event_id`, active membership checks, and composite session ownership are complete |
 | `notifications` and delivery tables | Global feed | Add `event_id`; migrate preferences, recipients, dispatches, and reads together |
 | `quick_links` | Global | Convert to event-owned content |
 | `networking_cards`, `social_profiles`, scan history | Global/user scoped | Keep reusable URLs global; move cards, selections, and scans to membership/event scope |
-| Workshop seat functions/state | Single event | Add event identity and membership checks in one transactional unit |
+| Workshop seat functions/state | Compatibility scoped | Claim/release RPCs now verify the session event and active membership; adding `event_id` to claim rows remains deferred |
 | `app_feedback` | Global app feedback | Keep as platform feedback; add separate event feedback later |
 | `admin_users` and `admin_audit_log` | Global event operator | Preserve for legacy routes; mirror into platform/event role foundations, then retire after cutover |
 | `profiles`, `push_subscriptions` | Global user/device | Remain global with privacy-safe event projections |
@@ -41,6 +41,19 @@ Migration `20260913160000_multi_tenant_foundation.sql` adds:
 
 If a fresh local database has no auth users, the seeded legacy event cannot receive an owner until a bootstrap identity exists. Production backfill is expected to have at least one legacy admin and must be checked before applying the migration.
 
+## Event program scoping added
+
+Migration `20260913180000_tenant_scoped_event_program.sql` adds:
+
+- Required event ownership for speakers, session-speaker links, and bookmarks
+- Composite foreign keys preventing cross-event program relationships
+- Event-bounded session times and explicit speaker publication
+- Tenant-aware RLS, audited administrative RPCs, and scoped bookmark/seat RPC behavior
+- A safe public program DTO RPC for published, non-suspended events
+- Tenant-friendly indexes and Realtime publication for speaker and speaker-link changes
+
+Rooms remain free-text labels for the first reusable release. Normalized tracks and venues are intentionally deferred until there is demonstrated cross-event demand.
+
 ## Quarantined remote objects
 
 Generated remote types expose `merch_attendees`, `merch_scan_log`, `merch_claim_attendee`, and `merch_revert_claim`, although they have no intended migration source or approved place in Sync. The foundation migration conditionally revokes `anon` and `authenticated` privileges from matching tables and every `public.merch_*` function if they exist. It does not delete, modify, or integrate their data.
@@ -51,7 +64,9 @@ The merchandise objects still require an ownership decision before cutover. Do n
 
 - `supabase/seed.sql` is configured but absent.
 - The historical social-profile sequence includes an out-of-band/no-op mismatch around `20260902120000_social_profiles.sql`.
-- A linked-project dry run recognizes the new foundation migration as the only pending migration.
-- Local SQL execution currently requires Docker or Podman, which is not installed in the development environment.
+- A linked-project dry run recognizes the foundation, audited-operations, and tenant-program migrations as pending, in that order.
+- Docker Desktop is installed and the local Supabase stack, clean replay, schema lint, and pgTAP suite are working.
+
+The current application queries, unfiltered Realtime subscriptions, and legacy `admin_get_dashboard` RPC still assume one active event. They must be replaced by slug/event-context-aware access before the feature flag or multi-event creation is enabled.
 
 These hazards are why the existing history is preserved and a reviewed clean baseline is deferred until after cutover stabilization.

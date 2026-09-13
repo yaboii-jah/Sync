@@ -46,7 +46,7 @@ Membership statuses support active, left, removed, and blocked behavior. A remov
 ### Event scoped
 
 - Events, branding, memberships, and invitations
-- Sessions, speakers, tracks, venues, and bookmarks
+- Sessions, speakers, free-text room labels, and bookmarks
 - Seat inventory and reservations
 - Event notification configuration, delivery, preferences, and read state
 - Event networking cards, card-link selections, and scan history
@@ -54,6 +54,8 @@ Membership statuses support active, left, removed, and blocked behavior. A remov
 - Event audit records
 
 Every tenant-owned row has an `event_id`. Relationships that can cross tables use composite foreign keys including `event_id` where practical so invalid cross-event references fail at the database boundary.
+
+Speaker publication is explicit and independent of session publication. Session intervals must remain within their event's start and end timestamps. Normalized track and venue entities are deferred; v1 keeps the existing room text field.
 
 ## Database security invariants
 

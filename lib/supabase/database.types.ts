@@ -365,26 +365,29 @@ export type Database = {
       my_flow_bookmarks: {
         Row: {
           created_at: string
+          event_id: string
           session_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          event_id: string
           session_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          event_id?: string
           session_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "my_flow_bookmarks_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "my_flow_bookmarks_session_fkey"
+            columns: ["event_id", "session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
@@ -884,31 +887,34 @@ export type Database = {
       }
       session_speakers: {
         Row: {
+          event_id: string
           session_id: string
           speaker_id: string
         }
         Insert: {
+          event_id: string
           session_id: string
           speaker_id: string
         }
         Update: {
+          event_id?: string
           session_id?: string
           speaker_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "session_speakers_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "session_speakers_session_fkey"
+            columns: ["event_id", "session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
           {
-            foreignKeyName: "session_speakers_speaker_id_fkey"
-            columns: ["speaker_id"]
+            foreignKeyName: "session_speakers_speaker_fkey"
+            columns: ["event_id", "speaker_id"]
             isOneToOne: false
             referencedRelation: "speakers_sponsors"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
@@ -1024,32 +1030,52 @@ export type Database = {
       speakers_sponsors: {
         Row: {
           bio: string | null
+          created_at: string
+          event_id: string
           id: string
           linkedin_url: string | null
           name: string
           organization: string | null
           photo_url: string | null
+          published: boolean
           role: string
+          updated_at: string
         }
         Insert: {
           bio?: string | null
+          created_at?: string
+          event_id: string
           id?: string
           linkedin_url?: string | null
           name: string
           organization?: string | null
           photo_url?: string | null
+          published?: boolean
           role: string
+          updated_at?: string
         }
         Update: {
           bio?: string | null
+          created_at?: string
+          event_id?: string
           id?: string
           linkedin_url?: string | null
           name?: string
           organization?: string | null
           photo_url?: string | null
+          published?: boolean
           role?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "speakers_sponsors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1087,8 +1113,26 @@ export type Database = {
         }
         Returns: string
       }
+      admin_create_speaker: {
+        Args: {
+          mutation_request_id: string
+          speaker_bio: string
+          speaker_linkedin_url: string
+          speaker_name: string
+          speaker_organization: string
+          speaker_photo_url: string
+          speaker_published: boolean
+          speaker_role: string
+          target_event_id: string
+        }
+        Returns: string
+      }
       admin_delete_session: {
         Args: { mutation_request_id: string; target_session_id: string }
+        Returns: string
+      }
+      admin_delete_speaker: {
+        Args: { mutation_request_id: string; target_speaker_id: string }
         Returns: string
       }
       admin_get_attendee: {
@@ -1176,6 +1220,14 @@ export type Database = {
         }
         Returns: string
       }
+      admin_set_session_speakers: {
+        Args: {
+          mutation_request_id: string
+          target_session_id: string
+          target_speaker_ids: string[]
+        }
+        Returns: string
+      }
       admin_set_session_status: {
         Args: {
           action: string
@@ -1192,6 +1244,14 @@ export type Database = {
           status_override_at: string
         }[]
       }
+      admin_set_speaker_published: {
+        Args: {
+          mutation_request_id: string
+          next_published: boolean
+          target_speaker_id: string
+        }
+        Returns: string
+      }
       admin_update_session: {
         Args: {
           mutation_request_id: string
@@ -1201,6 +1261,19 @@ export type Database = {
           session_start_time: string
           session_title: string
           target_session_id: string
+        }
+        Returns: string
+      }
+      admin_update_speaker: {
+        Args: {
+          mutation_request_id: string
+          speaker_bio: string
+          speaker_linkedin_url: string
+          speaker_name: string
+          speaker_organization: string
+          speaker_photo_url: string
+          speaker_role: string
+          target_speaker_id: string
         }
         Returns: string
       }
@@ -1245,6 +1318,7 @@ export type Database = {
           url: string
         }[]
       }
+      get_public_event_program: { Args: { event_slug: string }; Returns: Json }
       get_public_networking_card: {
         Args: { card_token: string }
         Returns: {
