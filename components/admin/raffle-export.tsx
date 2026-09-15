@@ -13,12 +13,8 @@ import {
 import { Copy, Download, Ticket, Users } from "lucide-react";
 import { EmptyState } from "@/components/empty-states";
 import { formatRaffleEntries, raffleText } from "@/lib/raffle";
-import { createClient } from "@/lib/supabase/client";
-import {
-  getAdminRaffleAttendees,
-  type AdminAttendee,
-  type AdminRaffleSnapshot,
-} from "@/lib/supabase/queries/admin";
+import { getRaffleSnapshotAction } from "@/app/(admin)/admin/actions";
+import type { AdminAttendee, AdminRaffleSnapshot } from "@/lib/supabase/queries/admin";
 import { useToast } from "@/components/toast/toast-provider";
 import { AttendeeDetailModal } from "./attendee-detail-modal";
 
@@ -46,7 +42,7 @@ export function RaffleExport() {
   function loadSnapshot() {
     startLoading(async () => {
       try {
-        setSnapshot(await getAdminRaffleAttendees(createClient()));
+        setSnapshot(await getRaffleSnapshotAction());
         setError(null);
       } catch {
         setSnapshot(null);

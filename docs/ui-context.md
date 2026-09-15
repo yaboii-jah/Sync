@@ -4,11 +4,11 @@
 
 Sync has an attendee-first, event-neutral platform shell. It should feel lively and welcoming without becoming visually noisy. The signed-in hub makes opening the user's current or most relevant event the dominant action, while clearly separating events they manage from events they attend.
 
-The generic platform must not inherit AWS colors, names, imagery, or Perandory typography. The archived AWS tenant keeps its legacy presentation inside its scoped event routes.
+The original Sync dark teal/gold/green theme is shared globally, with Perandory for the Sync wordmark. Platform wording stays event-neutral; AWS names and logos belong only to that event's content.
 
 ## Design system
 
-- Use Geist Sans and Geist Mono for the platform and organizer interfaces.
+- Use Geist Sans for interfaces and Perandory for the Sync identity.
 - Use semantic CSS variables rather than raw tenant colors in components.
 - Preserve React Aria interaction semantics and Tailwind-based styling.
 - Prefer clear hierarchy, generous touch targets, purposeful empty states, and restrained CSS motion.
@@ -16,8 +16,8 @@ The generic platform must not inherit AWS colors, names, imagery, or Perandory t
 
 ## Platform shell
 
-- Neutral warm or cool surfaces with strong readable contrast
-- One primary platform accent for navigation and calls to action
+- Original dark teal surfaces with strong readable contrast
+- Gold primary actions, green success accents, and blue keyboard focus
 - Attendee routes use compact mobile-first navigation
 - Management routes use a denser workspace layout without looking like a separate product
 - Super-admin surfaces are visibly platform-level and never borrow an event's brand
@@ -28,8 +28,7 @@ Organizer-controlled inputs:
 
 - Logo
 - Cover image
-- Preset: `daylight`, `midnight`, or `festival`
-- Custom accent color that passes validation
+- No interface color, typography, or theme controls
 
 Platform-controlled tokens:
 
@@ -40,7 +39,7 @@ Platform-controlled tokens:
 - Form validation
 - System overlays and permission warnings
 
-The theme resolver converts event settings into semantic tokens such as `--event-accent`, `--event-accent-contrast`, `--event-surface`, and `--event-hero-overlay`. Components never assume that the accent itself is safe for text. Reject accents that cannot produce an accessible interaction palette.
+`app/globals.css` is the canonical original Sync theme; `tokens.css` aliases it without overriding it. Stored presets and accents are compatibility data only. Users, roles, and events do not change interface appearance.
 
 ## Key screens
 
@@ -54,7 +53,7 @@ Lead with `Open current event`. Follow with two scannable sections: `Attending` 
 
 ### Event attendee shell
 
-Brand the header and hero region with the event theme while keeping navigation predictable across events. Archived events display an unmistakable read-only banner and suppress actions that change event state.
+Use event logos and cover images in the header and hero, retaining the fixed Sync palette, typography, and navigation. Archived events display an unmistakable read-only banner and suppress actions that change event state.
 
 ### Event management
 

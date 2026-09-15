@@ -1286,6 +1286,19 @@ export type Database = {
         Returns: string
       }
       claim_session_seat: { Args: { target_session_id: string }; Returns: Json }
+      create_event: {
+        Args: {
+          event_description: string
+          event_ends_at: string
+          event_name: string
+          event_slug: string
+          event_starts_at: string
+          event_timezone: string
+          event_venue: string
+          mutation_request_id: string
+        }
+        Returns: string
+      }
       current_user_is_admin: { Args: never; Returns: boolean }
       delete_untouched_draft_event: {
         Args: {
@@ -1441,6 +1454,19 @@ export type Database = {
         Args: {
           mutation_request_id: string
           next_owner_membership_id: string
+          target_event_id: string
+        }
+        Returns: string
+      }
+      update_event_basics: {
+        Args: {
+          event_description: string
+          event_ends_at: string
+          event_name: string
+          event_starts_at: string
+          event_timezone: string
+          event_venue: string
+          mutation_request_id: string
           target_event_id: string
         }
         Returns: string

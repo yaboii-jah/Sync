@@ -8,7 +8,7 @@ Convert Sync from the completed AWS Student Community Day Mega Manila 2026 compa
 
 ## Current phase
 
-Phase 1 — tenant foundation, audited operations, tenant-scoped program data, and the first event-context application routes are locally verified; all three migrations remain unapplied remotely.
+Phase 1 — tenant foundation, audited operations, tenant-scoped program data, event-context routes, and organizer foundation are locally verified; all four forward migrations remain unapplied remotely.
 
 ## Completed
 
@@ -85,26 +85,54 @@ Phase 1 — tenant foundation, audited operations, tenant-scoped program data, a
 - Verified locally that the generic landing and a temporary published event return `200`, invalid and unknown event slugs return `404`, protected event home returns `307` with its encoded `next` path, and both social-image endpoints return PNG responses.
 - Removed the temporary local event fixture after verification; no remote data or migration state changed.
 
+### 2026-09-15 — Organizer foundation locally verified
+
+- Added audited, idempotent event creation and basics updates with immutable slugs, five-active-event default quotas, per-owner concurrency locking, timezone validation, and session-window protection.
+- Added `/events/new`, `/manage/[slug]`, and `/manage/[slug]/basics` with independent owner/admin authorization at every data and action leaf. Archived and suspended management is read-only.
+- Added owner-only publication, reason-gated archival, and reason/name-gated untouched-draft deletion. Creation/basics audit entries do not count as meaningful activity; persistent platform tombstones prevent deleted creation requests from resurrecting drafts.
+- Split the member hub into attending/managing groups and added management entry points. Retired legacy global-admin reads at both layout and query boundaries when the rollout flag is enabled; stale legacy actions remain blocked and flag-off behavior is preserved.
+- Preserved readable `legacy_aws` branding in event parsing. Organizer forms reuse the existing Cobalt/Geist tokens and include a non-production eight-state component preview.
+- Fixed React action-form resets interacting with React Aria controlled inputs: successful saves now preserve edited values and visible feedback.
+- Separated the browser-safe attendee alert-read RPC from the server-only legacy-admin query module, so global-query cutover guards cannot enter client bundles or intercept attendee alert reads.
+- Routed legacy attendee search/detail/raffle client reads through independently authorized server actions; no client runtime imports the global-admin query module. Existing flag-off functionality retains its pagination and database operations.
+- Added 48 organizer pgTAP assertions and a repeatable local-only Edge acceptance probe. Verified actual browser creation, suggested slugs, basics saving, publication/public visibility, archival/read-only transition, typed draft deletion, and parallel owner-quota enforcement. Removed only the probe's temporary users/events/audit rows.
+- Executed the new forward migration against the existing local database, recorded version `20260915130258` as applied in local migration history, and regenerated types; did not reset local user data, alter historical migrations, or apply remote migrations.
+
 ## Verification evidence
 
-- `npm test`: 49 tests passed.
+- `npm test`: 69 tests passed.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
 - `npm run build`: passed on Next.js 16.3.2.
-- `npx tsc --noEmit`: passed after the event-context routing unit.
+- `npx tsc --noEmit`: passed after the organizer implementation.
 - `npx supabase db push --linked --dry-run`: recognized the foundation, audited-operations, and tenant-program migrations in order and did not mutate the linked project.
 - `npx supabase db lint --local --level warning`: no schema errors or warnings.
 - `git diff --check`: passed.
-- `npx supabase test db`: all 185 pgTAP assertions passed, including 38 tenant-program, 64 audited-operation, and 19 tenant-foundation checks.
+- `npx supabase test db`: all 233 pgTAP assertions passed, including 48 organizer, 38 tenant-program, 64 audited-operation, and 19 tenant-foundation checks.
+- `node scripts/smoke-organizer.mjs`: local two-tenant route and browser acceptance passed, including 320/375/414/768px overflow checks and measured text/control contrast. A captured basics-screen screenshot was visually reviewed.
 
 ## In progress
 
-- Event owner/admin management routes and event creation remain the next prerequisite for enabling the multi-tenant flag.
+- No organizer-foundation implementation work remains. Preview/staging migration application and rollout remain pending explicit deployment approval.
+
+## Original Sync theme restoration verification — September 15, 2026
+
+Original Sync UI restoration completed: removed light platform overrides, restored shared dark teal/gold/green controls and Perandory identity, and aligned social previews and active context docs. Event logo/cover branding remains supported; stored theme fields are compatibility-only. Authentication and database behavior are unchanged.
+
+- `npm test`: all 72 tests passed, including fixed-theme and social-palette regression checks.
+- `npm run build`: passed, including TypeScript and both generated social images. Existing `metadataBase` configuration warning remains.
+- `npm run lint`: no errors; 9 pre-existing networking-card warnings remain.
+- Local browser smoke against the existing server on port 3000 passed: two-tenant access isolation, anonymous redirects, organizer basics save, draft creation, publish/archive, gated deletion, and concurrent creation quotas.
+- Identical computed theme values verified across two event owners, an event admin, and an attendee. Stored presets are not read by the shared shells or overview presentation.
+- Basics overflow checks passed at 320/375/414/768px; landing checks passed at 320/375/414/768/1280/1920px. Phone and laptop landing screenshots, organizer controls, and social preview were visually reviewed.
+- Shared text, helper, error, success, primary button, input boundary, and focus contrast passed. Error text uses a lighter derivative of the original red for readable contrast on dark surfaces.
+- Both social-image endpoints returned PNG successfully, with explicitly registered Geist body text and the restored Perandory wordmark.
+- Only smoke-run fixture data was removed. No schema migrations, production changes, auth-provider changes, commits, or pushes were performed.
 
 ## Next implementation unit
 
-1. Add `/manage/[slug]` owner/admin routes and audited event creation using the existing tenant-operation RPCs.
-2. Replace or retire the legacy global `admin_get_dashboard` path before any multi-event management route can consume it.
-3. Add browser-level route acceptance for two simultaneous tenants, then apply all three verified Phase 1 migrations to preview/staging before production.
+1. Plan the tenant-scoped schedule/speaker management editor using the existing audited program RPCs; branding and team controls remain separate units.
+2. Apply all four verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
+3. Continue the deferred tenant migration domains and platform-super-admin workspace documented in the rollout and schema inventory.
 
 ## Known migration risks
 

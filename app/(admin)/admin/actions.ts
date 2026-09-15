@@ -9,6 +9,8 @@ import {
   createAdminSession,
   deleteAdminSession,
   searchAdminAttendees,
+  getAdminAttendee,
+  getAdminRaffleAttendees,
   setAdminSessionCapacity,
   setAdminSessionPublished,
   setAdminSessionStatus,
@@ -79,10 +81,22 @@ export async function sendAdminNotification(input: {
   }
 }
 
-export async function searchAttendeesAction(query: string): Promise<AdminAttendee[]> {
+export async function searchAttendeesAction(query: string, offset = 0): Promise<AdminAttendee[]> {
   await requireAdmin();
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw new Error("Invalid pagination offset");
   const supabase = await createClient();
-  return searchAdminAttendees(supabase, query.trim(), 50, 0);
+  return searchAdminAttendees(supabase, query.trim(), 50, offset);
+}
+
+export async function getAttendeeDetailAction(userId: string) {
+  await requireAdmin();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) throw new Error("Invalid attendee");
+  return getAdminAttendee(await createClient(), userId);
+}
+
+export async function getRaffleSnapshotAction() {
+  await requireAdmin();
+  return getAdminRaffleAttendees(await createClient());
 }
 
 export async function changeSessionStatus(input: {

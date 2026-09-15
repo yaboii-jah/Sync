@@ -13,12 +13,8 @@ import {
   Typography,
 } from "@/components/ui";
 import { ExternalLink, Smartphone } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import {
-  getAdminAttendee,
-  type AdminAttendee,
-  type AdminAttendeeDetail,
-} from "@/lib/supabase/queries/admin";
+import { getAttendeeDetailAction } from "@/app/(admin)/admin/actions";
+import type { AdminAttendee, AdminAttendeeDetail } from "@/lib/supabase/queries/admin";
 import { formatRelativeTime } from "@/lib/format";
 import { SOCIAL_SPECS, type SocialNetwork } from "@/lib/social";
 
@@ -61,7 +57,7 @@ export function AttendeeDetailModal({
   useEffect(() => {
     let current = true;
 
-    void getAdminAttendee(createClient(), attendee.id)
+    void getAttendeeDetailAction(attendee.id)
       .then((nextDetail) => {
         if (current) setDetail(nextDetail);
       })

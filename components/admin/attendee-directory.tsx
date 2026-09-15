@@ -14,11 +14,8 @@ import {
   Search,
   Users,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import {
-  searchAdminAttendees,
-  type AdminAttendee,
-} from "@/lib/supabase/queries/admin";
+import { searchAttendeesAction } from "@/app/(admin)/admin/actions";
+import type { AdminAttendee } from "@/lib/supabase/queries/admin";
 import { formatRelativeTime } from "@/lib/format";
 import { EmptyState } from "@/components/empty-states";
 import { AttendeeAvatar, AttendeeDetailModal } from "./attendee-detail-modal";
@@ -42,7 +39,7 @@ export function AttendeeDirectory({ initialAttendees, initialQuery = "" }: { ini
         return;
       }
       try {
-        const rows = await searchAdminAttendees(createClient(), query.trim(), PAGE_SIZE, 0);
+        const rows = await searchAttendeesAction(query.trim());
         setAttendees(rows);
         setHasMore(rows.length === PAGE_SIZE);
         setError(null);
@@ -60,7 +57,7 @@ export function AttendeeDirectory({ initialAttendees, initialQuery = "" }: { ini
   function loadMore() {
     startLoadingMore(async () => {
       try {
-        const rows = await searchAdminAttendees(createClient(), query.trim(), PAGE_SIZE, attendees.length);
+        const rows = await searchAttendeesAction(query.trim(), attendees.length);
         setAttendees((current) => [...current, ...rows]);
         setHasMore(rows.length === PAGE_SIZE);
       } catch {

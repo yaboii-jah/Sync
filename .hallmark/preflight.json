@@ -1,15 +1,15 @@
 {
-  "date": "2026-09-14",
+  "date": "2026-09-15",
   "projectType": "existing Next.js event platform",
   "preserved": {
-    "font": "Geist with existing local Perandory retained for the legacy tenant",
-    "palette": "legacy AWS tokens remain unchanged outside .tenant-platform",
+    "font": "Geist interface typography and Perandory Sync identity",
+    "palette": "Original Sync globals.css tokens shared across every route and role",
     "framework": "Next.js 16 App Router, Tailwind CSS 4, React Aria primitives",
     "spacing": "existing 4px-derived scale"
   },
   "introduced": {
     "macrostructure": "Index-First",
-    "theme": "Cobalt adapted to Geist",
+    "theme": "Original Sync aliases; no event-dependent overrides",
     "navigation": "N9 edge-aligned minimal",
     "footer": "Ft2 inline rule"
   }

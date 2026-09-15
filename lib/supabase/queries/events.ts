@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { deriveEventPermissions, EVENT_LIFECYCLES, EVENT_ROLES, EVENT_THEME_PRESETS, MEMBERSHIP_STATUSES, type EventContext, type EventPermissions, type EventRole, type MembershipStatus } from "@/lib/events/types";
+import { deriveEventPermissions, EVENT_LIFECYCLES, EVENT_ROLES, STORED_EVENT_THEME_PRESETS, MEMBERSHIP_STATUSES, type EventContext, type EventPermissions, type EventRole, type MembershipStatus } from "@/lib/events/types";
 import { normalizeEventSlug } from "@/lib/events/routing";
 import type { Database } from "../database.types";
 
@@ -43,7 +43,7 @@ function toUserEvent(
   role: string,
   status: string,
 ): UserEvent | null {
-  if (!includes(EVENT_LIFECYCLES, event.lifecycle) || !includes(EVENT_THEME_PRESETS, event.theme_preset)) return null;
+  if (!includes(EVENT_LIFECYCLES, event.lifecycle) || !includes(STORED_EVENT_THEME_PRESETS, event.theme_preset)) return null;
   if (!includes(EVENT_ROLES, role) || !includes(MEMBERSHIP_STATUSES, status)) return null;
   return {
     id: event.id, slug: event.slug, name: event.name, lifecycle: event.lifecycle,

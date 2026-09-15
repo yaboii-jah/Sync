@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 
 export function PlatformShell({ children }: { children: ReactNode }) {
   return (
-    <div className="tenant-platform flex min-h-dvh flex-col">
+    <div className="sync-app app-field flex min-h-dvh flex-col">
       <header className="platform-frame flex min-h-20 items-center justify-between border-b platform-rule">
-        <Link href="/events" className="platform-link text-lg tracking-[-0.04em]" aria-label="Sync event index">
-          Sync<span aria-hidden className="text-accent">/</span>
+        <Link href="/events" className="platform-link identity-font text-2xl uppercase" aria-label="Sync event index">
+          Sync
         </Link>
         <nav aria-label="Primary navigation">
           <Link href="/events" className="platform-link px-2 text-sm">Events</Link>

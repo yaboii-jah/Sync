@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { deriveEventPermissions } from "./types";
+import { deriveEventPermissions, EVENT_THEME_PRESETS, STORED_EVENT_THEME_PRESETS } from "./types";
 
 describe("deriveEventPermissions", () => {
+  it("keeps legacy event branding readable without offering it for creation", () => {
+    expect(STORED_EVENT_THEME_PRESETS).toContain("legacy_aws");
+    expect(EVENT_THEME_PRESETS).not.toContain("legacy_aws");
+  });
   it("grants full draft setup permissions only to the active owner", () => {
     expect(deriveEventPermissions("owner", "active", "draft", false)).toEqual({
       canViewAttendeeExperience: true,
@@ -12,6 +16,7 @@ describe("deriveEventPermissions", () => {
       canTransferOwnership: true,
       canPublish: true,
       canArchive: true,
+      canDeleteDraft: true,
     });
   });
 
@@ -26,6 +31,7 @@ describe("deriveEventPermissions", () => {
       canTransferOwnership: false,
       canPublish: false,
       canArchive: false,
+      canDeleteDraft: false,
     });
   });
 
@@ -40,6 +46,7 @@ describe("deriveEventPermissions", () => {
       canTransferOwnership: false,
       canPublish: false,
       canArchive: false,
+      canDeleteDraft: false,
     });
   });
 
@@ -56,6 +63,7 @@ describe("deriveEventPermissions", () => {
         canTransferOwnership: false,
         canPublish: false,
         canArchive: false,
+        canDeleteDraft: false,
       });
     },
   );
@@ -71,6 +79,7 @@ describe("deriveEventPermissions", () => {
       canTransferOwnership: false,
       canPublish: false,
       canArchive: false,
+      canDeleteDraft: false,
     });
   });
 });

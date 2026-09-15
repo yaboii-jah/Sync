@@ -18,6 +18,9 @@ export const EVENT_THEME_PRESETS = [
   "festival",
 ] as const;
 export type EventThemePreset = (typeof EVENT_THEME_PRESETS)[number];
+// The private legacy preset is readable, never offered to new organizers.
+export const STORED_EVENT_THEME_PRESETS = [...EVENT_THEME_PRESETS, "legacy_aws"] as const;
+export type StoredEventThemePreset = (typeof STORED_EVENT_THEME_PRESETS)[number];
 
 export interface EventContext {
   id: string;
@@ -26,7 +29,7 @@ export interface EventContext {
   lifecycle: EventLifecycle;
   isSuspended: boolean;
   timezone: string;
-  themePreset: EventThemePreset;
+  themePreset: StoredEventThemePreset;
   accentColor: string;
 }
 export interface EventPermissions {
@@ -37,6 +40,7 @@ export interface EventPermissions {
   canTransferOwnership: boolean;
   canPublish: boolean;
   canArchive: boolean;
+  canDeleteDraft: boolean;
 }
 
 const NO_EVENT_PERMISSIONS: EventPermissions = {
@@ -47,6 +51,7 @@ const NO_EVENT_PERMISSIONS: EventPermissions = {
   canTransferOwnership: false,
   canPublish: false,
   canArchive: false,
+  canDeleteDraft: false,
 };
 
 export function deriveEventPermissions(
@@ -71,5 +76,6 @@ export function deriveEventPermissions(
     canTransferOwnership: isOwner && isWritable,
     canPublish: isOwner && lifecycle === "draft",
     canArchive: isOwner && lifecycle !== "archived",
+    canDeleteDraft: isOwner && lifecycle === "draft",
   };
 }

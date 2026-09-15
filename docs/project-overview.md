@@ -37,7 +37,7 @@ The platform is not tied to AWS or to student events. AWS Student Community Day 
 ### Organizer
 
 1. Sign in and create a draft event.
-2. Add event identity, venue, dates, IANA timezone, branding, sessions, and speakers.
+2. Add event identity, venue, dates, IANA timezone, logo/cover branding, sessions, and speakers. All events share the original Sync UI theme.
 3. Invite admins by verified email.
 4. Preview and publish the event.
 5. Operate the live event, moderate membership, and review event feedback.

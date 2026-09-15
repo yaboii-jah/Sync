@@ -44,7 +44,7 @@ Read the relevant installed Next.js guide before changing framework APIs. For da
 
 - Active documents describe the current approved platform direction and current implementation state.
 - Event-specific historical documents live under `docs/archive/<event>/`.
-- Do not let completed-event branding or one-off operations become global requirements.
+- Do not let completed-event names, logos, or one-off operations become global requirements. Preserve the original Sync visual identity as the fixed app-wide theme.
 - Record open implementation questions in the progress tracker rather than guessing silently.
 
 ## Completion standard

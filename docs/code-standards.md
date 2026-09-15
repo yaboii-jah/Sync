@@ -39,8 +39,8 @@ Required shared types include `EventContext`, `EventLifecycle`, `EventRole`, `Me
 
 ## UI
 
-- Use semantic theme tokens and existing primitives.
-- Keep tenant branding at the event shell/hero level; do not leak it into platform or super-admin UI.
+- Use semantic theme tokens and existing primitives. The original Sync theme is fixed globally; user preferences, roles, and stored event presets/accents must not override it.
+- Keep event logos and covers at the event shell/hero level; they never override shared UI colors or fonts.
 - Preserve React Aria semantics, keyboard access, visible focus, reduced motion, and sufficient contrast.
 - Avoid adding dependencies when a small existing primitive is sufficient.
 

@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
-import { markAlertsReadAtDatabaseTime } from "./admin";
 
 export async function getLastReadAt(
   client: SupabaseClient<Database>,
@@ -32,7 +31,10 @@ export async function markAlertsRead(
   client: SupabaseClient<Database>,
 ): Promise<void> {
   try {
-    await markAlertsReadAtDatabaseTime(client);
+    // Attendee operation, not a legacy administrative query. Keep this module
+    // browser-safe and independent of the server-only global-admin boundary.
+    const { error } = await client.rpc("mark_alerts_read");
+    if (error) throw new Error(error.message);
   } catch (error) {
     console.error(
       "[alerts] mark-read failed:",

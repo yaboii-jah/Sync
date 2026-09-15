@@ -1,5 +1,7 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "../database.types";
+import { redirectLegacyAdmin } from "../legacy-admin-routing";
 
 type QueryClient = SupabaseClient<Database>;
 
@@ -126,6 +128,7 @@ async function callRpc<T>(
   name: string,
   args?: Record<string, unknown>,
 ): Promise<T> {
+  await redirectLegacyAdmin();
   const rpcClient = client as unknown as RpcClient;
   const { data, error } = await rpcClient.rpc(name, args);
   if (error) throw new Error(error.message);
@@ -268,12 +271,6 @@ export async function setAdminSessionStatus(
     send_notification: input.sendNotification,
     mutation_request_id: input.requestId,
   });
-}
-
-export async function markAlertsReadAtDatabaseTime(
-  client: QueryClient,
-): Promise<void> {
-  await callRpc(client, "mark_alerts_read");
 }
 
 export interface AdminSessionInput {

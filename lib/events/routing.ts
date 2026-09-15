@@ -28,6 +28,15 @@ export function eventHomePath(slug: string): string {
   return `${eventPublicPath(slug)}/home`;
 }
 
+export function eventManagePath(slug: string): string {
+  return `/manage/${slug}`;
+}
+
+export function legacyAdminDestination(events: RoutableEvent[]): string {
+  const event = selectPreferredEvent(events, "manage");
+  return event ? eventManagePath(event.slug) : "/events";
+}
+
 export function selectPreferredEvent(
   events: RoutableEvent[],
   surface: "attendee" | "manage" = "attendee",

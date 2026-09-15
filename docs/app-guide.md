@@ -13,6 +13,7 @@ The approved multi-tenant experience is being built in stages behind `MULTI_TENA
 - `/e/[slug]` is an event's public page.
 - `/e/[slug]/*` contains its attendee experience.
 - `/manage/[slug]/*` contains its organizer workspace.
+- `/events/new` creates an authenticated private draft. `/manage/[slug]` currently supports overview, core basics, attendee preview, publish, archive, and untouched-draft deletion; branding uploads, content editing, and team controls are later units.
 - `/super-admin/*` contains platform operations.
 - `/settings` contains global account settings.
 
@@ -22,7 +23,7 @@ The hub chooses a relevant event using lifecycle and recency, then presents `Ope
 
 ## Creating and publishing an event
 
-A new event starts as a draft. The owner completes basics, venue, dates, IANA timezone, branding, schedule, speakers, and team setup. Preview uses the same theme resolver as the public page. Publishing makes the unlisted public URL readable and allows attendees to join.
+A new event starts as a draft. The owner completes basics, venue, dates, IANA timezone, branding, schedule, speakers, and team setup. Preview and public pages use the fixed original Sync theme, as do organizer and attendee screens. Publishing makes the unlisted public URL readable and allows attendees to join.
 
 An event can later be archived. Suspension is independent and controlled by a platform super admin. Archived events are read-only memories; suspended events are unavailable except to authorized platform operations.
 
@@ -47,4 +48,8 @@ Organizers see only profile data needed for their event. Attendee-selected socia
 
 ## Legacy AWS event
 
-AWS Student Community Day Mega Manila 2026 is migrated as an archived event with its original branding and history. Its theme and Photo Booth frames are legacy-only. Historical product documents are in `docs/archive/aws-student-community-day-2026/`.
+AWS Student Community Day Mega Manila 2026 is migrated as an archived event with its original branding and history. Its stored theme field remains compatibility-only and its Photo Booth frames are legacy-only. Event logos and covers remain allowed; interface colors and fonts are shared globally. Historical product documents are in `docs/archive/aws-student-community-day-2026/`.
+
+## Local organizer acceptance
+
+Start the app on port `3100` with local Supabase credentials and `MULTI_TENANT_PLATFORM_ENABLED=true`, then run `node scripts/smoke-organizer.mjs`. The Windows probe uses hidden headless Edge, requires Docker/local Supabase, rejects remote API URLs, and removes only its temporary UUID-scoped fixtures. It does not enable or migrate a remote deployment.

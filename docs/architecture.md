@@ -10,6 +10,7 @@ The migration is additive and feature flagged by the server-only `MULTI_TENANT_P
 
 - `/` — generic Sync platform landing page
 - `/events` — signed-in event hub
+- `/events/new` — authenticated draft event creation
 - `/e/[slug]` — published public event page
 - `/e/[slug]/home`, `/alerts`, `/connect`, `/more`, `/settings`, `/photo-booth` — attendee routes
 - `/manage/[slug]/*` — event owner/admin workspace
@@ -31,6 +32,8 @@ Next.js proxy logic is only an optimistic navigation gate. Every server action, 
 - Event admins enter through exact verified-email invitations that expire after seven days.
 
 Membership statuses support active, left, removed, and blocked behavior. A removed attendee may rejoin; a blocked attendee may not. Leaving hides the person from active event views while preserving historical data.
+
+Organizer creation is a short form followed by an event setup workspace. Slugs are immutable after creation in v1. Active owned-event quotas count draft/published events, including suspended events, and creation is serialized per owner. Basics edits preserve existing session time-window constraints. Setup-only creation/basics audits do not prevent untouched-draft deletion; an immutable platform tombstone preserves the deleted event and its creation request.
 
 ## Data domains
 
@@ -76,7 +79,7 @@ Inputs may be at most 10 MB and are normalized into smaller delivery assets. Uns
 
 ## Event themes
 
-An event stores a logo, cover image, theme preset, and validated accent color. Initial presets are `daylight`, `midnight`, and `festival`. Status, destructive, warning, focus, and accessibility colors are platform-controlled. The legacy AWS event uses a private legacy theme unavailable to newly created events.
+All routes use the original fixed Sync dark teal/gold/green theme from `app/globals.css`. Event logos and covers remain supported branding data without overriding interface colors or fonts. Stored `theme_preset` and `accent_color` fields remain for compatibility only; there is no user-, role-, or event-dependent UI theme resolver or chooser. No database migration is needed for this restoration.
 
 ## Time and localization
 

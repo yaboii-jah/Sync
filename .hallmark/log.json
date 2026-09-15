@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-09-15",
+    "macrostructure": "Original portal + event index + organizer workspace",
+    "theme": "Original Sync (user-approved restoration)",
+    "enrichment": "existing sky artwork",
+    "nav": "existing event navigation preserved",
+    "footer": "existing inline footer preserved",
+    "brief": "Restore one fixed dark teal/gold/green theme and Perandory identity across all multi-tenant screens; preserve logos/covers and functionality."
+  },
+  {
     "date": "2026-09-14",
     "macrostructure": "Index-First",
     "theme": "Cobalt",

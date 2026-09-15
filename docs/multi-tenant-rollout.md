@@ -21,7 +21,7 @@
 
 ## Phase 2 — Core vertical release
 
-- Add `/events`, event creation/setup, and theme resolution.
+- Add `/events`, event creation/setup, and the fixed original Sync theme with event logo/cover branding.
 - Add public event page and explicit joining.
 - Move schedule, speakers, and bookmarks to scoped routes and data access.
 - Add `/manage/[slug]` team, content, membership, preview, publish, archive, and ownership flows.

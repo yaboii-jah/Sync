@@ -32,7 +32,7 @@ Migration `20260913160000_multi_tenant_foundation.sql` adds:
 
 ## Legacy backfill
 
-- The known AWS event receives its stable slug, Manila timezone, archived lifecycle, and private `legacy_aws` theme.
+- The known AWS event receives its stable slug, Manila timezone, archived lifecycle, and compatibility-only `legacy_aws` theme field; interface styling remains the shared original Sync theme.
 - The earliest legacy admin becomes owner for each existing event.
 - Other legacy admins become event admins.
 - Existing non-admin profiles become attendees.
@@ -67,6 +67,6 @@ The merchandise objects still require an ownership decision before cutover. Do n
 - A linked-project dry run recognizes the foundation, audited-operations, and tenant-program migrations as pending, in that order.
 - Docker Desktop is installed and the local Supabase stack, clean replay, schema lint, and pgTAP suite are working.
 
-The current application queries, unfiltered Realtime subscriptions, and legacy `admin_get_dashboard` RPC still assume one active event. They must be replaced by slug/event-context-aware access before the feature flag or multi-event creation is enabled.
+Core program reads and Realtime subscriptions are event scoped. The new management workspace uses explicit `event_id`-filtered setup counts instead of `admin_get_dashboard`. Legacy `/admin/*` pages and Server Actions are retired from application access when the multi-tenant flag is enabled; their RPCs remain flag-disabled compatibility code and are never imported by new management routes. Advanced single-event data domains still require parity work before cutover; application redirects are not database authorization.
 
 These hazards are why the existing history is preserved and a reviewed clean baseline is deferred until after cutover stabilization.

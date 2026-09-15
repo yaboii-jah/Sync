@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PlatformShell } from "@/components/platform/platform-shell";
-import { eventHomePath, eventPublicPath } from "@/lib/events/routing";
+import { eventHomePath, eventManagePath, eventPublicPath } from "@/lib/events/routing";
 import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
 import { requireCompleteProfile } from "@/lib/supabase/profile";
 import { getUserEvents, type UserEvent } from "@/lib/supabase/queries/events";
@@ -22,11 +22,12 @@ function EventRow({ event }: { event: UserEvent }) {
         <p className="mt-2 text-sm text-muted">
           {formatEventDate(event.startsAt, event.timezone)} · {event.venue ?? "Venue TBA"}
         </p>
-        {canManage ? <p className="mt-1 text-xs text-muted">Management workspace follows in the next unit.</p> : null}
+        <p className="mt-1 text-xs text-muted">{event.isSuspended ? "Suspended · read-only" : event.lifecycle}</p>
       </div>
       <div className="mt-4 flex flex-wrap gap-4 sm:mt-0">
+        {canManage ? <Link href={eventManagePath(event.slug)} className="platform-button text-sm">Manage</Link> : null}
         {hasPublicPage ? <Link href={eventPublicPath(event.slug)} className="platform-link text-sm">Public page</Link> : null}
-        {permissions.canViewAttendeeExperience ? <Link href={eventHomePath(event.slug)} className="platform-button text-sm">Open event</Link> : (
+        {permissions.canViewAttendeeExperience ? <Link href={eventHomePath(event.slug)} className={`${canManage ? "platform-link" : "platform-button"} text-sm`}>Open event</Link> : (
           <span className="platform-link text-sm" aria-disabled="true">Unavailable</span>
         )}
       </div>
@@ -51,18 +52,17 @@ export default async function EventsPage() {
           <p className="max-w-md text-base leading-7 text-muted">Every event keeps its own schedule, people, and permissions. Choose where you want to go.</p>
         </div>
 
-        <section className="mt-12" aria-labelledby="active-events">
-          <div>
-            <h2 id="active-events" className="text-2xl font-semibold tracking-[-0.035em]">Current events</h2>
-            <span className="platform-kicker mt-2 block">{active.length.toString().padStart(2, "0")} listed</span>
-          </div>
-          {active.length ? <ul className="mt-5">{active.map((event) => <EventRow key={event.id} event={event} />)}</ul> : (
-            <div className="mt-5 border-t py-10 platform-rule">
-              <p className="font-semibold">No current events yet.</p>
-              <p className="mt-2 max-w-lg text-sm leading-6 text-muted">Open an organizer’s public event link to join it. Event creation will arrive with the management workspace.</p>
-            </div>
-          )}
-        </section>
+        <div className="mt-6"><Link href="/events/new" className="platform-button">Create event</Link></div>
+
+        {(["Attending", "Managing"] as const).map((label) => {
+          const listed = active.filter((event) => label === "Managing" ? event.role === "owner" || event.role === "admin" : event.role === "attendee");
+          return <section key={label} className="mt-12" aria-label={label}>
+            <h2 className="text-2xl font-semibold tracking-[-0.035em]">{label}</h2>
+            {listed.length ? <ul className="mt-5">{listed.map((event) => <EventRow key={event.id} event={event} />)}</ul> : <div className="mt-5 border-t py-6 platform-rule">
+              <p className="text-sm leading-6 text-muted">{label === "Managing" ? "No managed events yet. Create a draft when you’re ready." : "No joined events yet. Open an organizer’s public event link to join."}</p>
+            </div>}
+          </section>;
+        })}
 
         {archived.length ? (
           <section className="mt-14" aria-labelledby="archived-events">
