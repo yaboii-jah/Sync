@@ -29,6 +29,11 @@ or making any architectural decision:
 Update `docs/progress-tracker.md` after each
 meaningful implementation change.
 
+Update `docs/app-guide.md` after a major implementation only when it changes
+developer-relevant behavior, architecture, routes, setup, security boundaries,
+deployment workflow, or repository structure. Keep the guide concise and
+replace stale statements instead of appending implementation history.
+
 If implementation changes the architecture, scope, or
 standards documented in the context files, update the
 relevant file before continuing.

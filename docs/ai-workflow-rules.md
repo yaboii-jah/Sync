@@ -43,6 +43,7 @@ Read the relevant installed Next.js guide before changing framework APIs. For da
 ## Documentation policy
 
 - Active documents describe the current approved platform direction and current implementation state.
+- Update `docs/app-guide.md` after a major implementation only when developer-relevant behavior, architecture, routes, setup, security boundaries, deployment workflow, or repository structure changes. Replace stale explanations rather than appending history. Routine refactors, styling changes, and fixes that do not change how developers understand or operate the project do not require an update.
 - Event-specific historical documents live under `docs/archive/<event>/`.
 - Do not let completed-event names, logos, or one-off operations become global requirements. Preserve the original Sync visual identity as the fixed app-wide theme.
 - Record open implementation questions in the progress tracker rather than guessing silently.
