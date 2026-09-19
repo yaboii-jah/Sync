@@ -8,7 +8,7 @@ Convert Sync from the completed AWS Student Community Day Mega Manila 2026 compa
 
 ## Current phase
 
-Phase 1 — tenant foundation, audited operations, tenant-scoped program data, event-context routes, and organizer foundation are locally verified; all four forward migrations remain unapplied remotely.
+Phase 1 — tenant foundation, audited operations, tenant-scoped program data, event-context routes, organizer program management, and event branding are locally implemented and verified; all five forward migrations remain unapplied remotely.
 
 ## Completed
 
@@ -98,21 +98,40 @@ Phase 1 — tenant foundation, audited operations, tenant-scoped program data, e
 - Added 48 organizer pgTAP assertions and a repeatable local-only Edge acceptance probe. Verified actual browser creation, suggested slugs, basics saving, publication/public visibility, archival/read-only transition, typed draft deletion, and parallel owner-quota enforcement. Removed only the probe's temporary users/events/audit rows.
 - Executed the new forward migration against the existing local database, recorded version `20260915130258` as applied in local migration history, and regenerated types; did not reset local user data, alter historical migrations, or apply remote migrations.
 
+### 2026-09-16 — Tenant-scoped schedule and speaker management
+
+- Added `/manage/[slug]/schedule` and `/manage/[slug]/speakers` to the owner/admin workspace, with archived events read-only and suspended event content unavailable.
+- Added validated session and speaker create/edit, publish/unpublish, and safe deletion flows. Session times are interpreted in the event time zone and constrained to the event window.
+- Added event-scoped speaker assignment with both route/action entity checks and the existing database-enforced composite tenant boundary. Seats, live-session controls, and notification dispatch remain outside this editor unit.
+- Reused the existing audited, idempotent program RPCs; no database migration, grant, policy, or generated-type change was required.
+- Added focused validation tests and expanded the local organizer smoke probe to exercise two-tenant route access, speaker creation, session creation, and speaker assignment.
+
+### 2026-09-20 — Tenant-scoped event branding
+
+- Added `/manage/[slug]/branding` for owner/admin logo and cover management, with archived and suspended events remaining read-only.
+- Added private, user-scoped staging and public, immutable delivery buckets. Storage RLS validates the event, actor, asset kind, and UUID path; an audited/idempotent RPC alone activates event paths.
+- Added server-side Sharp decoding and normalization: JPEG/PNG/WebP inputs up to 10 MB become versioned WebP assets, with 512 × 512 contained logos, covers within 1600 × 900, and a 2 MB delivery limit.
+- Added logo/cover presentation to unlisted public and attendee event headers without changing the fixed Sync theme.
+- Added 26 branding pgTAP assertions, four image/path unit tests, browser upload acceptance, public/attendee display checks, and exact-object smoke cleanup.
+- Made the raffle-export pgTAP fixture hermetic so restored local attendee rows no longer change its expected result.
+
 ## Verification evidence
 
-- `npm test`: 69 tests passed.
+- `npm test`: 80 tests passed.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
 - `npm run build`: passed on Next.js 16.3.2.
-- `npx tsc --noEmit`: passed after the organizer implementation.
+- `npx tsc --noEmit`: passed after the schedule/speaker implementation.
 - `npx supabase db push --linked --dry-run`: recognized the foundation, audited-operations, and tenant-program migrations in order and did not mutate the linked project.
 - `npx supabase db lint --local --level warning`: no schema errors or warnings.
 - `git diff --check`: passed.
-- `npx supabase test db`: all 233 pgTAP assertions passed, including 48 organizer, 38 tenant-program, 64 audited-operation, and 19 tenant-foundation checks.
-- `node scripts/smoke-organizer.mjs`: local two-tenant route and browser acceptance passed, including 320/375/414/768px overflow checks and measured text/control contrast. A captured basics-screen screenshot was visually reviewed.
+- `npx supabase test db --local`: all 259 pgTAP assertions passed, including the 26 branding assertions and the hermetic raffle export fixture.
+- `node scripts/smoke-organizer.mjs`: local two-tenant route and browser acceptance passed, including speaker/session creation, real branding upload and normalization, public/attendee branding display, lifecycle flows, 320/375/414/768px overflow checks, and measured text/control contrast.
+- Moved the complete local Supabase port block from Windows-reserved `54320–54329` to `45420–45429`, restored the preserved local database backup, and verified `200` responses from local Auth and the Next.js app. Docker again shows the Supabase API, Studio, Mailpit, analytics, and Postgres containers with published host ports.
+- The restored local database now passes the complete pgTAP suite; raffle-export assertions use only their UUID-scoped fixtures.
 
 ## In progress
 
-- No organizer-foundation implementation work remains. Preview/staging migration application and rollout remain pending explicit deployment approval.
+- No branding implementation work remains. Preview/staging migration application and rollout remain pending explicit deployment approval.
 
 ## Original Sync theme restoration verification — September 15, 2026
 
@@ -130,8 +149,8 @@ Original Sync UI restoration completed: removed light platform overrides, restor
 
 ## Next implementation unit
 
-1. Plan the tenant-scoped schedule/speaker management editor using the existing audited program RPCs; branding and team controls remain separate units.
-2. Apply all four verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
+1. Plan the tenant-scoped team controls; branding is complete and remains a separate authorization boundary.
+2. Apply all five verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
 3. Continue the deferred tenant migration domains and platform-super-admin workspace documented in the rollout and schema inventory.
 
 ## Known migration risks

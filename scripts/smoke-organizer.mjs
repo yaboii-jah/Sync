@@ -8,16 +8,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
+import sharp from "sharp";
 
 const app = process.env.SMOKE_APP_URL ?? "http://localhost:3100";
 assert.ok(["localhost", "127.0.0.1"].includes(new URL(app).hostname), "Local app is required");
 const status = JSON.parse(execSync("npx supabase status --output json", { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
 assert.equal(new URL(status.API_URL).hostname, "127.0.0.1", "Local Supabase is required");
-assert.equal(new URL(status.API_URL).port, "54321");
+assert.equal(new URL(status.API_URL).port, "45421");
 const key = status.PUBLISHABLE_KEY ?? status.ANON_KEY;
 const root = createClient(status.API_URL, status.SECRET_KEY ?? status.SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const users = [];
 const events = [];
+const brandingObjects = [];
 let browser;
 let socket;
 const pending = new Map();
@@ -92,6 +94,10 @@ async function fill(name, value) {
   await cdp("Input.insertText", { text: value });
   await pause();
 }
+async function fillDialogInput(index, value) {
+  await evaluate(`(() => { const input = document.querySelectorAll('[role=dialog] input')[${index}]; if (!input) throw Error('Missing dialog input'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(input, ${JSON.stringify(value)}); input.dispatchEvent(new Event('input', {bubbles:true})); input.dispatchEvent(new Event('change', {bubbles:true})); })()`);
+  await pause();
+}
 
 try {
   const owner = await user("owner");
@@ -107,8 +113,14 @@ try {
   await route("/events/new", owner, 200);
   assert.match(await route(`/manage/${first.slug}`, owner, 200), /Draft setup/);
   await route(`/manage/${first.slug}/basics`, admin, 200);
+  await route(`/manage/${first.slug}/branding`, owner, 200);
+  await route(`/manage/${first.slug}/schedule`, owner, 200);
+  await route(`/manage/${first.slug}/speakers`, admin, 200);
   await route(`/manage/${first.slug}`, other, 404);
   await route(`/manage/${first.slug}/basics`, attendee, 404);
+  await route(`/manage/${first.slug}/branding`, attendee, 404);
+  await route(`/manage/${first.slug}/schedule`, attendee, 404);
+  await route(`/manage/${first.slug}/speakers`, other, 404);
   await route(`/manage/${second.slug}`, owner, 404);
   await route("/admin", owner, 307, `/manage/${first.slug}`);
   await route("/admin", attendee, 307, "/events");
@@ -130,8 +142,47 @@ try {
     clearTimeout(request.timeout); pending.delete(message.id);
     if (message.error) request.reject(new Error(message.error.message)); else request.resolve(message.result);
   });
-  await cdp("Page.enable"); await cdp("Runtime.enable"); await cdp("Network.enable");
+  await cdp("Page.enable"); await cdp("Runtime.enable"); await cdp("Network.enable"); await cdp("DOM.enable");
   await cdp("Network.setCookies", { cookies: owner.cookies.map(({ name, value }) => ({ name, value, url: app, path: "/" })) });
+  await navigate(`/manage/${first.slug}/speakers`);
+  await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('New speaker')).click()");
+  await until("!!document.querySelector('[role=dialog]')");
+  await fillDialogInput(0, `Browser Speaker ${suffix}`);
+  await fillDialogInput(1, "Browser Organization");
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).find(button => button.textContent.includes('Create speaker')).click()");
+  await until(`!document.querySelector('[role=dialog]') && document.body.innerText.includes(${JSON.stringify(`Browser Speaker ${suffix}`)})`);
+  await navigate(`/manage/${first.slug}/schedule`);
+  await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('New session')).click()");
+  await until("!!document.querySelector('[role=dialog]')");
+  await fillDialogInput(0, `Browser Session ${suffix}`);
+  await fillDialogInput(1, "Browser Hall");
+  await fillDialogInput(2, "2027-01-15T10:00");
+  await fillDialogInput(3, "2027-01-15T11:00");
+  await evaluate(`(() => { const label = Array.from(document.querySelectorAll('[role=dialog] label')).find(item => item.textContent.includes(${JSON.stringify(`Browser Speaker ${suffix}`)})); const target = label?.querySelector('input') ?? label; if (!target) throw Error('Missing speaker checkbox'); target.focus(); })()`);
+  await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space" });
+  await cdp("Input.dispatchKeyEvent", { type: "keyUp", key: " ", code: "Space" });
+  await until(`Array.from(document.querySelectorAll('[role=dialog] label')).some(label => label.textContent.includes(${JSON.stringify(`Browser Speaker ${suffix}`)}) && (label.hasAttribute('data-selected') || label.querySelector('input')?.checked))`);
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).find(button => button.textContent.includes('Create session')).click()");
+  await until(`!document.querySelector('[role=dialog]') && document.body.innerText.includes(${JSON.stringify(`Browser Session ${suffix}`)})`);
+  const browserSpeaker = await checked(owner.client.from("speakers_sponsors").select("id,event_id").eq("event_id", first.id).eq("name", `Browser Speaker ${suffix}`).single());
+  const browserSession = await checked(owner.client.from("sessions").select("id,event_id").eq("event_id", first.id).eq("title", `Browser Session ${suffix}`).single());
+  assert.equal(browserSpeaker.event_id, first.id); assert.equal(browserSession.event_id, first.id);
+  assert.equal((await checked(owner.client.from("session_speakers").select("speaker_id").eq("event_id", first.id).eq("session_id", browserSession.id).single())).speaker_id, browserSpeaker.id);
+  console.log("PASS: browser speaker/session creation and tenant-scoped assignment");
+  await navigate(`/manage/${first.slug}/branding`);
+  const brandingDir = mkdtempSync(join(tmpdir(), "sync-branding-smoke-"));
+  const logoFile = join(brandingDir, "logo.png");
+  await sharp({ create: { width: 240, height: 160, channels: 4, background: "#0b766e" } }).png().toFile(logoFile);
+  const documentNode = await cdp("DOM.getDocument", { depth: -1, pierce: true });
+  const logoInput = await cdp("DOM.querySelector", { nodeId: documentNode.root.nodeId, selector: 'input[data-branding-kind="logo"]' });
+  assert.ok(logoInput.nodeId, "Logo file input is present");
+  await cdp("DOM.setFileInputFiles", { nodeId: logoInput.nodeId, files: [logoFile] });
+  await until("Array.from(document.querySelectorAll('label')).some(label => label.textContent.includes('Replace image'))");
+  const branded = await checked(owner.client.from("events").select("logo_path").eq("id", first.id).single());
+  assert.match(branded.logo_path, new RegExp(`^events/${first.id}/branding/logo/[0-9a-f-]{36}\\.webp$`, "i"));
+  brandingObjects.push(branded.logo_path);
+  assert.equal((await checked(root.storage.from("event-branding").download(branded.logo_path))).type, "image/webp");
+  console.log("PASS: browser branding upload, server normalization, and tenant-scoped activation");
   await navigate(`/manage/${first.slug}/basics`);
   await until("!!document.querySelector('[name=venue]') && Object.keys(document.querySelector('[name=venue]')).some(key => key.startsWith('__reactProps'))");
   await fill("venue", "Browser updated venue");
@@ -175,7 +226,8 @@ try {
   await until("Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Publish event')");
   await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Publish event').click()");
   await until("document.body.innerText.includes('Managing as owner · published')");
-  await route(`/e/${first.slug}`, null, 200);
+  assert.match(await route(`/e/${first.slug}`, null, 200), /event-branding/);
+  assert.match(await route(`/e/${first.slug}/home`, owner, 200), /event-branding/);
   await evaluate("Array.from(document.querySelectorAll('details')).find(item => item.querySelector('summary').textContent === 'Archive event').open = true");
   await fill("reason", "Local browser acceptance archive");
   await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Archive event').click()");
@@ -234,6 +286,7 @@ try {
 } finally {
   if (socket?.readyState === WebSocket.OPEN) { try { await cdp("Browser.close"); } catch { /* Already closed. */ } socket.close(); }
   browser?.kill();
+  if (brandingObjects.length) await checked(root.storage.from("event-branding").remove(brandingObjects));
   for (const id of [...users, ...events]) assert.match(id, /^[0-9a-f-]{36}$/i);
   if (users.length) {
     // Administrative fixture teardown only: exact IDs, never a broad table reset.

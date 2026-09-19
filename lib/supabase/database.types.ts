@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -1416,6 +1441,15 @@ export type Database = {
             }
             Returns: undefined
           }
+      set_event_branding: {
+        Args: {
+          asset_kind: string
+          asset_path: string
+          mutation_request_id: string
+          target_event_id: string
+        }
+        Returns: string
+      }
       set_event_suspension: {
         Args: {
           mutation_request_id: string
@@ -1599,6 +1633,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

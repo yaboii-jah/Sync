@@ -73,9 +73,9 @@ Speaker publication is explicit and independent of session publication. Session 
 
 ## Storage
 
-Branding objects live under event-scoped paths such as `events/{event_id}/branding/...`. Published branding may be publicly readable. Upload, replacement, and deletion require active owner/admin authorization. Storage policies check the path's event identifier. Upsert policies include the required `INSERT`, `SELECT`, and `UPDATE` permissions.
+Branding objects live under event-scoped paths such as `events/{event_id}/branding/...`. Browser uploads first enter the private `event-branding-staging` bucket under the current user's path. A Server Action downloads and decodes the file with Sharp, writes an immutable WebP object to the public `event-branding` delivery bucket, and activates that path through an audited RPC. Replacement uses a new versioned path instead of upsert; the prior delivery object and staging object are then removed.
 
-Inputs may be at most 10 MB and are normalized into smaller delivery assets. Unsafe or unreadable uploads are rejected.
+Upload, activation, and deletion require an active owner/admin on the path's event, and archived or suspended events are read-only. Storage policies validate the tenant, user, and UUID path segments independently of application checks. Inputs may be at most 10 MB and must decode as JPEG, PNG, or WebP; logos normalize to a 512 px transparent canvas and covers fit within 1600 × 900. Delivery objects are WebP and at most 2 MB.
 
 ## Event themes
 

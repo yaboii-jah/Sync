@@ -20,6 +20,9 @@ export default async function ManagementLayout({ children, params }: { children:
       <nav aria-label="Event management" className="flex flex-wrap gap-3 lg:flex-col lg:items-start">
         <Link className="platform-link" href={eventManagePath(event.slug)}>Overview</Link>
         <Link className="platform-link" href={`${eventManagePath(event.slug)}/basics`}>Event basics</Link>
+        <Link className="platform-link" href={`${eventManagePath(event.slug)}/branding`}>Branding</Link>
+        <Link className="platform-link" href={`${eventManagePath(event.slug)}/schedule`}>Schedule</Link>
+        <Link className="platform-link" href={`${eventManagePath(event.slug)}/speakers`}>Speakers</Link>
         {permissions.canViewAttendeeExperience ? <Link className="platform-link" href={eventHomePath(event.slug)}>Attendee preview</Link> : null}
         <Link className="platform-link" href="/events">All events</Link>
       </nav>

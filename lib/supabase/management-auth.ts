@@ -13,5 +13,5 @@ export async function requireEventManager(slug: string) {
   const access = await getEventAccessBySlug(supabase, user.id, slug);
   if (!access || access.event.membershipStatus !== "active" ||
       (access.event.role !== "owner" && access.event.role !== "admin")) notFound();
-  return { supabase, ...access };
+  return { user, supabase, ...access };
 }

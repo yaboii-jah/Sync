@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JoinEventButton } from "@/components/platform/join-event-button";
 import { PlatformShell } from "@/components/platform/platform-shell";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { eventHomePath, eventPublicPath, normalizeEventSlug } from "@/lib/events/routing";
+import { eventBrandingPublicUrl } from "@/lib/events/branding";
 import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
 import { formatEventDate, formatEventTimeRange } from "@/lib/format";
 import { getAuthenticatedClaims } from "@/lib/supabase/auth";
@@ -25,13 +27,17 @@ export default async function PublicEventPage({ params }: { params: Promise<{ sl
   const isActive = membership?.status === "active";
   const isBlocked = membership?.status === "blocked";
   const join = joinEventAction.bind(null, program.event.id, slug);
+  const logoUrl = eventBrandingPublicUrl(program.event.logo_path);
+  const coverUrl = eventBrandingPublicUrl(program.event.cover_path);
 
   return (
     <PlatformShell>
       <div className="platform-frame py-12 sm:py-20">
+        {coverUrl ? <div className="relative mb-10 aspect-[16/7] overflow-hidden rounded-2xl bg-default"><Image src={coverUrl} alt="" fill priority sizes="(min-width: 1280px) 1200px, 100vw" className="object-cover" unoptimized /></div> : null}
         <p className="platform-kicker">Published event</p>
         <div className="mt-4 grid gap-8 border-b pb-12 platform-rule md:grid-cols-[minmax(0,1fr)_18rem] md:items-end">
           <div className="min-w-0">
+            {logoUrl ? <div className="relative mb-5 size-20 overflow-hidden rounded-xl bg-default"><Image src={logoUrl} alt={`${program.event.name} logo`} fill sizes="80px" className="object-contain" unoptimized /></div> : null}
             <h1 className="platform-display">{program.event.name}</h1>
             {program.event.description ? <p className="mt-6 max-w-2xl text-base leading-7 text-muted">{program.event.description}</p> : null}
           </div>

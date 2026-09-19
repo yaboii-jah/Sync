@@ -24,6 +24,8 @@ export interface EventInfo {
   starts_at: string;
   ends_at: string;
   status: string;
+  logo_path: string | null;
+  cover_path: string | null;
 }
 
 /**
@@ -99,7 +101,7 @@ export async function getEventById(
 ): Promise<EventInfo | null> {
   const { data, error } = await client
     .from("events")
-    .select("id, slug, name, theme, theme_preset, accent_color, timezone, lifecycle, venue, starts_at, ends_at, status")
+    .select("id, slug, name, theme, theme_preset, accent_color, timezone, lifecycle, venue, starts_at, ends_at, status, logo_path, cover_path")
     .eq("id", eventId)
     .maybeSingle();
 

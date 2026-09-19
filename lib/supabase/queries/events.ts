@@ -12,6 +12,8 @@ export interface UserEvent extends EventContext {
   endsAt: string;
   venue: string | null;
   description: string | null;
+  logoPath: string | null;
+  coverPath: string | null;
 }
 
 export interface EventAccess {
@@ -51,6 +53,7 @@ function toUserEvent(
     themePreset: event.theme_preset, accentColor: event.accent_color,
     role, membershipStatus: status, startsAt: event.starts_at,
     endsAt: event.ends_at, venue: event.venue, description: event.description,
+    logoPath: event.logo_path, coverPath: event.cover_path,
   };
 }
 
