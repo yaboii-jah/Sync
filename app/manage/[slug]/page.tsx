@@ -14,7 +14,7 @@ export default async function ManagementOverview({ params }: { params: Promise<{
     { label: "Branding", description: event.logoPath || event.coverPath ? "Custom event artwork is active." : "Using the original Sync theme without custom artwork.", href: `${managePath}/branding`, action: permissions.canManageContent ? "Manage branding" : "View branding" },
     { label: "Schedule", description: setup ? `${setup.sessions} sessions · ${setup.publishedSessions} published.` : "Unavailable while suspended.", href: `${managePath}/schedule`, action: permissions.canManageContent ? "Manage schedule" : "View schedule" },
     { label: "Speakers", description: setup ? `${setup.speakers} directory entries.` : "Unavailable while suspended.", href: `${managePath}/speakers`, action: permissions.canManageContent ? "Manage speakers" : "View speakers" },
-    { label: "Team", description: setup ? `1 owner · ${setup.admins} active admins · ${setup.pendingInvitations} pending invitations. Team controls follow in a later unit.` : "Unavailable while suspended." },
+    { label: "Team", description: setup ? `1 owner · ${setup.admins} active admins · ${setup.pendingInvitations} pending invitations.` : "Unavailable while suspended.", href: `${managePath}/team`, action: permissions.canManageAdmins ? "Manage team" : "View team" },
   ];
   return <div className="grid gap-10">
     <section>

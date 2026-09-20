@@ -38,7 +38,8 @@ A typical request flows from a browser to a Next.js route, then through a server
 - `/` is the landing/authentication entry.
 - `/events` lists events the signed-in user attends or manages; `/events/new` creates a private draft.
 - `/e/[slug]` is an unlisted published event page; `/e/[slug]/home` is its scoped attendee entry.
-- `/manage/[slug]/*` is the owner/admin workspace. Its implemented editors cover event basics, logo/cover branding, schedule sessions, speaker profiles, publication state, and session-speaker assignments.
+- `/manage/[slug]/*` is the owner/admin workspace. Its implemented editors cover event basics, logo/cover branding, schedule sessions, speaker profiles, team administration, publication state, and session-speaker assignments.
+- `/invite` is a public, noindex invitation entry. The secret remains in the URL fragment, so a matching signed-in account must explicitly accept it before gaining admin membership.
 - Legacy attendee routes such as `/home`, plus `/admin/*`, remain compatibility paths during rollout.
 - The planned `/super-admin/*` workspace is for platform operations and is separate from event administration.
 
@@ -55,6 +56,8 @@ The sign-in button starts Google OAuth through Supabase. Google returns to the S
 Database changes are forward-only. Tenant-owned relationships include `event_id`, preferably in composite foreign keys, so invalid cross-event relationships fail at the database boundary. Consult `docs/schema-inventory.md` before migrating a legacy domain.
 
 Branding uploads use two Storage boundaries. The browser sends a JPEG, PNG, or WebP of at most 10 MB to a private, user-scoped staging path. A server action decodes and normalizes it with Sharp, uploads a versioned WebP delivery object, and calls an audited RPC to update the event. Delivery assets are public because they appear on the unlisted public event page; only an active event owner/admin can create, activate, replace, or remove them. Do not bypass the path helpers or replace immutable delivery objects in place.
+
+Team invitations are issued by the event owner and are bound to the invitee’s exact verified email. Configure `RESEND_API_KEY` and `EVENT_INVITE_FROM_EMAIL` only in ignored deployment/local environment files to send email. Without them, the owner still receives a secure copyable link. See `docs/team-management-test-plan.md` for local manual QA.
 
 ## Local development
 
@@ -79,7 +82,7 @@ npx supabase test db
 
 Code, database schema, and environment configuration are deployed separately. Pushing a branch does not copy local data, but CI may deploy that branch depending on hosting settings. Apply migrations to preview/staging first, repeat authorization and browser acceptance, and enable the multi-tenant flag only after the core acceptance gate passes. Never commit secrets or point local destructive tests at a hosted project.
 
-Tenant foundations, audited operations, scoped program data, event routes, event creation, event basics, lifecycle controls, schedule/speaker management, and tenant-scoped branding uploads are locally verified. Team controls, full platform operations, and remaining legacy feature migrations are still staged work. Use `docs/progress-tracker.md` for the exact current status rather than extending this guide with implementation history.
+Tenant foundations, audited operations, scoped program data, event routes, event creation, event basics, lifecycle controls, schedule/speaker management, tenant-scoped branding uploads, and team controls are locally verified. Full platform operations and remaining legacy feature migrations are still staged work. Use `docs/progress-tracker.md` for the exact current status rather than extending this guide with implementation history.
 
 ## Where to look first
 

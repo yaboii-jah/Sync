@@ -50,6 +50,45 @@ export async function updateManagedEventBasics(client: QueryClient, eventId: str
   if (result.error) throw result.error;
 }
 
+export interface ManagedEventTeamMember {
+  id: string;
+  userId: string | null;
+  name: string;
+  email: string | null;
+  role: "owner" | "admin";
+  joinedAt: string;
+}
+
+export interface ManagedEventInvitation {
+  id: string;
+  email: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export async function getManagedEventTeam(client: QueryClient, eventId: string): Promise<{
+  members: ManagedEventTeamMember[];
+  invitations: ManagedEventInvitation[];
+}> {
+  const [members, invitations] = await Promise.all([
+    client.from("event_memberships").select("id, user_id, display_name_snapshot, email_snapshot, role, joined_at")
+      .eq("event_id", eventId).eq("status", "active").in("role", ["owner", "admin"]).order("role").order("joined_at").order("id"),
+    client.from("event_admin_invitations").select("id, email, expires_at, created_at")
+      .eq("event_id", eventId).is("accepted_at", null).is("revoked_at", null).order("created_at", { ascending: false }),
+  ]);
+  if (members.error) throw members.error;
+  if (invitations.error) throw invitations.error;
+  return {
+    members: (members.data ?? []).flatMap((member) => (member.role === "owner" || member.role === "admin") ? [{
+      id: member.id, userId: member.user_id, name: member.display_name_snapshot, email: member.email_snapshot,
+      role: member.role, joinedAt: member.joined_at,
+    }] : []),
+    invitations: (invitations.data ?? []).map((invitation) => ({
+      id: invitation.id, email: invitation.email, expiresAt: invitation.expires_at, createdAt: invitation.created_at,
+    })),
+  };
+}
+
 export interface ManagedSpeaker {
   id: string;
   name: string;
@@ -220,4 +259,53 @@ export async function setManagedEventBranding(
   });
   if (error) throw error;
   return data;
+}
+
+export async function issueManagedEventAdminInvitation(client: QueryClient, eventId: string, email: string, tokenHash: string, requestId: string): Promise<string> {
+  const { data, error } = await client.rpc("issue_event_admin_invitation", {
+    target_event_id: eventId, invite_email: email.trim().toLowerCase(), invitation_token_hash: tokenHash, mutation_request_id: requestId,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function reserveManagedEventInvitationEmail(client: QueryClient, invitationId: string, requestId: string): Promise<string> {
+  const { data, error } = await client.rpc("reserve_event_admin_invitation_email", { target_invitation_id: invitationId, mutation_request_id: requestId });
+  if (error) throw error;
+  return data;
+}
+
+export async function completeManagedEventInvitationEmail(client: QueryClient, deliveryId: string, sent: boolean, providerMessageId: string | null, failureCode: string | null): Promise<void> {
+  const { error } = await client.rpc("complete_event_admin_invitation_email", {
+    target_delivery_id: deliveryId, was_sent: sent,
+    provider_message_id: providerMessageId as unknown as string,
+    failure_code: failureCode as unknown as string,
+  });
+  if (error) throw error;
+}
+
+export async function revokeManagedEventAdminInvitation(client: QueryClient, invitationId: string, reason: string, requestId: string): Promise<void> {
+  const { error } = await client.rpc("revoke_event_admin_invitation", { target_invitation_id: invitationId, revocation_reason: reason.trim(), mutation_request_id: requestId });
+  if (error) throw error;
+}
+
+export async function removeManagedEventAdmin(client: QueryClient, membershipId: string, reason: string, requestId: string): Promise<void> {
+  const { error } = await client.rpc("remove_event_admin", { target_membership_id: membershipId, removal_reason: reason.trim(), mutation_request_id: requestId });
+  if (error) throw error;
+}
+
+export async function transferManagedEventOwnership(client: QueryClient, eventId: string, membershipId: string, requestId: string): Promise<void> {
+  const { error } = await client.rpc("transfer_event_ownership", { target_event_id: eventId, next_owner_membership_id: membershipId, mutation_request_id: requestId });
+  if (error) throw error;
+}
+
+export async function getManagedEventInvitationPreview(client: QueryClient, tokenHash: string) {
+  const { data, error } = await client.rpc("get_event_admin_invitation_preview", { invitation_token_hash: tokenHash });
+  if (error) throw error;
+  return data;
+}
+
+export async function acceptManagedEventAdminInvitation(client: QueryClient, tokenHash: string, requestId: string): Promise<void> {
+  const { error } = await client.rpc("accept_event_admin_invitation", { invitation_token_hash: tokenHash, mutation_request_id: requestId });
+  if (error) throw error;
 }

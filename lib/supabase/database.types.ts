@@ -135,6 +135,60 @@ export type Database = {
           },
         ]
       }
+      event_admin_invitation_email_deliveries: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          event_id: string
+          failure_code: string | null
+          id: string
+          invitation_id: string
+          provider_message_id: string | null
+          request_id: string
+          requested_by_user_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          event_id: string
+          failure_code?: string | null
+          id?: string
+          invitation_id: string
+          provider_message_id?: string | null
+          request_id: string
+          requested_by_user_id: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          event_id?: string
+          failure_code?: string | null
+          id?: string
+          invitation_id?: string
+          provider_message_id?: string | null
+          request_id?: string
+          requested_by_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_admin_invitation_email_deliveries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_admin_invitation_email_deliveries_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "event_admin_invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_admin_invitations: {
         Row: {
           accepted_at: string | null
@@ -1311,6 +1365,15 @@ export type Database = {
         Returns: string
       }
       claim_session_seat: { Args: { target_session_id: string }; Returns: Json }
+      complete_event_admin_invitation_email: {
+        Args: {
+          failure_code: string
+          provider_message_id: string
+          target_delivery_id: string
+          was_sent: boolean
+        }
+        Returns: undefined
+      }
       create_event: {
         Args: {
           event_description: string
@@ -1336,6 +1399,10 @@ export type Database = {
       end_event_support_session: {
         Args: { mutation_request_id: string; target_support_session_id: string }
         Returns: string
+      }
+      get_event_admin_invitation_preview: {
+        Args: { invitation_token_hash: string }
+        Returns: Json
       }
       get_my_networking_scan_history: {
         Args: never
@@ -1412,6 +1479,10 @@ export type Database = {
           removal_reason: string
           target_membership_id: string
         }
+        Returns: string
+      }
+      reserve_event_admin_invitation_email: {
+        Args: { mutation_request_id: string; target_invitation_id: string }
         Returns: string
       }
       retry_push_dispatches: { Args: never; Returns: undefined }

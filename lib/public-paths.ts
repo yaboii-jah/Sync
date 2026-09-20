@@ -24,5 +24,5 @@ export function isPublicPath(
   }
 
   if (!multiTenantEnabled) return false;
-  return /^\/e\/[^/]+\/?$/.test(pathname);
+  return pathname === "/invite" || /^\/e\/[^/]+\/?$/.test(pathname);
 }

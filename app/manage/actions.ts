@@ -16,6 +16,8 @@ import {
   type EventBrandingKind,
 } from "@/lib/events/branding";
 import { normalizeEventBrandingImage } from "@/lib/events/branding-image";
+import { createInvitationToken, eventInvitationUrl, invitationTokenHash, isTeamReason, teamInputError, type InvitationDeliveryStatus } from "@/lib/events/team";
+import { isEventAdminInvitationEmailConfigured, sendEventAdminInvitation } from "@/lib/email/event-admin-invitation";
 import {
   validateManagedSession,
   validateManagedSpeaker,
@@ -39,10 +41,17 @@ import {
   setManagedSessionSpeakers,
   setManagedSpeakerPublished,
   setManagedEventBranding,
+  completeManagedEventInvitationEmail,
+  issueManagedEventAdminInvitation,
+  removeManagedEventAdmin,
+  reserveManagedEventInvitationEmail,
+  revokeManagedEventAdminInvitation,
+  transferManagedEventOwnership,
   updateManagedEventBasics,
   updateManagedSession,
   updateManagedSpeaker,
 } from "@/lib/supabase/queries/management";
+import { acceptManagedEventAdminInvitation, getManagedEventInvitationPreview } from "@/lib/supabase/queries/management";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -99,6 +108,114 @@ function brandingFailure(error: unknown, action: string): BrandingActionResult {
   if (message.includes("access required") || message.includes("row-level security")) return { error: "Your permission changed. Reload before trying again." };
   if (message.startsWith("The image") || message.startsWith("The normalized")) return { error: message };
   return { error: "The branding image could not be saved. Retry, or choose another image." };
+}
+
+export interface TeamActionResult {
+  error?: string;
+  success?: string;
+  invitationUrl?: string;
+  delivery?: InvitationDeliveryStatus;
+  slug?: string;
+}
+
+function teamFailure(error: unknown, action: string): TeamActionResult {
+  const record = typeof error === "object" && error !== null ? error as Record<string, unknown> : {};
+  const message = typeof record.message === "string" ? record.message : "";
+  console.error("team mutation failed", { action, code: record.code ?? "unknown" });
+  if (message.includes("read-only") || message.includes("suspended")) return { error: "This event is read-only. Reload to see its current state." };
+  if (message.includes("owner access") || message.includes("access required") || message.includes("authentication required")) return { error: "Your permission changed. Reload before trying again." };
+  if (message.includes("admin limit")) return { error: "This event has reached its active admin limit." };
+  if (message.includes("pending invitation")) return { error: "That invitation is no longer pending. Reload and try again." };
+  return { error: "The team change could not be saved. Retry, or reload if the problem continues." };
+}
+
+function teamOwner(access: Awaited<ReturnType<typeof requireEventManager>>) {
+  return access.permissions.canManageAdmins && access.permissions.canTransferOwnership ? access : null;
+}
+
+export async function issueEventAdminInvitationAction(input: { slug: string; email: string; requestId: string; deliveryRequestId: string }): Promise<TeamActionResult> {
+  const access = await mutableEvent(input.slug);
+  if (!access || !teamOwner(access)) return { error: "Only the event owner can manage the team." };
+  if (!validRequestIds(input.requestId, input.deliveryRequestId)) return { error: "Invalid request. Reload and try again." };
+  const inputError = teamInputError(input.email);
+  if (inputError) return { error: inputError };
+  const token = createInvitationToken();
+  const tokenHash = invitationTokenHash(token);
+  if (!tokenHash) return { error: "The invitation could not be created. Retry." };
+  let invitationUrl: string;
+  try { invitationUrl = eventInvitationUrl(token); } catch (error) { return teamFailure(error, "team.invite.url"); }
+  try {
+    const invitationId = await issueManagedEventAdminInvitation(access.supabase, access.event.id, input.email, tokenHash, input.requestId);
+    let delivery: InvitationDeliveryStatus = "not_configured";
+    if (isEventAdminInvitationEmailConfigured()) {
+      try {
+        const deliveryId = await reserveManagedEventInvitationEmail(access.supabase, invitationId, input.deliveryRequestId);
+        const sent = await sendEventAdminInvitation({ deliveryId, email: input.email.trim().toLowerCase(), eventName: access.event.name, invitationUrl });
+        delivery = sent.status;
+        await completeManagedEventInvitationEmail(access.supabase, deliveryId, sent.status === "sent", sent.providerMessageId ?? null, sent.failureCode ?? null);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        delivery = message.includes("email limit reached") ? "limit_reached" : "failed";
+        console.error("team invitation delivery failed", { code: typeof error === "object" && error !== null && "code" in error ? error.code : "unknown" });
+      }
+    }
+    revalidateEvent(access.event.slug);
+    return { success: "Invitation created.", invitationUrl, delivery };
+  } catch (error) { return teamFailure(error, "team.invite.issue"); }
+}
+
+export async function revokeEventAdminInvitationAction(input: { slug: string; invitationId: string; reason: string; requestId: string }): Promise<TeamActionResult> {
+  const access = await mutableEvent(input.slug);
+  if (!access || !teamOwner(access)) return { error: "Only the event owner can manage the team." };
+  if (!validRequestIds(input.invitationId, input.requestId) || !isTeamReason(input.reason)) return { error: "Give a reason between 8 and 1,000 characters." };
+  try { await revokeManagedEventAdminInvitation(access.supabase, input.invitationId, input.reason, input.requestId); revalidateEvent(access.event.slug); return { success: "Invitation revoked." }; }
+  catch (error) { return teamFailure(error, "team.invite.revoke"); }
+}
+
+export async function removeEventAdminAction(input: { slug: string; membershipId: string; reason: string; requestId: string }): Promise<TeamActionResult> {
+  const access = await mutableEvent(input.slug);
+  if (!access || !teamOwner(access)) return { error: "Only the event owner can manage the team." };
+  if (!validRequestIds(input.membershipId, input.requestId) || !isTeamReason(input.reason)) return { error: "Give a reason between 8 and 1,000 characters." };
+  try { await removeManagedEventAdmin(access.supabase, input.membershipId, input.reason, input.requestId); revalidateEvent(access.event.slug); return { success: "Admin removed." }; }
+  catch (error) { return teamFailure(error, "team.admin.remove"); }
+}
+
+export async function transferEventOwnershipAction(input: { slug: string; membershipId: string; confirmation: string; requestId: string }): Promise<TeamActionResult> {
+  const access = await mutableEvent(input.slug);
+  if (!access || !teamOwner(access)) return { error: "Only the event owner can transfer ownership." };
+  if (!validRequestIds(input.membershipId, input.requestId)) return { error: "Invalid request. Reload and try again." };
+  if (input.confirmation !== access.event.name) return { error: "Type the event name exactly to confirm ownership transfer." };
+  try { await transferManagedEventOwnership(access.supabase, access.event.id, input.membershipId, input.requestId); revalidateEvent(access.event.slug); return { success: "Ownership transferred." }; }
+  catch (error) { return teamFailure(error, "team.ownership.transfer"); }
+}
+
+function previewResult(data: unknown): { status: string; name?: string; slug?: string; expiresAt?: string } {
+  const value = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
+  return { status: typeof value.status === "string" ? value.status : "invalid", name: typeof value.name === "string" ? value.name : undefined, slug: typeof value.slug === "string" ? value.slug : undefined, expiresAt: typeof value.expires_at === "string" ? value.expires_at : undefined };
+}
+
+export async function previewEventAdminInvitationAction(token: string): Promise<{ status: string; name?: string; slug?: string; expiresAt?: string }> {
+  const hash = invitationTokenHash(token);
+  if (!hash) return { status: "invalid" };
+  await requireCompleteProfile();
+  const supabase = await createClient();
+  try { return previewResult(await getManagedEventInvitationPreview(supabase, hash)); }
+  catch { return { status: "invalid" }; }
+}
+
+export async function acceptEventAdminInvitationAction(token: string, requestId: string): Promise<TeamActionResult> {
+  const hash = invitationTokenHash(token);
+  if (!hash || !validRequestIds(requestId)) return { error: "This invitation link is invalid or has been replaced." };
+  await requireCompleteProfile();
+  const supabase = await createClient();
+  try {
+    const preview = previewResult(await getManagedEventInvitationPreview(supabase, hash));
+    if (preview.status !== "valid" || !preview.slug) return { error: "This invitation is no longer available for this account." };
+    await acceptManagedEventAdminInvitation(supabase, hash, requestId);
+    revalidatePath("/events");
+    revalidatePath(eventManagePath(preview.slug), "layout");
+    return { success: "You are now an event admin.", slug: preview.slug };
+  } catch (error) { return teamFailure(error, "team.invite.accept"); }
 }
 
 async function removeBrandingObject(access: Awaited<ReturnType<typeof requireEventManager>>, bucket: string, path: string) {

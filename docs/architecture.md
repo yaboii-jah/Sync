@@ -29,7 +29,7 @@ Next.js proxy logic is only an optimistic navigation gate. Every server action, 
 - Platform super admins are separate from event roles.
 - `event_memberships` stores tenant roles and status. It has its own primary key and a nullable `user_id` so account deletion can anonymize identity without destroying event history.
 - Each event has exactly one active owner. Ownership transfer is transactional and only targets an active admin.
-- Event admins enter through exact verified-email invitations that expire after seven days.
+- Event admins enter through exact verified-email invitations that expire after seven days. Raw invitation tokens remain in URL fragments and are stored only as hashes; acceptance requires the matching verified account and an explicit confirmation.
 
 Membership statuses support active, left, removed, and blocked behavior. A removed attendee may rejoin; a blocked attendee may not. Leaving hides the person from active event views while preserving historical data.
 
@@ -91,6 +91,8 @@ All routes use the original fixed Sync dark teal/gold/green theme from `app/glob
 ## Notifications and jobs
 
 Scheduled work must be set-based and limited to published, non-archived, non-suspended events. Schedule timing does not automatically create attendee notifications. Manual operational alerts remain event scoped and auditable. Free-tier email guards are enforced before enqueueing delivery.
+
+Admin invitation emails use Resend from a server-only key. A private reservation ledger limits delivery attempts to 10 per event and 80 platform-wide per UTC day, then records only provider IDs or bounded failure codes. Creating an invitation always returns a copyable link even when email delivery is unavailable or capped.
 
 ## Account deletion
 

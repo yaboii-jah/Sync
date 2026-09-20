@@ -115,23 +115,30 @@ Phase 1 — tenant foundation, audited operations, tenant-scoped program data, e
 - Added 26 branding pgTAP assertions, four image/path unit tests, browser upload acceptance, public/attendee display checks, and exact-object smoke cleanup.
 - Made the raffle-export pgTAP fixture hermetic so restored local attendee rows no longer change its expected result.
 
+### 2026-09-20 — Tenant-scoped team controls
+
+- Added `/manage/[slug]/team` with owner-only invitation, reissue, revoke, admin removal, and explicit ownership-transfer flows; admins retain a read-only roster view.
+- Added fragment-based `/invite#token` acceptance so raw tokens stay out of request URLs. Only the exact verified invited account can preview and explicitly accept an invitation.
+- Added private invitation-email delivery reservations, 10-per-event and 80-platform-per-UTC-day guards, server-only Resend delivery, and copy-link fallback when delivery is unavailable or capped.
+- Added 16 focused pgTAP assertions, invitation helper tests, a local manual QA checklist in `docs/team-management-test-plan.md`, and regenerated database types after the forward migrations.
+
 ## Verification evidence
 
-- `npm test`: 80 tests passed.
+- `npm test`: all 82 tests passed, including invitation-token and public-path coverage.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
 - `npm run build`: passed on Next.js 16.3.2.
-- `npx tsc --noEmit`: passed after the schedule/speaker implementation.
+- `npx tsc --noEmit`: passed after the team-management implementation.
 - `npx supabase db push --linked --dry-run`: recognized the foundation, audited-operations, and tenant-program migrations in order and did not mutate the linked project.
 - `npx supabase db lint --local --level warning`: no schema errors or warnings.
 - `git diff --check`: passed.
-- `npx supabase test db --local`: all 259 pgTAP assertions passed, including the 26 branding assertions and the hermetic raffle export fixture.
+- `npx supabase test db --local`: all 275 pgTAP assertions passed, including 16 team invitation/delivery assertions.
 - `node scripts/smoke-organizer.mjs`: local two-tenant route and browser acceptance passed, including speaker/session creation, real branding upload and normalization, public/attendee branding display, lifecycle flows, 320/375/414/768px overflow checks, and measured text/control contrast.
 - Moved the complete local Supabase port block from Windows-reserved `54320–54329` to `45420–45429`, restored the preserved local database backup, and verified `200` responses from local Auth and the Next.js app. Docker again shows the Supabase API, Studio, Mailpit, analytics, and Postgres containers with published host ports.
 - The restored local database now passes the complete pgTAP suite; raffle-export assertions use only their UUID-scoped fixtures.
 
 ## In progress
 
-- No branding implementation work remains. Preview/staging migration application and rollout remain pending explicit deployment approval.
+- No team-control implementation work remains. Preview/staging migration application and rollout remain pending explicit deployment approval.
 
 ## Original Sync theme restoration verification — September 15, 2026
 
@@ -149,8 +156,8 @@ Original Sync UI restoration completed: removed light platform overrides, restor
 
 ## Next implementation unit
 
-1. Plan the tenant-scoped team controls; branding is complete and remains a separate authorization boundary.
-2. Apply all five verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
+1. Plan the platform-super-admin workspace; team controls are complete and remain separate from event administration.
+2. Apply all seven verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
 3. Continue the deferred tenant migration domains and platform-super-admin workspace documented in the rollout and schema inventory.
 
 ## Known migration risks
