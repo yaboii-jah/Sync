@@ -26,7 +26,7 @@ Next.js proxy logic is only an optimistic navigation gate. Every server action, 
 
 - `auth.users` is the canonical global identity.
 - A global profile stores display name, avatar, and reusable social URLs.
-- Platform super admins are separate from event roles.
+- Platform super admins are separate from event roles. Their `/super-admin/*` workspace uses narrow, database-authorized read RPCs for platform health, users, events, quotas, feedback, and audit history; it does not reuse legacy global-admin queries.
 - `event_memberships` stores tenant roles and status. It has its own primary key and a nullable `user_id` so account deletion can anonymize identity without destroying event history.
 - Each event has exactly one active owner. Ownership transfer is transactional and only targets an active admin.
 - Event admins enter through exact verified-email invitations that expire after seven days. Raw invitation tokens remain in URL fragments and are stored only as hashes; acceptance requires the matching verified account and an explicit confirmation.
@@ -34,6 +34,10 @@ Next.js proxy logic is only an optimistic navigation gate. Every server action, 
 Membership statuses support active, left, removed, and blocked behavior. A removed attendee may rejoin; a blocked attendee may not. Leaving hides the person from active event views while preserving historical data.
 
 Organizer creation is a short form followed by an event setup workspace. Slugs are immutable after creation in v1. Active owned-event quotas count draft/published events, including suspended events, and creation is serialized per owner. Basics edits preserve existing session time-window constraints. Setup-only creation/basics audits do not prevent untouched-draft deletion; an immutable platform tombstone preserves the deleted event and its creation request.
+
+Platform quota overrides apply per event owner. Defaults are five active events, twenty event admins, five hundred sessions per event, and a 10 MiB branding source image. Branding overrides may reach 50 MiB, matching the configured Storage ceiling, and are enforced by Storage RLS plus server-side validation.
+
+An operator may hold only one live support session. Starting another atomically ends the previous session. Support expires after 60 minutes, reveals attendee identity only for the selected event, and permits attendee moderation without granting organizer, lifecycle, branding, schedule, team, or ownership authority.
 
 ## Data domains
 

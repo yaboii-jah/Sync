@@ -41,11 +41,13 @@ A typical request flows from a browser to a Next.js route, then through a server
 - `/manage/[slug]/*` is the owner/admin workspace. Its implemented editors cover event basics, logo/cover branding, schedule sessions, speaker profiles, team administration, publication state, and session-speaker assignments.
 - `/invite` is a public, noindex invitation entry. The secret remains in the URL fragment, so a matching signed-in account must explicitly accept it before gaining admin membership.
 - Legacy attendee routes such as `/home`, plus `/admin/*`, remain compatibility paths during rollout.
-- The planned `/super-admin/*` workspace is for platform operations and is separate from event administration.
+- `/super-admin/*` is the active platform-operations workspace. It includes health metrics, event and user oversight, owner quota overrides, platform feedback, immutable audit history, event suspension, and reason-gated support access. It remains separate from event administration.
 
 The global identity lives in Supabase Auth. Event membership supplies the contextual `owner`, `admin`, or `attendee` role. Platform super-admin authority is separate. Every event-owned query and mutation must carry an `event_id`; knowing a slug or object ID is not permission.
 
 Events move through `draft`, `published`, and `archived`. Suspension is an independent platform state. Archived and suspended management is read-only, and only an untouched, never-published draft may be deleted.
+
+Platform support is deliberately temporary: one live event per operator, a maximum of 60 minutes, and an explicit purpose recorded in the platform audit. The dedicated support page may inspect and moderate attendees for that event only. It never enters `/manage/[slug]` or inherits owner/admin powers.
 
 ## Authentication and data boundaries
 

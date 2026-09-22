@@ -7,7 +7,6 @@ import { eventHomePath, eventManagePath, eventPublicPath } from "@/lib/events/ro
 import { organizerErrorMessage, type OrganizerActionState } from "@/lib/events/organizer-actions";
 import {
   EVENT_BRANDING_BUCKET,
-  EVENT_BRANDING_MAX_BYTES,
   EVENT_BRANDING_STAGING_BUCKET,
   eventBrandingDeliveryPath,
   isEventBrandingKind,
@@ -53,6 +52,7 @@ import {
 } from "@/lib/supabase/queries/management";
 import { acceptManagedEventAdminInvitation, getManagedEventInvitationPreview } from "@/lib/supabase/queries/management";
 import { createClient } from "@/lib/supabase/server";
+import { getEventBrandingUploadLimit } from "@/lib/supabase/queries/platform-admin";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const field = (form: FormData, key: string) => {
@@ -240,7 +240,8 @@ export async function processEventBrandingAction(input: {
   try {
     const downloaded = await access.supabase.storage.from(EVENT_BRANDING_STAGING_BUCKET).download(input.stagingPath);
     if (downloaded.error) throw downloaded.error;
-    if (downloaded.data.size < 1 || downloaded.data.size > EVENT_BRANDING_MAX_BYTES) throw new Error("The image must be no larger than 10 MB.");
+    const maxUploadBytes = await getEventBrandingUploadLimit(access.supabase, access.event.id);
+    if (downloaded.data.size < 1 || downloaded.data.size > maxUploadBytes) throw new Error(`The image must be no larger than ${Math.floor(maxUploadBytes / 1048576)} MiB.`);
     const normalized = await normalizeEventBrandingImage(Buffer.from(await downloaded.data.arrayBuffer()), input.kind);
     deliveryPath = eventBrandingDeliveryPath(access.event.id, input.kind, crypto.randomUUID());
     const uploaded = await access.supabase.storage.from(EVENT_BRANDING_BUCKET).upload(deliveryPath, normalized, {

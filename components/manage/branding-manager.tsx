@@ -23,6 +23,7 @@ interface BrandingManagerProps {
   logoPath: string | null;
   coverPath: string | null;
   readOnly: boolean;
+  maxUploadBytes: number;
 }
 
 const descriptions: Record<EventBrandingKind, { title: string; help: string }> = {
@@ -43,7 +44,7 @@ export function BrandingManager(props: BrandingManagerProps) {
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
-    const inputError = brandingInputError(file);
+    const inputError = brandingInputError(file, props.maxUploadBytes);
     if (inputError) return setError(inputError);
 
     setError(null);
@@ -92,7 +93,7 @@ export function BrandingManager(props: BrandingManagerProps) {
 
   return <section>
     <h2 className="text-2xl font-bold tracking-tight">Branding</h2>
-    <p className="mt-2 max-w-2xl leading-7 text-muted">Add event-specific artwork for the public page and attendee experience. JPEG, PNG, and WebP files up to 10 MB are accepted.</p>
+    <p className="mt-2 max-w-2xl leading-7 text-muted">Add event-specific artwork for the public page and attendee experience. JPEG, PNG, and WebP files up to {Math.floor(props.maxUploadBytes / 1048576)} MiB are accepted.</p>
     {props.readOnly ? <Alert status="warning" className="mt-5"><Alert.Indicator /><Alert.Content><Alert.Description>This event is read-only. Existing artwork remains visible.</Alert.Description></Alert.Content></Alert> : null}
     {error ? <Alert status="danger" className="mt-5"><Alert.Indicator /><Alert.Content><Alert.Description>{error}</Alert.Description></Alert.Content></Alert> : null}
     <div className="mt-8 grid gap-5 xl:grid-cols-2">

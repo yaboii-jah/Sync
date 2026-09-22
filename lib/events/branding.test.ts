@@ -19,7 +19,8 @@ describe("event branding", () => {
   it("validates input size and public MIME type", () => {
     expect(brandingInputError({ size: 100, type: "image/png" })).toBeNull();
     expect(brandingInputError({ size: 0, type: "image/png" })).toContain("non-empty");
-    expect(brandingInputError({ size: 10 * 1024 * 1024 + 1, type: "image/png" })).toContain("10 MB");
+    expect(brandingInputError({ size: 10 * 1024 * 1024 + 1, type: "image/png" })).toContain("10 MiB");
+    expect(brandingInputError({ size: 20 * 1024 * 1024, type: "image/png" }, 25 * 1024 * 1024)).toBeNull();
     expect(brandingInputError({ size: 100, type: "image/svg+xml" })).toContain("JPEG");
   });
 

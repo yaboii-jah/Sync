@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -1404,6 +1404,10 @@ export type Database = {
         Args: { invitation_token_hash: string }
         Returns: Json
       }
+      get_event_branding_upload_limit: {
+        Args: { target_event_id: string }
+        Returns: number
+      }
       get_my_networking_scan_history: {
         Args: never
         Returns: {
@@ -1460,6 +1464,59 @@ export type Database = {
           target_membership_id: string
         }
         Returns: string
+      }
+      platform_super_admin_event: {
+        Args: { target_event_id: string }
+        Returns: Json
+      }
+      platform_super_admin_list_attendees: {
+        Args: {
+          cursor_id?: string
+          cursor_joined_at?: string
+          result_limit?: number
+          search_query?: string
+          status_filter?: string
+          target_event_id: string
+        }
+        Returns: Json
+      }
+      platform_super_admin_list_audit: {
+        Args: { cursor_id?: number; result_limit?: number }
+        Returns: Json
+      }
+      platform_super_admin_list_events: {
+        Args: {
+          cursor_id?: string
+          cursor_updated_at?: string
+          lifecycle_filter?: string
+          result_limit?: number
+          search_query?: string
+          suspended_filter?: boolean
+        }
+        Returns: Json
+      }
+      platform_super_admin_list_feedback: {
+        Args: {
+          category_filter?: string
+          cursor_created_at?: string
+          cursor_id?: string
+          result_limit?: number
+        }
+        Returns: Json
+      }
+      platform_super_admin_list_users: {
+        Args: {
+          cursor_created_at?: string
+          cursor_id?: string
+          result_limit?: number
+          search_query?: string
+        }
+        Returns: Json
+      }
+      platform_super_admin_overview: { Args: never; Returns: Json }
+      platform_super_admin_user: {
+        Args: { target_user_id: string }
+        Returns: Json
       }
       publish_event: {
         Args: { mutation_request_id: string; target_event_id: string }
@@ -1533,6 +1590,18 @@ export type Database = {
       set_networking_card_template: {
         Args: { p_template: number }
         Returns: undefined
+      }
+      set_platform_quota_override: {
+        Args: {
+          change_reason: string
+          mutation_request_id: string
+          next_active_event_limit: number
+          next_branding_upload_bytes: number
+          next_event_admin_limit: number
+          next_event_session_limit: number
+          target_user_id: string
+        }
+        Returns: string
       }
       start_event_support_session: {
         Args: {

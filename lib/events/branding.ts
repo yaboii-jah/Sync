@@ -19,9 +19,9 @@ export function isEventBrandingKind(value: string): value is EventBrandingKind {
   return (EVENT_BRANDING_KINDS as readonly string[]).includes(value);
 }
 
-export function brandingInputError(file: Pick<File, "size" | "type">): string | null {
+export function brandingInputError(file: Pick<File, "size" | "type">, maxBytes = EVENT_BRANDING_MAX_BYTES): string | null {
   if (file.size < 1) return "Choose a non-empty image.";
-  if (file.size > EVENT_BRANDING_MAX_BYTES) return "Choose an image no larger than 10 MB.";
+  if (file.size > maxBytes) return `Choose an image no larger than ${Math.floor(maxBytes / 1048576)} MiB.`;
   if (!(EVENT_BRANDING_MIME_TYPES as readonly string[]).includes(file.type)) return "Use a JPEG, PNG, or WebP image.";
   return null;
 }

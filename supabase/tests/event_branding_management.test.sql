@@ -2,7 +2,7 @@ begin;
 select no_plan();
 
 select ok(
-  (select not public and file_size_limit = 10485760 and allowed_mime_types = array['image/jpeg','image/png','image/webp']::text[]
+  (select not public and file_size_limit = 52428800 and allowed_mime_types = array['image/jpeg','image/png','image/webp']::text[]
      from storage.buckets where id = 'event-branding-staging')
   and (select public and file_size_limit = 2097152 and allowed_mime_types = array['image/webp']::text[]
      from storage.buckets where id = 'event-branding'),
