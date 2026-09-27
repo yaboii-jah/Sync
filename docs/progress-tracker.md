@@ -8,7 +8,7 @@ Convert Sync from the completed AWS Student Community Day Mega Manila 2026 compa
 
 ## Current phase
 
-Phase 2 — the core multi-tenant routes, organizer workspace, team controls, branding, and platform super-admin workspace are locally implemented and verified; all nine multi-tenant forward migrations remain unapplied remotely.
+Phase 3 — tenant-scoped alerts, push preferences, workshop seats, and networking are implemented locally on top of the core multi-tenant routes. All seventeen multi-tenant forward migrations remain unapplied remotely.
 
 ## Completed
 
@@ -120,7 +120,7 @@ Phase 2 — the core multi-tenant routes, organizer workspace, team controls, br
 - Added `/manage/[slug]/team` with owner-only invitation, reissue, revoke, admin removal, and explicit ownership-transfer flows; admins retain a read-only roster view.
 - Added fragment-based `/invite#token` acceptance so raw tokens stay out of request URLs. Only the exact verified invited account can preview and explicitly accept an invitation.
 - Added private invitation-email delivery reservations, 10-per-event and 80-platform-per-UTC-day guards, server-only Resend delivery, and copy-link fallback when delivery is unavailable or capped.
-- Added 16 focused pgTAP assertions, invitation helper tests, a local manual QA checklist in `docs/team-management-test-plan.md`, and regenerated database types after the forward migrations.
+- Added 16 focused pgTAP assertions, invitation helper tests, and regenerated database types after the forward migrations. Manual invitation checks are now in `docs/multi-tenant-acceptance-plan.md`.
 
 ### 2026-09-21 — Platform super-admin workspace
 
@@ -128,26 +128,77 @@ Phase 2 — the core multi-tenant routes, organizer workspace, team controls, br
 - Added narrow super-admin DTO RPCs instead of broad table access. Tenant attendee identity remains unavailable until a reason-gated event-specific support session is active.
 - Enforced one live support tenant per operator; starting another session atomically closes the prior one. Support remains capped at 60 minutes and cannot acquire organizer or owner powers.
 - Added audited, idempotent owner quota management and made the branding source-upload override effective through client validation, server validation, and Storage RLS up to the configured 50 MiB ceiling.
-- Added 19 focused pgTAP assertions, platform-route authorization unit coverage, regenerated database types, and `docs/super-admin-test-plan.md`.
+- Added 19 focused pgTAP assertions, platform-route authorization unit coverage, and regenerated database types. Manual super-admin acceptance checks are now in `docs/multi-tenant-acceptance-plan.md`.
 - Added the shared confirmation-based sign-out control to the platform-operations header while keeping “Leave operations” as a separate non-destructive navigation action.
+
+### 2026-09-23 — Active documentation synchronized
+
+- Removed the standalone team and super-admin manual checklists in favor of one consolidated multi-tenant acceptance plan after the foundation is complete.
+- Updated the developer guide and schema inventory to reflect the locally completed platform super-admin workspace and all nine remotely unapplied multi-tenant migrations.
+
+### 2026-09-23 — Tenant-scoped alerts and push foundation
+
+- Added required event ownership to notifications, recipient snapshots, dispatches, deliveries, and read cursors; preserved historical AWS alerts and global device subscriptions.
+- Added per-event push opt-in, recipient/event RLS, audited idempotent owner/admin send RPC, and all/selected active-member targeting. Published, non-suspended events alone can send; support sessions do not authorize sending.
+- Added scoped attendee alerts/settings and organizer composer/history/detail routes. The scoped home links to event alerts and settings; legacy routes remain flag-off compatibility surfaces.
+- Updated the push Edge worker to require event recipient, active membership, and per-event opt-in; scoped notification clicks open `/e/[slug]/alerts`. Webhook destinations are environment-configured, and missing configuration fails safely without retry.
+- Added focused tenant-alert pgTAP coverage and repaired two non-hermetic/legacy assumptions in the existing suite. All 305 database assertions now pass on the restored local database. Real-device push delivery and manual two-account browser acceptance remain to be tested.
+
+### 2026-09-23 — Tenant-scoped workshop seats
+
+- Added required `event_id` ownership and a composite session reference to seat claims, backfilled existing claims, and reconciled held-seat counters.
+- Moved count maintenance to claim insert/delete triggers, including automatic release when a member leaves, is removed, is blocked, or loses their account identity. My Flow bookmarks remain intact.
+- Restricted audited capacity edits to event owners/admins, closing the temporary support-session capacity path. The scoped schedule editor now exposes optional capacity, off-app reservations, close-seats control, and a live attendee-facing preview.
+- Added focused input validation and database isolation/authorization tests. Local suite passes 87 unit tests and 331 pgTAP assertions; build and schema lint pass. A live two-device last-seat race and responsive browser acceptance remain manual checks for the consolidated foundation plan.
+
+### 2026-09-23 — Tenant-scoped networking
+
+- Added membership-owned event cards, opt-in card-link selections, and deduplicated event scan history. QR card reads require active membership in the same event; direct table access is revoked and composite foreign keys prevent cross-event relationships.
+- Added scoped Connect and card routes with a reused but event-neutral card presentation. Published cards can be edited and scanned; archived cards/history are read-only, suspended events are hidden, and legacy card routes remain separate.
+- Removing a global social URL or deactivating membership revokes its event-card selections. Existing global URLs remain reusable, but no event links are selected automatically. Active members can edit reusable links on Connect with either Google or email-link sign-in; the legacy account-settings save remains Google-only while the rollout flag is off.
+- Added database isolation/consent tests and QR routing unit tests. All four networking migrations were applied only to local Supabase; remote migration state is unchanged. Current checks: 90 unit tests, 368 pgTAP assertions, schema lint, and production build pass; two-account browser acceptance is still pending.
+
+### 2026-09-27 — Networking follow-up verification
+
+- Restored the in-progress multi-tenant work to its feature branch while preserving the unrelated `main` rollback notes in a separate stash.
+- Removed legacy AWS artwork and slogan from new event cards without changing flag-off legacy cards. Scan history now preserves unavailable connections as memories without returning a clickable token after link removal, membership loss, or identity anonymization.
+- Expanded database checks for anonymous callers, suspended events, and anonymized scan targets; all 368 database assertions pass locally.
+
+### 2026-09-27 — Event feedback and raffle scoping
+
+- Added separate event/membership-owned feedback with idempotent attendee submission and owner/admin-only event reads. Global `app_feedback` remains platform feedback; the shared form now identifies the recipient accurately.
+- Added scoped feedback and raffle routes. Raffle export is a fresh active-attendee names snapshot for an external drawing tool, without in-app draw or winner storage; legacy global-admin paths remain flag-off compatibility surfaces.
+- Restricted both domains at database and route/action boundaries across tenants, lifecycle states, suspension, membership removal, and deleted identity. Feedback authors anonymize as “Former attendee” when their account identity is removed. Duplicate raffle labels have an on-demand, same-event identity check; exported text remains names-only.
+- Applied three forward migrations to local Supabase only, regenerated types, and added 35 focused pgTAP assertions plus scoped-action tests. No remote migration or deployment was performed.
+
+### 2026-09-27 — Event-scoped Photo Booth
+
+- Added `/e/[slug]/photo-booth` for active members of published or archived, non-suspended events and an attendee navigation link. The legacy `/more/photo-booth` route redirects to the preferred eligible event only when the multi-tenant flag is enabled; flag-off AWS frames remain unchanged.
+- Added two deterministic Sync-only vector frames used by both preview and local 1080×1920 JPEG composition. The existing three-shot camera/picker, retake, countdown, and media cleanup flow is reused; photos still have no server, Storage, or database write path.
+- Added scoped-route and frame-contract tests. No migration, bucket, generated database type, or remote configuration change was needed. Physical camera acceptance remains for the consolidated test plan.
 
 ## Verification evidence
 
-- `npm test`: all 85 tests passed, including platform-super-admin route authorization, invitation-token, branding-quota, and public-path coverage.
+- `npm test`: all 109 tests passed, including Photo Booth route, legacy redirect, and frame-contract checks.
 - `npm run lint`: passed with 9 pre-existing warnings in legacy networking-card files and no errors.
-- `npm run build`: passed on Next.js 16.3.2.
-- `npx tsc --noEmit`: passed after the platform-super-admin implementation.
+- `npm run build`: passed on Next.js 16.3.2 with all scoped Phase 3 routes, including Photo Booth; the existing `metadataBase` warning remains.
+- `npx tsc --noEmit`: passed after the Photo Booth implementation.
 - `npx supabase db push --linked --dry-run`: recognized the foundation, audited-operations, and tenant-program migrations in order and did not mutate the linked project.
-- `npx supabase db lint --local --level warning`: no schema errors or warnings.
+- `npx supabase db lint --local --level warning`: no schema errors or warnings after the networking migrations.
 - `git diff --check`: passed.
-- `npx supabase test db --local`: all 294 pgTAP assertions passed, including platform DTO authorization, single-session support isolation, quota auditing, and branding Storage enforcement.
+- `npx supabase test db`: all 403 pgTAP assertions pass, including feedback/raffle tenant isolation, eligibility, lifecycle, suspension, and anonymization.
 - `node scripts/smoke-organizer.mjs`: local two-tenant route and browser acceptance passed, including speaker/session creation, real branding upload and normalization, public/attendee branding display, lifecycle flows, 320/375/414/768px overflow checks, and measured text/control contrast.
 - Moved the complete local Supabase port block from Windows-reserved `54320–54329` to `45420–45429`, restored the preserved local database backup, and verified `200` responses from local Auth and the Next.js app. Docker again shows the Supabase API, Studio, Mailpit, analytics, and Postgres containers with published host ports.
-- The restored local database now passes the complete pgTAP suite; raffle-export assertions use only their UUID-scoped fixtures.
+- The restored local database now passes the complete pgTAP suite; raffle-export and platform-assignment assertions use their UUID-scoped fixtures.
+
+## Consolidated acceptance planning — September 27, 2026
+
+- Added `docs/multi-tenant-acceptance-plan.md` with a local-first two-event fixture matrix, automated baseline, release-blocking authorization/lifecycle checks, feature-parity browser/device checks, evidence fields, and a go/no-go gate. This is a checklist, not a record of passed manual tests. No hosted migrations, flags, or data were changed.
 
 ## In progress
 
-- Platform super-admin implementation is complete locally. Preview/staging migration application and rollout remain pending explicit deployment approval.
+- Alerts, push scoping, workshop seats, networking, event feedback/raffle, and Photo Booth are locally implemented. Real-device push and camera acceptance, a live last-seat race, and two-account networking and feedback/raffle browser acceptance still require verification; no remote function deployment or migrations were performed.
+- The consolidated end-to-end plan is ready; its manual checks have not yet been run as a complete acceptance pass.
 
 ## Original Sync theme restoration verification — September 15, 2026
 
@@ -165,8 +216,8 @@ Original Sync UI restoration completed: removed light platform overrides, restor
 
 ## Next implementation unit
 
-1. Apply the verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
-2. Continue the deferred tenant migration domains documented in the rollout and schema inventory.
+1. Execute `docs/multi-tenant-acceptance-plan.md` locally, record evidence, and fix any blocking failures, including physical-device push/camera and two-account/race checks.
+2. Apply migrations to preview/staging only with explicit approval, then repeat the acceptance plan before cutover.
 
 ## Known migration risks
 

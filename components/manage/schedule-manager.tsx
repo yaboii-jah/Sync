@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import {
   deleteManagedSessionAction,
   saveManagedSessionAction,
+  setManagedSessionCapacityAction,
   setManagedSessionPublishedAction,
 } from "@/app/manage/actions";
 import { Alert, Button, Card, Checkbox, Input, Label, Modal, Switch, TextArea, TextField, Typography } from "@/components/ui";
 import { useToast } from "@/components/toast/toast-provider";
 import { formatEventDate, formatEventTimeRange } from "@/lib/format";
 import { formatEventDateTimeInput } from "@/lib/events/basics";
-import type { ManagedSessionInput } from "@/lib/events/program-management";
+import { validateManagedSeatInput, type ManagedSessionInput } from "@/lib/events/program-management";
+import { seatAvailability } from "@/lib/seats";
 import type { ManagedSpeaker } from "@/lib/supabase/queries/management";
 import type { SessionWithSpeakers } from "@/lib/supabase/queries/program-flow";
 
@@ -86,6 +88,7 @@ export function ScheduleManager({ slug, timezone, sessions, speakers, readOnly }
                   <span className={`text-xs font-semibold ${session.published ? "text-success" : "text-muted"}`}>{session.published ? "Published" : "Draft"}</span>
                 </div>
                 <p className="mt-1 text-sm text-muted">{formatEventTimeRange(session.start_time, session.end_time, timezone)}{session.room ? ` · ${session.room}` : ""}</p>
+                {seatAvailability(session) ? <p className="mt-1 text-sm text-muted">Seats: {seatAvailability(session)?.label}</p> : null}
                 {session.speakers.length ? <p className="mt-2 text-sm">{session.speakers.map((speaker) => speaker.name).join(", ")}</p> : <p className="mt-2 text-sm text-muted">No speakers assigned</p>}
               </div>
               {!readOnly ? <div className="flex flex-wrap gap-2">
@@ -115,24 +118,45 @@ function SessionForm({ slug, timezone, session, speakers, onClose }: { slug: str
     published: session?.published ?? false,
   });
   const [speakerIds, setSpeakerIds] = useState(() => session?.speakers.map((speaker) => speaker.id) ?? []);
+  const [capacity, setCapacity] = useState(session?.capacity === null || !session ? "" : String(session.capacity));
+  const [reservedSeats, setReservedSeats] = useState(session ? String(session.reserved_seats) : "0");
+  const [seatsClosed, setSeatsClosed] = useState(session?.seats_closed ?? false);
   const [requestIds] = useState(() => ({ details: crypto.randomUUID(), speakers: crypto.randomUUID() }));
+  const [seatRequestId, setSeatRequestId] = useState(() => crypto.randomUUID());
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const { toast } = useToast();
   const change = (key: keyof ManagedSessionInput, value: string | boolean) => setValues((previous) => ({ ...previous, [key]: value }));
+  const seatInput = { capacity, reservedSeats, seatsClosed };
+  const seatSettings = validateManagedSeatInput(seatInput, session?.claimed_seats ?? 0);
+  const seatPreview = seatSettings.capacity != null && seatSettings.reservedSeats !== undefined && seatSettings.seatsClosed !== undefined
+    ? seatAvailability({ capacity: seatSettings.capacity, reserved_seats: seatSettings.reservedSeats, claimed_seats: session?.claimed_seats ?? 0, seats_closed: seatSettings.seatsClosed })
+    : null;
+  const seatsChanged = seatSettings.capacity !== (session?.capacity ?? null) ||
+    seatSettings.reservedSeats !== (session?.reserved_seats ?? 0) ||
+    seatSettings.seatsClosed !== (session?.seats_closed ?? false);
 
   function submit() {
     setError(null);
+    if (seatSettings.error) { setError(seatSettings.error); return; }
     startTransition(async () => {
       const result = await saveManagedSessionAction({ slug, sessionId: session?.id ?? null, values, speakerIds, detailsRequestId: requestIds.details, speakersRequestId: requestIds.speakers });
       if (result.error) {
         if (result.entityId) {
-          toast(`Session saved, but speaker assignments were not updated: ${result.error}`, "error");
+          toast(`Session saved, but speaker assignments or seats were not updated: ${result.error}`, "error");
           router.refresh();
           onClose();
         } else setError(result.error);
         return;
+      }
+      if (seatsChanged && result.entityId) {
+        const seatResult = await setManagedSessionCapacityAction({ slug, sessionId: result.entityId, seats: seatInput, requestId: seatRequestId });
+        if (seatResult.error) {
+          setError(`Session saved, but seats were not updated: ${seatResult.error}`);
+          router.refresh();
+          return;
+        }
       }
       toast(session ? "Session updated" : "Session created");
       router.refresh();
@@ -149,6 +173,16 @@ function SessionForm({ slug, timezone, session, speakers, onClose }: { slug: str
       <TextField fullWidth value={values.endsAt} onChange={(value) => change("endsAt", value)} isRequired><Label>Ends in {timezone}</Label><Input type="datetime-local" /></TextField>
     </div>
     <TextField fullWidth value={values.description} onChange={(value) => change("description", value)}><Label>Description</Label><TextArea rows={4} maxLength={2000} /></TextField>
+    <fieldset className="grid gap-3 rounded-xl border p-4 platform-rule">
+      <legend className="px-1 text-sm font-medium">Seats</legend>
+      <p className="text-xs text-muted">Leave capacity blank for no seat limit. Held seats are read-only; registered off-app seats are organizer-controlled.</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <TextField fullWidth value={capacity} onChange={(value) => { setCapacity(value); setSeatRequestId(crypto.randomUUID()); }}><Label>Capacity</Label><Input inputMode="numeric" placeholder="No limit" /></TextField>
+        <TextField fullWidth value={reservedSeats} onChange={(value) => { setReservedSeats(value); setSeatRequestId(crypto.randomUUID()); }} isDisabled={!capacity.trim()}><Label>Registered off-app</Label><Input inputMode="numeric" /></TextField>
+      </div>
+      <p className="text-xs text-muted">Held in app: {session?.claimed_seats ?? 0}. {seatPreview?.label ?? "No seat limit"}</p>
+      {capacity.trim() ? <Switch isSelected={seatsClosed} onChange={(value) => { setSeatsClosed(value); setSeatRequestId(crypto.randomUUID()); }}><Switch.Content className="w-full justify-between gap-4"><span className="text-sm">Close seats to new claims</span><Switch.Control><Switch.Thumb /></Switch.Control></Switch.Content></Switch> : null}
+    </fieldset>
     {!session ? <Switch isSelected={values.published} onChange={(value) => change("published", value)}><Switch.Content className="w-full justify-between gap-4"><span><span className="block text-sm font-medium">Publish immediately</span><span className="block text-xs text-muted">Drafts stay hidden from attendees.</span></span><Switch.Control><Switch.Thumb /></Switch.Control></Switch.Content></Switch> : null}
     <fieldset className="grid gap-2"><legend className="mb-1 text-sm font-medium">Speakers</legend>{speakers.length ? speakers.map((speaker) => <Checkbox key={speaker.id} isSelected={speakerIds.includes(speaker.id)} onChange={(selected) => setSpeakerIds((current) => selected ? [...current, speaker.id] : current.filter((id) => id !== speaker.id))}><Checkbox.Content><Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>{speaker.name}<span className="text-xs text-muted">{speaker.published ? "Published" : "Draft"}</span></Checkbox.Content></Checkbox>) : <p className="text-sm text-muted">Create speakers first, then return to assign them.</p>}</fieldset>
   </Modal.Body><Modal.Footer><Button variant="secondary" isDisabled={pending} onPress={onClose}>Cancel</Button><Button isPending={pending} onPress={submit}>{session ? "Save changes" : "Create session"}</Button></Modal.Footer></Modal.Dialog></Modal.Container></Modal.Backdrop></Modal>;

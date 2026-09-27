@@ -5,7 +5,7 @@
  *
  * Two independent writers move the numbers. Event operations owns
  * `reserved_seats`, the count registered off-app through the organiser export;
- * attendees own `claimed_seats`, which only the seat RPCs touch. Taken seats
+ * attendee claim rows drive `claimed_seats` through database triggers. Taken seats
  * are the sum, so an organiser freeing seats and an attendee taking one never
  * overwrite each other's number.
  *

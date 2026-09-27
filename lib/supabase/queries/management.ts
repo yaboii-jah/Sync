@@ -193,6 +193,17 @@ export async function setManagedSessionPublished(client: QueryClient, sessionId:
   if (error) throw error;
 }
 
+export async function setManagedSessionCapacity(client: QueryClient, sessionId: string, capacity: number | null, reservedSeats: number, seatsClosed: boolean, requestId: string): Promise<void> {
+  const { error } = await client.rpc("admin_set_session_capacity", {
+    target_session_id: sessionId,
+    session_capacity: capacity as unknown as number,
+    session_reserved_seats: reservedSeats,
+    session_seats_closed: seatsClosed,
+    mutation_request_id: requestId,
+  });
+  if (error) throw error;
+}
+
 export async function setManagedSessionSpeakers(client: QueryClient, sessionId: string, speakerIds: string[], requestId: string): Promise<void> {
   const { error } = await client.rpc("admin_set_session_speakers", { target_session_id: sessionId, target_speaker_ids: speakerIds, mutation_request_id: requestId });
   if (error) throw error;

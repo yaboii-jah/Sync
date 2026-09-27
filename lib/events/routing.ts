@@ -28,6 +28,30 @@ export function eventHomePath(slug: string): string {
   return `${eventPublicPath(slug)}/home`;
 }
 
+export function eventAlertsPath(slug: string): string {
+  return `${eventPublicPath(slug)}/alerts`;
+}
+
+export function eventSettingsPath(slug: string): string {
+  return `${eventPublicPath(slug)}/settings`;
+}
+
+export function eventConnectPath(slug: string): string {
+  return `${eventPublicPath(slug)}/connect`;
+}
+
+export function eventFeedbackPath(slug: string): string {
+  return `${eventPublicPath(slug)}/feedback`;
+}
+
+export function eventPhotoBoothPath(slug: string): string {
+  return `${eventPublicPath(slug)}/photo-booth`;
+}
+
+export function eventCardPath(slug: string, token: string): string {
+  return `${eventPublicPath(slug)}/c/${token}`;
+}
+
 export function eventManagePath(slug: string): string {
   return `/manage/${slug}`;
 }
@@ -35,6 +59,14 @@ export function eventManagePath(slug: string): string {
 export function legacyAdminDestination(events: RoutableEvent[]): string {
   const event = selectPreferredEvent(events, "manage");
   return event ? eventManagePath(event.slug) : "/events";
+}
+
+/** The legacy booth link resolves only to an accessible, non-suspended event. */
+export function legacyPhotoBoothDestination(events: (RoutableEvent & { isSuspended: boolean })[]): string {
+  const eligible = events.filter((event) => !event.isSuspended &&
+    (event.lifecycle === "published" || event.lifecycle === "archived"));
+  const event = selectPreferredEvent(eligible);
+  return event ? eventPhotoBoothPath(event.slug) : "/events";
 }
 
 export function selectPreferredEvent(

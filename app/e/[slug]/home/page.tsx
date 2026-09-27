@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { HomeClient } from "@/components/home/home-client";
 import { PlatformShell } from "@/components/platform/platform-shell";
-import { PushGate } from "@/components/push/push-gate";
+import { ScopedEventNavigation } from "@/components/platform/scoped-event-navigation";
 import { eventPublicPath, normalizeEventSlug } from "@/lib/events/routing";
 import { eventBrandingPublicUrl } from "@/lib/events/branding";
 import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
@@ -47,7 +47,7 @@ export default async function ScopedEventHomePage({ params }: { params: Promise<
           </div>
           <Link href={eventPublicPath(slug)} className="platform-link mt-3 text-sm">Public page</Link>
         </div>
-        <PushGate />
+        <ScopedEventNavigation slug={slug} />
         <HomeClient initialEvent={event} initialSessions={sessions} initialBookmarks={bookmarks} initialClaims={claims} initialNow={getServerNow()} eventSlug={slug} showVenueMap={false} />
       </div>
     </PlatformShell>

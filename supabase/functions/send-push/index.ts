@@ -20,6 +20,7 @@ interface SubscriptionRow {
 }
 
 interface DeliveryResult {
+  event_id: string;
   notification_id: string;
   user_id: string;
   subscription_id: string;
@@ -40,9 +41,11 @@ function parsePayload(value: unknown): WebhookPayload | null {
   return { id: value.id };
 }
 
-function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message.slice(0, 500);
-  return String(error).slice(0, 500);
+function failureCode(error: unknown): string {
+  const status = isRecord(error) && typeof error.statusCode === "number" ? error.statusCode : null;
+  if (status === 404 || status === 410) return "push_expired";
+  if (status !== null && status >= 400 && status < 500) return "push_rejected";
+  return "push_unavailable";
 }
 
 Deno.serve(async (req) => {
@@ -122,53 +125,78 @@ Deno.serve(async (req) => {
   try {
     const { data: notification, error: notificationError } = await admin
       .from("notifications")
-      .select("title, body")
+      .select("event_id, title, body")
       .eq("id", payload.id)
       .single();
 
     if (notificationError || !notification) {
       throw new Error(notificationError?.message ?? "Notification not found");
     }
+    const { data: event, error: eventError } = await admin
+      .from("events").select("slug,lifecycle,suspended_at,theme_preset").eq("id", notification.event_id).single();
+    if (eventError || !event) throw new Error("event_lookup_failed");
     const recipientIds = new Set<string>();
     for (let from = 0; ; from += PAGE_SIZE) {
       const { data: page, error } = await admin
         .from("notification_recipients")
         .select("user_id")
+        .eq("event_id", notification.event_id)
         .eq("notification_id", payload.id)
         .order("user_id")
         .range(from, from + PAGE_SIZE - 1);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error("recipient_lookup_failed");
       for (const row of page ?? []) recipientIds.add(row.user_id);
       if (!page || page.length < PAGE_SIZE) break;
     }
 
-    const allSubscriptions: SubscriptionRow[] = [];
-    let lastSubscriptionId: string | null = null;
-    for (;;) {
-      let query = admin
-        .from("push_subscriptions")
-        .select("id, user_id, device_id, endpoint, p256dh, auth")
-        .order("id")
-        .limit(PAGE_SIZE);
-      if (lastSubscriptionId) query = query.gt("id", lastSubscriptionId);
-      const { data: page, error } = await query;
-      if (error) throw new Error(error.message);
-      allSubscriptions.push(...((page ?? []) as SubscriptionRow[]));
+    const enabledIds = new Set<string>();
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data: page, error } = await admin.from("event_notification_preferences")
+        .select("user_id").eq("event_id", notification.event_id).eq("push_enabled", true)
+        .order("user_id").range(from, from + PAGE_SIZE - 1);
+      if (error) throw new Error("preference_lookup_failed");
+      for (const row of page ?? []) enabledIds.add(row.user_id);
       if (!page || page.length < PAGE_SIZE) break;
-      lastSubscriptionId = page[page.length - 1].id;
     }
-
-    const targets = allSubscriptions.filter((subscription) =>
-      recipientIds.has(subscription.user_id)
-    );
+    const activeIds = new Set<string>();
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data: page, error } = await admin.from("event_memberships")
+        .select("user_id").eq("event_id", notification.event_id).eq("status", "active")
+        .order("id").range(from, from + PAGE_SIZE - 1);
+      if (error) throw new Error("membership_lookup_failed");
+      for (const row of page ?? []) if (row.user_id) activeIds.add(row.user_id);
+      if (!page || page.length < PAGE_SIZE) break;
+    }
+    const legacyCompatibility = event.theme_preset === "legacy_aws" &&
+      Deno.env.get("MULTI_TENANT_PLATFORM_ENABLED") !== "true";
+    const eventCanPush = legacyCompatibility || (event.lifecycle === "published" && event.suspended_at === null);
+    const targetUsers = new Set([...recipientIds].filter((id) =>
+      eventCanPush && activeIds.has(id) && (legacyCompatibility || enabledIds.has(id))));
+    const targets: SubscriptionRow[] = [];
+    const targetIds = [...targetUsers];
+    for (let offset = 0; offset < targetIds.length; offset += 100) {
+      const userBatch = targetIds.slice(offset, offset + 100);
+      let lastSubscriptionId: string | null = null;
+      for (;;) {
+        let query = admin.from("push_subscriptions")
+          .select("id, user_id, device_id, endpoint, p256dh, auth")
+          .in("user_id", userBatch).order("id").limit(PAGE_SIZE);
+        if (lastSubscriptionId) query = query.gt("id", lastSubscriptionId);
+        const { data: page, error } = await query;
+        if (error) throw new Error("subscription_lookup_failed");
+        targets.push(...((page ?? []) as SubscriptionRow[]));
+        if (!page || page.length < PAGE_SIZE) break;
+        lastSubscriptionId = page[page.length - 1].id;
+      }
+    }
     const usersWithPush = new Set(targets.map((subscription) => subscription.user_id));
-    const noSubscriptionCount = [...recipientIds].filter(
+    const noSubscriptionCount = [...targetUsers].filter(
       (userId) => !usersWithPush.has(userId),
     ).length;
     const pushBody = JSON.stringify({
       title: notification.title,
       body: notification.body ?? "",
-      url: "/alerts",
+      url: legacyCompatibility ? "/alerts" : `/e/${event.slug}/alerts`,
       id: payload.id,
     });
 
@@ -186,6 +214,7 @@ Deno.serve(async (req) => {
               pushBody,
             );
             return {
+              event_id: notification.event_id,
               notification_id: payload.id,
               user_id: subscription.user_id,
               subscription_id: subscription.id,
@@ -199,13 +228,14 @@ Deno.serve(async (req) => {
               ? error.statusCode
               : null;
             return {
+              event_id: notification.event_id,
               notification_id: payload.id,
               user_id: subscription.user_id,
               subscription_id: subscription.id,
               device_id: subscription.device_id,
               status: statusCode === 404 || statusCode === 410 ? "pruned" : "failed",
               status_code: statusCode,
-              error: errorMessage(error),
+              error: failureCode(error),
             };
           }
         }),
@@ -217,7 +247,7 @@ Deno.serve(async (req) => {
       const { error: deliveryError } = await admin
         .from("notification_deliveries")
         .upsert(deliveryResults, { onConflict: "notification_id,subscription_id" });
-      if (deliveryError) throw new Error(deliveryError.message);
+      if (deliveryError) throw new Error("delivery_write_failed");
     }
 
     const deadIds = deliveryResults
@@ -251,13 +281,14 @@ Deno.serve(async (req) => {
       .eq("attempt_count", claimedAttempt)
       .select("notification_id")
       .maybeSingle();
-    if (completeError) throw new Error(completeError.message);
+    if (completeError) throw new Error("dispatch_complete_failed");
     if (!completed) {
       return Response.json({ notification_id: payload.id, status: "superseded" });
     }
 
     return Response.json({
       notification_id: payload.id,
+      event_id: notification.event_id,
       status: "completed",
       recipients: recipientIds.size,
       targeted_devices: targets.length,
@@ -267,7 +298,8 @@ Deno.serve(async (req) => {
       no_subscription: noSubscriptionCount,
     });
   } catch (error) {
-    const message = errorMessage(error);
+    const message = error instanceof Error && /^[a-z_]+$/.test(error.message)
+      ? error.message : "dispatch_unavailable";
     console.error("push dispatch failed:", message);
     await admin
       .from("notification_dispatches")

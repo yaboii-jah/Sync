@@ -180,7 +180,7 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from public.platform_super_admins),
+  (select count(*)::integer from public.platform_super_admins where user_id = '30000000-0000-0000-0000-000000000001'),
   1,
   'a super admin can read platform assignments'
 );

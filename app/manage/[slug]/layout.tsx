@@ -24,6 +24,9 @@ export default async function ManagementLayout({ children, params }: { children:
         <Link className="platform-link" href={`${eventManagePath(event.slug)}/schedule`}>Schedule</Link>
         <Link className="platform-link" href={`${eventManagePath(event.slug)}/speakers`}>Speakers</Link>
         <Link className="platform-link" href={`${eventManagePath(event.slug)}/team`}>Team</Link>
+        <Link className="platform-link" href={`${eventManagePath(event.slug)}/alerts`}>Alerts</Link>
+        <Link className="platform-link" href={`${eventManagePath(event.slug)}/feedback`}>Feedback</Link>
+        <Link className="platform-link" href={`${eventManagePath(event.slug)}/raffle`}>Raffle export</Link>
         {permissions.canViewAttendeeExperience ? <Link className="platform-link" href={eventHomePath(event.slug)}>Attendee preview</Link> : null}
         <Link className="platform-link" href="/events">All events</Link>
       </nav>

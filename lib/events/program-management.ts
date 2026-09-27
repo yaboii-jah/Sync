@@ -33,6 +33,34 @@ export interface ProgramActionResult {
   entityId?: string;
 }
 
+export interface ManagedSeatInput {
+  capacity: string;
+  reservedSeats: string;
+  seatsClosed: boolean;
+}
+
+export function validateManagedSeatInput(input: ManagedSeatInput, claimedSeats: number):
+  { error?: string; capacity?: number | null; reservedSeats?: number; seatsClosed?: boolean } {
+  const parse = (value: string): number | null | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (!/^\d+$/.test(trimmed)) return undefined;
+    const number = Number(trimmed);
+    return Number.isSafeInteger(number) && number <= 2147483647 ? number : undefined;
+  };
+  const capacity = parse(input.capacity);
+  const reserved = parse(input.reservedSeats);
+  if (capacity === undefined || (capacity !== null && capacity < 1)) return { error: "Capacity must be a positive whole number, or blank for no limit." };
+  if (reserved === undefined) return { error: "Reserved seats must be a whole number." };
+  if (capacity === null) {
+    if (claimedSeats > 0) return { error: "Release held seats before removing the limit; close seats instead." };
+    return { capacity: null, reservedSeats: 0, seatsClosed: false };
+  }
+  const reservedSeats = reserved ?? 0;
+  if (reservedSeats + claimedSeats > capacity) return { error: `Capacity must cover ${reservedSeats} reserved and ${claimedSeats} held seats.` };
+  return { capacity, reservedSeats, seatsClosed: input.seatsClosed };
+}
+
 function validHttpsUrl(value: string, hostname?: string): boolean {
   if (!value.trim()) return true;
   if (value.length > 2048) return false;

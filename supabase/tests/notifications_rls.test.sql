@@ -93,18 +93,24 @@ values
   ('22222222-2222-2222-2222-222222222222', 'notification-stranger@example.com'),
   ('33333333-3333-3333-3333-333333333333', 'notification-admin@example.com');
 
-insert into public.notifications (id, type, title)
+insert into public.notifications (id, event_id, type, title)
 values (
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  (select id from public.events where theme_preset = 'legacy_aws' order by id limit 1),
   'announcement',
   'Recipient-only test alert'
 );
 
-insert into public.notification_recipients (notification_id, user_id)
+insert into public.notification_recipients (event_id, notification_id, user_id)
 values (
+  (select id from public.events where theme_preset = 'legacy_aws' order by id limit 1),
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   '11111111-1111-1111-1111-111111111111'
 );
+
+insert into public.event_memberships (event_id, user_id, role, display_name_snapshot)
+values ((select id from public.events where theme_preset = 'legacy_aws' order by id limit 1),
+  '11111111-1111-1111-1111-111111111111', 'attendee', 'Notification owner');
 
 insert into public.admin_users (user_id)
 values ('33333333-3333-3333-3333-333333333333');

@@ -78,6 +78,8 @@ const FRAME_OPTIONS = [
     id: "frame-1",
     label: "Frame 1",
     src: "/assets/event-frame-source.png",
+    sourceWidth: FRAME_SOURCE_WIDTH,
+    sourceHeight: FRAME_SOURCE_HEIGHT,
     slots: FRAME_1_SLOTS,
     slotBorder: 6,
     slotBorderColor: "#003c70",
@@ -87,6 +89,8 @@ const FRAME_OPTIONS = [
     id: "frame-2",
     label: "Frame 2",
     src: "/assets/event-frame-source-2.png",
+    sourceWidth: FRAME_SOURCE_WIDTH,
+    sourceHeight: FRAME_SOURCE_HEIGHT,
     slots: FRAME_2_SLOTS,
     slotBorder: 6,
     slotBorderColor: "#003c70",
@@ -94,6 +98,16 @@ const FRAME_OPTIONS = [
   },
 ] as const;
 type FrameId = (typeof FRAME_OPTIONS)[number]["id"];
+type FrameSet = "legacy" | "scoped";
+
+const SCOPED_FRAME_OPTIONS = [
+  { id: "frame-1", label: "Classic", src: "/assets/sync-photo-booth-frame-1.svg",
+    sourceWidth: OUTPUT_WIDTH, sourceHeight: OUTPUT_HEIGHT, slots: FRAME_1_SLOTS,
+    slotBorder: 6, slotBorderColor: "#D4C58B", overlays: [] as readonly FrameOverlay[] },
+  { id: "frame-2", label: "Radiant", src: "/assets/sync-photo-booth-frame-2.svg",
+    sourceWidth: OUTPUT_WIDTH, sourceHeight: OUTPUT_HEIGHT, slots: FRAME_2_SLOTS,
+    slotBorder: 6, slotBorderColor: "#F0DEA7", overlays: [] as readonly FrameOverlay[] },
+] as const;
 
 const DEFAULT_FRAME_ID: FrameId = "frame-1";
 
@@ -113,8 +127,9 @@ function hasCompletedPhotos(slots: SlotPhotos): slots is CompletedPhotos {
   return slots.every((slot): slot is string => slot !== null);
 }
 
-function getFrame(frameId: FrameId) {
-  return FRAME_OPTIONS.find((frame) => frame.id === frameId) ?? FRAME_OPTIONS[0];
+function getFrame(frameId: FrameId, frameSet: FrameSet) {
+  const options = frameSet === "scoped" ? SCOPED_FRAME_OPTIONS : FRAME_OPTIONS;
+  return options.find((frame) => frame.id === frameId) ?? options[0];
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -190,6 +205,7 @@ function getCameraError(error: unknown): string {
 interface PhotoStripProps {
   slots: SlotPhotos;
   frameId: FrameId;
+  frameSet: FrameSet;
   activeSlot?: number;
   cameraFacing?: CameraFacing;
   countdown?: number | null;
@@ -201,6 +217,7 @@ interface PhotoStripProps {
 function PhotoStrip({
   slots,
   frameId,
+  frameSet,
   activeSlot,
   cameraFacing,
   countdown,
@@ -208,7 +225,7 @@ function PhotoStrip({
   showCamera,
   videoRef,
 }: PhotoStripProps) {
-  const frame = getFrame(frameId);
+  const frame = getFrame(frameId, frameSet);
 
   return (
     <div className="relative aspect-[9/16] w-full overflow-hidden rounded-xl bg-surface-secondary">
@@ -283,10 +300,10 @@ function PhotoStrip({
           aria-hidden
           className="pointer-events-none absolute z-20"
           style={{
-            left: `${(overlay.left / FRAME_SOURCE_WIDTH) * 100}%`,
-            top: `${(overlay.top / FRAME_SOURCE_HEIGHT) * 100}%`,
-            width: `${(overlay.width / FRAME_SOURCE_WIDTH) * 100}%`,
-            height: `${(overlay.height / FRAME_SOURCE_HEIGHT) * 100}%`,
+              left: `${(overlay.left / frame.sourceWidth) * 100}%`,
+              top: `${(overlay.top / frame.sourceHeight) * 100}%`,
+              width: `${(overlay.width / frame.sourceWidth) * 100}%`,
+              height: `${(overlay.height / frame.sourceHeight) * 100}%`,
           }}
         />
       ))}
@@ -297,9 +314,11 @@ function PhotoStrip({
 function FrameSelector({
   selectedFrameId,
   onChange,
+  frameSet,
 }: {
   selectedFrameId: FrameId;
   onChange: (frameId: FrameId) => void;
+  frameSet: FrameSet;
 }) {
   return (
     <Card variant="secondary" className="p-3">
@@ -313,7 +332,7 @@ function FrameSelector({
           </Typography>
         </div>
         <div className="grid grid-cols-2 gap-2" role="group" aria-label="Choose a photo frame">
-          {FRAME_OPTIONS.map((frame) => (
+          {(frameSet === "scoped" ? SCOPED_FRAME_OPTIONS : FRAME_OPTIONS).map((frame) => (
             <Button
               key={frame.id}
               variant={selectedFrameId === frame.id ? "primary" : "secondary"}
@@ -330,7 +349,7 @@ function FrameSelector({
   );
 }
 
-export function PhotoBoothClient() {
+export function PhotoBoothClient({ frameSet = "legacy" }: { frameSet?: FrameSet }) {
   const [stage, setStage] = useState<BoothStage>("intro");
   const [slots, setSlots] = useState<SlotPhotos>(EMPTY_SLOTS);
   const [selectedFrameId, setSelectedFrameId] = useState<FrameId>(DEFAULT_FRAME_ID);
@@ -413,7 +432,7 @@ export function PhotoBoothClient() {
     setError(null);
 
     try {
-      const selectedFrame = getFrame(frameId);
+      const selectedFrame = getFrame(frameId, frameSet);
       const [frame, ...photos] = await Promise.all([
         loadImage(selectedFrame.src),
         ...completedSlots.map((slot) => loadImage(slot)),
@@ -449,10 +468,10 @@ export function PhotoBoothClient() {
         const image = overlays[index];
         context.drawImage(
           image,
-          (overlay.left / FRAME_SOURCE_WIDTH) * OUTPUT_WIDTH,
-          (overlay.top / FRAME_SOURCE_HEIGHT) * OUTPUT_HEIGHT,
-          (overlay.width / FRAME_SOURCE_WIDTH) * OUTPUT_WIDTH,
-          (overlay.height / FRAME_SOURCE_HEIGHT) * OUTPUT_HEIGHT,
+          (overlay.left / selectedFrame.sourceWidth) * OUTPUT_WIDTH,
+          (overlay.top / selectedFrame.sourceHeight) * OUTPUT_HEIGHT,
+          (overlay.width / selectedFrame.sourceWidth) * OUTPUT_WIDTH,
+          (overlay.height / selectedFrame.sourceHeight) * OUTPUT_HEIGHT,
         );
       });
 
@@ -756,7 +775,7 @@ export function PhotoBoothClient() {
       ) : null}
 
       {canSelectFrame ? (
-        <FrameSelector selectedFrameId={selectedFrameId} onChange={handleFrameChange} />
+        <FrameSelector selectedFrameId={selectedFrameId} onChange={handleFrameChange} frameSet={frameSet} />
       ) : null}
 
       {stage === "review" ? (
@@ -769,7 +788,7 @@ export function PhotoBoothClient() {
                 className="w-full rounded-xl"
               />
             ) : (
-              <PhotoStrip frameId={selectedFrameId} slots={slots} />
+              <PhotoStrip frameId={selectedFrameId} frameSet={frameSet} slots={slots} />
             )}
             <div className="px-1">
               <Typography type="body-sm" weight="medium">
@@ -788,6 +807,7 @@ export function PhotoBoothClient() {
           <Card.Content className="flex flex-col gap-4 p-3">
             <PhotoStrip
               frameId={selectedFrameId}
+              frameSet={frameSet}
               slots={slots}
               activeSlot={selectedSlot}
               cameraFacing={cameraFacing}

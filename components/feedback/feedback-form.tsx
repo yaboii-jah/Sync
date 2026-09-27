@@ -21,6 +21,7 @@ import {
   submitFeedback,
   type SubmitFeedbackState,
 } from "@/app/(app)/more/feedback/actions";
+import { submitEventFeedback } from "@/app/e/[slug]/feedback/actions";
 
 const initialState: SubmitFeedbackState = {
   error: null,
@@ -29,9 +30,9 @@ const initialState: SubmitFeedbackState = {
   completedRequestId: null,
 };
 
-export function FeedbackForm({ initialRequestId }: { initialRequestId: string }) {
+export function FeedbackForm({ initialRequestId, eventSlug }: { initialRequestId: string; eventSlug?: string }) {
   const [state, formAction, pending] = useActionState(
-    submitFeedback,
+    eventSlug ? submitEventFeedback : submitFeedback,
     initialState,
   );
 
@@ -41,9 +42,9 @@ export function FeedbackForm({ initialRequestId }: { initialRequestId: string })
         <Alert status="success">
           <Alert.Indicator />
           <Alert.Content>
-            <Alert.Title>Thanks for helping us improve Sync.</Alert.Title>
+            <Alert.Title>Thanks for sharing your feedback.</Alert.Title>
             <Alert.Description>
-              Your feedback has been sent to the event team.
+              {eventSlug ? "Your feedback has been sent to the event team." : "Your feedback has been sent to the Sync platform team."}
             </Alert.Description>
           </Alert.Content>
         </Alert>
@@ -64,6 +65,7 @@ export function FeedbackForm({ initialRequestId }: { initialRequestId: string })
         initialRequestId={state.completedRequestId ? undefined : initialRequestId}
         pending={pending}
         state={state}
+        eventSlug={eventSlug}
       />
     </div>
   );
@@ -74,11 +76,13 @@ function FeedbackFields({
   initialRequestId,
   pending,
   state,
+  eventSlug,
 }: {
   action: (formData: FormData) => void;
   initialRequestId?: string;
   pending: boolean;
   state: SubmitFeedbackState;
+  eventSlug?: string;
 }) {
   const [message, setMessage] = useState("");
   const [requestId] = useState(
@@ -88,6 +92,7 @@ function FeedbackFields({
   return (
     <Form action={action} className="flex flex-col gap-5">
       <input type="hidden" name="request_id" value={requestId} />
+      {eventSlug ? <input type="hidden" name="event_slug" value={eventSlug} /> : null}
 
       <RadioGroup
         name="category"
@@ -106,7 +111,7 @@ function FeedbackFields({
                   {category.label}
                 </span>
                 <span className="mt-0.5 block text-xs text-muted">
-                  {category.description}
+                  {eventSlug && category.value === "idea" ? "Share an idea for improving this event." : category.description}
                 </span>
               </span>
             </RadioGroup.Option>
@@ -141,9 +146,8 @@ function FeedbackFields({
       </TextField>
 
       <Typography type="body-xs" color="muted">
-        Your submission is identified with your Sync profile so the event team
-        can understand who is sharing feedback. They will not see your email
-        address here.
+        Your submission is identified with your Sync profile so the {eventSlug ? "event team" : "platform team"}
+        can understand who is sharing feedback. They will not see your email address here.
       </Typography>
 
       <Button type="submit" fullWidth isPending={pending}>

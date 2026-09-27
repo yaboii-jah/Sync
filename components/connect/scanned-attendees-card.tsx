@@ -9,7 +9,7 @@ import { Avatar, Card, Separator, Typography } from "@/components/ui";
 export interface ScannedAttendee {
   name: string;
   photoUrl: string | null;
-  cardUrl: string;
+  cardUrl: string | null;
 }
 
 interface ScannedAttendeesCardProps {
@@ -30,9 +30,9 @@ export function ScannedAttendeesCard({ scans }: ScannedAttendeesCardProps) {
         {scans.length ? (
           <div className="flex flex-col">
             {scans.map((scan, index) => (
-              <div key={scan.cardUrl}>
+              <div key={scan.cardUrl ?? `${scan.name}-${index}`}>
                 {index ? <Separator /> : null}
-                <Link
+                {scan.cardUrl ? <Link
                   href={scan.cardUrl}
                   className="flex min-h-16 w-full items-center justify-start gap-2 rounded-xl px-2 py-2 text-left transition hover:bg-default focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
                   aria-label={`Open ${scan.name || "attendee"}'s social card`}
@@ -42,7 +42,11 @@ export function ScannedAttendeesCard({ scans }: ScannedAttendeesCardProps) {
                     <span className="block truncate text-sm font-medium">{scan.name || "Attendee"}</span>
                   </span>
                   <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
-                </Link>
+                </Link> : <div className="flex min-h-16 items-center gap-2 px-2 py-2 text-sm text-muted">
+                  <AttendeeAvatar name={scan.name} photoUrl={scan.photoUrl} />
+                  <span className="min-w-0 flex-1 truncate">{scan.name || "Former attendee"}</span>
+                  <span>Card unavailable</span>
+                </div>}
               </div>
             ))}
           </div>

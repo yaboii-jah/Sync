@@ -5,23 +5,12 @@ import { useRouter } from "next/navigation";
 import jsQR from "jsqr";
 import { Camera, ImagePlus, QrCode } from "lucide-react";
 import { Alert, Button, Modal, Typography } from "@/components/ui";
+import { networkingCardPathFromQr } from "@/lib/events/networking";
 
 const MAX_SCAN_WIDTH = 1280;
 const SCAN_INTERVAL = 120;
-const CARD_PATH =
-  /^\/c\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 
 type ScannerStatus = "idle" | "starting" | "scanning" | "decoding";
-
-function getNetworkingCardPath(value: string): string | null {
-  try {
-    const url = new URL(value.trim(), window.location.origin);
-    const match = url.pathname.match(CARD_PATH);
-    return match ? `/c/${match[1]}` : null;
-  } catch {
-    return null;
-  }
-}
 
 function decodeImageData(
   context: CanvasRenderingContext2D,
@@ -80,7 +69,7 @@ function getCameraError(error: unknown): string {
   return "The camera could not start. Choose a QR screenshot instead.";
 }
 
-export function QrScanner() {
+export function QrScanner({ eventSlug }: { eventSlug?: string }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<ScannerStatus>("idle");
@@ -155,7 +144,7 @@ export function QrScanner() {
         context.drawImage(video, 0, 0, width, height);
         const decodedValue = decodeImageData(context, width, height);
         if (decodedValue) {
-          const cardPath = getNetworkingCardPath(decodedValue);
+          const cardPath = networkingCardPathFromQr(decodedValue, window.location.origin, eventSlug);
           if (cardPath) {
             stopScanner();
             setStatus("idle");
@@ -239,7 +228,7 @@ export function QrScanner() {
       window.removeEventListener("pagehide", stopForLifecycle);
       stopScanner();
     };
-  }, [isOpen, router, stopScanner]);
+  }, [eventSlug, isOpen, router, stopScanner]);
 
   async function handleScreenshotChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -255,7 +244,7 @@ export function QrScanner() {
       const decodedValue = await decodeImageFile(file);
       if (scanRequestRef.current !== requestId || !isOpen) return;
 
-      const cardPath = decodedValue ? getNetworkingCardPath(decodedValue) : null;
+      const cardPath = decodedValue ? networkingCardPathFromQr(decodedValue, window.location.origin, eventSlug) : null;
       if (cardPath) {
         setStatus("idle");
         setIsOpen(false);

@@ -4,13 +4,22 @@ import { AppHeader } from "@/components/app-header";
 import { PageHeader } from "@/components/page-header";
 import { PhotoBoothClient } from "@/components/photo-booth/photo-booth-client";
 import { HistoryBackButton } from "@/components/history-back-button";
+import { isMultiTenantPlatformEnabled } from "@/lib/feature-flags";
+import { legacyPhotoBoothDestination } from "@/lib/events/routing";
+import { getUserEvents } from "@/lib/supabase/queries/events";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Photo Booth - Sync",
 };
 
 export default async function PhotoBoothPage() {
-  await requireCompleteProfile();
+  const { user } = await requireCompleteProfile();
+  if (isMultiTenantPlatformEnabled()) {
+    const supabase = await createClient();
+    redirect(legacyPhotoBoothDestination(await getUserEvents(supabase, user.id)));
+  }
 
   return (
     <main className="w-full">

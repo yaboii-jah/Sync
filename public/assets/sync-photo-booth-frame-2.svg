@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#1A686E"/>
+      <stop offset="1" stop-color="#0A434B"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#field)"/>
+  <path d="M0 0H1080V75H0ZM0 1666H1080V1920H0Z" fill="#062E35"/>
+  <path d="M0 58H1080M0 1667H1080" stroke="#E4D39A" stroke-width="4"/>
+  <path d="M15 240C305 38 758 40 1065 260M15 805C320 595 765 595 1065 805M15 1360C320 1155 765 1155 1065 1360" fill="none" stroke="#D9CC98" stroke-width="8" opacity=".44"/>
+  <path d="M20 326C320 120 760 120 1060 326M20 890C320 680 760 680 1060 890M20 1442C320 1232 760 1232 1060 1442" fill="none" stroke="#D9CC98" stroke-width="2" opacity=".48"/>
+  <circle cx="64" cy="130" r="13" fill="#EDDEA7"/>
+  <circle cx="1016" cy="582" r="13" fill="#EDDEA7"/>
+  <circle cx="64" cy="1125" r="13" fill="#EDDEA7"/>
+  <circle cx="1016" cy="1610" r="13" fill="#EDDEA7"/>
+  <text x="540" y="1738" fill="#E5D8A4" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="700" letter-spacing="8" text-anchor="middle">MADE FOR THE MOMENT</text>
+  <text x="540" y="1832" fill="#F8F2DC" font-family="Arial,Helvetica,sans-serif" font-size="86" font-weight="700" letter-spacing="9" text-anchor="middle">SYNC</text>
+  <text x="540" y="1875" fill="#E5D8A4" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" letter-spacing="10" text-anchor="middle">PHOTO BOOTH</text>
+</svg>

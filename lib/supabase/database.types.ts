@@ -87,18 +87,29 @@ export type Database = {
       }
       alert_read_state: {
         Row: {
+          event_id: string
           last_read_at: string
           user_id: string
         }
         Insert: {
+          event_id: string
           last_read_at?: string
           user_id: string
         }
         Update: {
+          event_id?: string
           last_read_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "alert_read_state_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_feedback: {
         Row: {
@@ -313,6 +324,51 @@ export type Database = {
           },
         ]
       }
+      event_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          event_id: string
+          id: string
+          membership_id: string
+          message: string
+          request_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          event_id: string
+          id?: string
+          membership_id: string
+          message: string
+          request_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          membership_id?: string
+          message?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_feedback_membership_fkey"
+            columns: ["event_id", "membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+        ]
+      }
       event_memberships: {
         Row: {
           created_at: string
@@ -360,6 +416,132 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_networking_card_links: {
+        Row: {
+          event_id: string
+          membership_id: string
+          network: string
+        }
+        Insert: {
+          event_id: string
+          membership_id: string
+          network: string
+        }
+        Update: {
+          event_id?: string
+          membership_id?: string
+          network?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_networking_card_links_event_id_membership_id_fkey"
+            columns: ["event_id", "membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_networking_cards"
+            referencedColumns: ["event_id", "membership_id"]
+          },
+        ]
+      }
+      event_networking_cards: {
+        Row: {
+          created_at: string
+          event_id: string
+          membership_id: string
+          public_token: string
+          template: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          membership_id: string
+          public_token?: string
+          template?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          membership_id?: string
+          public_token?: string
+          template?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_networking_cards_event_id_membership_id_fkey"
+            columns: ["event_id", "membership_id"]
+            isOneToOne: true
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+        ]
+      }
+      event_networking_scan_history: {
+        Row: {
+          event_id: string
+          scanned_at: string
+          scanned_membership_id: string
+          scanner_membership_id: string
+        }
+        Insert: {
+          event_id: string
+          scanned_at?: string
+          scanned_membership_id: string
+          scanner_membership_id: string
+        }
+        Update: {
+          event_id?: string
+          scanned_at?: string
+          scanned_membership_id?: string
+          scanner_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_networking_scan_history_event_id_scanned_membership__fkey"
+            columns: ["event_id", "scanned_membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+          {
+            foreignKeyName: "event_networking_scan_history_event_id_scanner_membership__fkey"
+            columns: ["event_id", "scanner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "id"]
+          },
+        ]
+      }
+      event_notification_preferences: {
+        Row: {
+          event_id: string
+          push_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          push_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          push_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_notification_preferences_membership_fkey"
+            columns: ["event_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "event_memberships"
+            referencedColumns: ["event_id", "user_id"]
           },
         ]
       }
@@ -543,6 +725,7 @@ export type Database = {
           attempted_at: string
           device_id: string
           error: string | null
+          event_id: string
           id: number
           notification_id: string
           status: string
@@ -554,6 +737,7 @@ export type Database = {
           attempted_at?: string
           device_id: string
           error?: string | null
+          event_id: string
           id?: never
           notification_id: string
           status: string
@@ -565,6 +749,7 @@ export type Database = {
           attempted_at?: string
           device_id?: string
           error?: string | null
+          event_id?: string
           id?: never
           notification_id?: string
           status?: string
@@ -574,11 +759,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notification_deliveries_notification_id_fkey"
-            columns: ["notification_id"]
+            foreignKeyName: "notification_deliveries_event_notification_fkey"
+            columns: ["event_id", "notification_id"]
             isOneToOne: false
             referencedRelation: "notifications"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
@@ -588,6 +773,7 @@ export type Database = {
           attempt_count: number
           completed_at: string | null
           created_at: string
+          event_id: string
           failed_count: number
           last_error: string | null
           no_subscription_count: number
@@ -603,6 +789,7 @@ export type Database = {
           attempt_count?: number
           completed_at?: string | null
           created_at?: string
+          event_id: string
           failed_count?: number
           last_error?: string | null
           no_subscription_count?: number
@@ -618,6 +805,7 @@ export type Database = {
           attempt_count?: number
           completed_at?: string | null
           created_at?: string
+          event_id?: string
           failed_count?: number
           last_error?: string | null
           no_subscription_count?: number
@@ -630,37 +818,40 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notification_dispatches_notification_id_fkey"
-            columns: ["notification_id"]
-            isOneToOne: true
+            foreignKeyName: "notification_dispatches_event_notification_fkey"
+            columns: ["event_id", "notification_id"]
+            isOneToOne: false
             referencedRelation: "notifications"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
       notification_recipients: {
         Row: {
           created_at: string
+          event_id: string
           notification_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          event_id: string
           notification_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          event_id?: string
           notification_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notification_recipients_notification_id_fkey"
-            columns: ["notification_id"]
+            foreignKeyName: "notification_recipients_event_notification_fkey"
+            columns: ["event_id", "notification_id"]
             isOneToOne: false
             referencedRelation: "notifications"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
@@ -672,6 +863,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           dedupe_key: string | null
+          event_id: string
           id: string
           related_session_id: string | null
           request_id: string | null
@@ -686,6 +878,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dedupe_key?: string | null
+          event_id: string
           id?: string
           related_session_id?: string | null
           request_id?: string | null
@@ -700,6 +893,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dedupe_key?: string | null
+          event_id?: string
           id?: string
           related_session_id?: string | null
           request_id?: string | null
@@ -709,11 +903,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_related_session_id_fkey"
-            columns: ["related_session_id"]
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_event_session_fkey"
+            columns: ["event_id", "related_session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
@@ -941,26 +1142,29 @@ export type Database = {
       session_seat_claims: {
         Row: {
           claimed_at: string
+          event_id: string
           session_id: string
           user_id: string
         }
         Insert: {
           claimed_at?: string
+          event_id: string
           session_id: string
           user_id: string
         }
         Update: {
           claimed_at?: string
+          event_id?: string
           session_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "session_seat_claims_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "session_seat_claims_event_session_fkey"
+            columns: ["event_id", "session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
-            referencedColumns: ["id"]
+            referencedColumns: ["event_id", "id"]
           },
         ]
       }
@@ -1408,6 +1612,26 @@ export type Database = {
         Args: { target_event_id: string }
         Returns: number
       }
+      get_event_networking_card: {
+        Args: { card_token: string; target_event_id: string }
+        Returns: Json
+      }
+      get_event_raffle_attendee_detail: {
+        Args: { target_event_id: string; target_membership_id: string }
+        Returns: Json
+      }
+      get_event_raffle_attendees: {
+        Args: { target_event_id: string }
+        Returns: Json
+      }
+      get_my_event_networking_card: {
+        Args: { target_event_id: string }
+        Returns: Json
+      }
+      get_my_event_networking_scans: {
+        Args: { target_event_id: string }
+        Returns: Json
+      }
       get_my_networking_scan_history: {
         Args: never
         Returns: {
@@ -1455,7 +1679,21 @@ export type Database = {
         Args: { mutation_request_id: string; target_event_id: string }
         Returns: string
       }
+      list_event_feedback: {
+        Args: { result_limit?: number; target_event_id: string }
+        Returns: {
+          attendee_name: string
+          category: string
+          created_at: string
+          id: string
+          message: string
+        }[]
+      }
       mark_alerts_read: { Args: never; Returns: undefined }
+      mark_event_alerts_read: {
+        Args: { target_event_id: string }
+        Returns: undefined
+      }
       moderate_event_attendee: {
         Args: {
           moderation_reason: string
@@ -1522,6 +1760,10 @@ export type Database = {
         Args: { mutation_request_id: string; target_event_id: string }
         Returns: string
       }
+      record_event_networking_scan: {
+        Args: { card_token: string; target_event_id: string }
+        Returns: undefined
+      }
       record_networking_card_scan: {
         Args: { card_token: string }
         Returns: undefined
@@ -1551,6 +1793,24 @@ export type Database = {
         }
         Returns: string
       }
+      save_event_networking_card: {
+        Args: {
+          selected_networks: string[]
+          selected_template: number
+          target_event_id: string
+        }
+        Returns: undefined
+      }
+      save_event_reusable_social_links: {
+        Args: {
+          facebook_url: string
+          github_url: string
+          instagram_url: string
+          linkedin_url: string
+          target_event_id: string
+        }
+        Returns: undefined
+      }
       save_social_profiles:
         | {
             Args: {
@@ -1569,6 +1829,17 @@ export type Database = {
             }
             Returns: undefined
           }
+      send_event_alert: {
+        Args: {
+          alert_body: string
+          alert_title: string
+          audience: string
+          mutation_request_id: string
+          target_event_id: string
+          target_membership_ids: string[]
+        }
+        Returns: Json
+      }
       set_event_branding: {
         Args: {
           asset_kind: string
@@ -1577,6 +1848,10 @@ export type Database = {
           target_event_id: string
         }
         Returns: string
+      }
+      set_event_push_preference: {
+        Args: { enabled: boolean; target_event_id: string }
+        Returns: boolean
       }
       set_event_suspension: {
         Args: {
@@ -1616,6 +1891,15 @@ export type Database = {
           feedback_category: string
           feedback_message: string
           feedback_request_id: string
+        }
+        Returns: undefined
+      }
+      submit_event_feedback: {
+        Args: {
+          feedback_category: string
+          feedback_message: string
+          feedback_request_id: string
+          target_event_id: string
         }
         Returns: undefined
       }

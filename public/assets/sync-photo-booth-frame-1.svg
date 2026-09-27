@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#062F37"/>
+      <stop offset="1" stop-color="#0A4650"/>
+    </linearGradient>
+    <pattern id="grain" width="72" height="72" patternUnits="userSpaceOnUse">
+      <circle cx="11" cy="15" r="1.5" fill="#D7D19B" opacity=".24"/>
+      <circle cx="58" cy="46" r="1" fill="#FFFFFF" opacity=".18"/>
+    </pattern>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#field)"/>
+  <rect width="1080" height="1920" fill="url(#grain)"/>
+  <path d="M54 0V1920M1026 0V1920" stroke="#CDBB7D" stroke-width="2" opacity=".55"/>
+  <path d="M88 75H992M88 1685H992" stroke="#CDBB7D" stroke-width="3"/>
+  <circle cx="540" cy="37" r="8" fill="#CDBB7D"/>
+  <circle cx="124" cy="593" r="7" fill="#CDBB7D"/>
+  <circle cx="955" cy="1135" r="7" fill="#CDBB7D"/>
+  <path d="M96 590H984M96 1133H984" stroke="#E3D9AA" stroke-width="2" opacity=".42"/>
+  <text x="540" y="1738" fill="#D4C58B" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="700" letter-spacing="9" text-anchor="middle">THREE MOMENTS · ONE STORY</text>
+  <text x="540" y="1832" fill="#F5F0D9" font-family="Arial,Helvetica,sans-serif" font-size="86" font-weight="700" letter-spacing="9" text-anchor="middle">SYNC</text>
+  <text x="540" y="1875" fill="#D4C58B" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" letter-spacing="10" text-anchor="middle">PHOTO BOOTH</text>
+</svg>

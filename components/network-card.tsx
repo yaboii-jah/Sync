@@ -47,12 +47,13 @@ interface NetworkCardProps {
   name: string;
   photoUrl?: string | null;
   links: SocialLinks;
+  eventNeutral?: boolean;
   bio?: string;
   organization?: string;
   badge?: string;
 }
 
-export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, organization, badge }: NetworkCardProps) {
+export function NetworkCard({ variant = "solid", name, photoUrl, links, eventNeutral = false, bio, organization, badge }: NetworkCardProps) {
   const normalized: NetworkCardVariant =
     typeof variant === "number" ? getVariantFromTemplate(variant) : variant;
   const theme = networkCardThemes[normalized];
@@ -85,13 +86,13 @@ export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, org
           </div>
         )}
         {theme.showMoon && <span className="network-card__moon" />}
-        {theme.showEventBranding && (
+        {!eventNeutral && theme.showEventBranding && (
           <div className="network-card__event-mark">
             <span className="network-card__event-label">STUDENT COMMUNITY DAY</span>
             <span className="network-card__event-subtitle">MEGA MANILA 2026</span>
           </div>
         )}
-        {normalized === "glass" && (
+        {!eventNeutral && normalized === "glass" && (
           <img
             src="/assets/scd%20pubmats%20(4).svg"
             alt=""
@@ -100,7 +101,7 @@ export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, org
             loading="lazy"
           />
         )}
-        {normalized === "crystal" && (
+        {!eventNeutral && normalized === "crystal" && (
           <img
             src="/assets/scd%20pubmats%20(3).svg"
             alt=""
@@ -109,7 +110,7 @@ export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, org
             loading="lazy"
           />
         )}
-        {normalized === "event" && (
+        {!eventNeutral && normalized === "event" && (
           <img
             src="/assets/scd%20pubmats%20clena.svg"
             alt=""
@@ -134,7 +135,7 @@ export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, org
             <h1 className="network-card__name">{name || "Attendee"}</h1>
             {organization ? <p className="network-card__organization">{organization}</p> : null}
             {badge ? <span className="network-card__badge">{badge}</span> : null}
-            <p className="network-card__event-inline">BUILD · FORGE · REPEAT</p>
+            {!eventNeutral ? <p className="network-card__event-inline">BUILD · FORGE · REPEAT</p> : null}
           </div>
         </div>
 

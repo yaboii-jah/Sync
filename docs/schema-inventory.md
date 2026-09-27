@@ -9,11 +9,11 @@
 | `speakers_sponsors` | Tenant scoped | Required `event_id`, explicit publication state, scoped policies, and audited RPCs are complete |
 | `session_speakers` | Tenant scoped | Required `event_id` and composite session/speaker foreign keys are complete |
 | `my_flow_bookmarks` | Tenant scoped | Required `event_id`, active membership checks, and composite session ownership are complete |
-| `notifications` and delivery tables | Global feed | Add `event_id`; migrate preferences, recipients, dispatches, and reads together |
+| `notifications` and delivery tables | Tenant scoped | Required `event_id`, recipient/dispatch/delivery ownership, per-event read cursor and push preference complete |
 | `quick_links` | Global | Convert to event-owned content |
-| `networking_cards`, `social_profiles`, scan history | Global/user scoped | Keep reusable URLs global; move cards, selections, and scans to membership/event scope |
-| Workshop seat functions/state | Compatibility scoped | Claim/release RPCs now verify the session event and active membership; adding `event_id` to claim rows remains deferred |
-| `app_feedback` | Global app feedback | Keep as platform feedback; add separate event feedback later |
+| Legacy `networking_cards` and scan history; `social_profiles` | Global/user scoped compatibility | Reusable URLs stay global; new event cards, selected links, and scans are membership/event scoped. Legacy rows remain for flag-off routes. |
+| Workshop seat functions/state | Tenant scoped | Claim rows have required `event_id` and a composite session key; organizer capacity and attendee claims are event-authorized |
+| `app_feedback` | Global app feedback | Remains platform feedback; separate `event_feedback` is event/membership scoped with authorized submit/list RPCs |
 | `admin_users` and `admin_audit_log` | Global event operator | Preserve for legacy routes; mirror into platform/event role foundations, then retire after cutover |
 | `profiles`, `push_subscriptions` | Global user/device | Remain global with privacy-safe event projections |
 
@@ -54,6 +54,14 @@ Migration `20260913180000_tenant_scoped_event_program.sql` adds:
 
 Rooms remain free-text labels for the first reusable release. Normalized tracks and venues are intentionally deferred until there is demonstrated cross-event demand.
 
+## Event alerts and push scoping added
+
+Migration `20260922210222_tenant_scoped_alerts_push.sql` and its two forward fixes add required event ownership, composite notification references, recipient/read-state RLS, per-event push opt-in, an audited/idempotent send RPC, and an environment-configured push webhook. Historical session alerts inherit their session event; other historical alerts and read cursors belong to the archived AWS event. Global `push_subscriptions` remain user/device records. A missing transport URL leaves an in-app alert visible and records `push_not_configured` without retrying. The Edge worker sends only to active, opted-in recipients and opens the scoped alerts route.
+
+## Workshop seat scoping added
+
+Migration `20260922212704_tenant_scoped_workshop_seats.sql` backfills and requires `event_id` on claims, enforces the event/session composite foreign key, and reconciles the `claimed_seats` counter. Claim insert/delete triggers now maintain the count, including membership deactivation and account-deletion cascades. Leaving, removal, and blocking release a member's seats but preserve My Flow bookmarks. The capacity RPC is restricted to event owners/admins; temporary platform support cannot edit it. Claim rows remain readable only to their active owner, with no client write grant or workshop roster API.
+
 ## Quarantined remote objects
 
 Generated remote types expose `merch_attendees`, `merch_scan_log`, `merch_claim_attendee`, and `merch_revert_claim`, although they have no intended migration source or approved place in Sync. The foundation migration conditionally revokes `anon` and `authenticated` privileges from matching tables and every `public.merch_*` function if they exist. It does not delete, modify, or integrate their data.
@@ -64,8 +72,8 @@ The merchandise objects still require an ownership decision before cutover. Do n
 
 - `supabase/seed.sql` is configured but absent.
 - The historical social-profile sequence includes an out-of-band/no-op mismatch around `20260902120000_social_profiles.sql`.
-- A linked-project dry run recognizes the foundation, audited-operations, and tenant-program migrations as pending, in that order.
-- Docker Desktop is installed and the local Supabase stack, clean replay, schema lint, and pgTAP suite are working.
+- All thirteen multi-tenant forward migrations—from the tenant foundation through scoped workshop seats—remain unapplied to the linked remote project.
+- Docker Desktop is installed and the local Supabase stack and pgTAP suite work. The persistent-database super-admin fixture was made hermetic.
 
 Core program reads and Realtime subscriptions are event scoped. The new management workspace uses explicit `event_id`-filtered setup counts instead of `admin_get_dashboard`. Legacy `/admin/*` pages and Server Actions are retired from application access when the multi-tenant flag is enabled; their RPCs remain flag-disabled compatibility code and are never imported by new management routes. Advanced single-event data domains still require parity work before cutover; application redirects are not database authorization.
 

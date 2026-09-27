@@ -203,8 +203,8 @@ export async function getClaimedSessionIds(
 ): Promise<string[]> {
   const { data, error } = await client
     .from("session_seat_claims")
-    .select("session_id, sessions!inner(event_id)")
-    .eq("sessions.event_id", eventId);
+    .select("session_id")
+    .eq("event_id", eventId);
 
   if (error) throw error;
   return (data ?? []).map((row) => row.session_id);

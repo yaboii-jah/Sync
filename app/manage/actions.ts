@@ -21,6 +21,8 @@ import {
   validateManagedSession,
   validateManagedSpeaker,
   validateSpeakerIds,
+  validateManagedSeatInput,
+  type ManagedSeatInput,
   type ManagedSessionInput,
   type ManagedSpeakerInput,
   type ProgramActionResult,
@@ -37,6 +39,7 @@ import {
   eventProgramEntityExists,
   getManagedSpeakers,
   setManagedSessionPublished,
+  setManagedSessionCapacity,
   setManagedSessionSpeakers,
   setManagedSpeakerPublished,
   setManagedEventBranding,
@@ -391,6 +394,27 @@ export async function setManagedSessionPublishedAction(input: { slug: string; se
     revalidateEvent(access.event.slug);
     return {};
   } catch (error) { return programFailure(error, "session.publish"); }
+}
+
+export async function setManagedSessionCapacityAction(input: {
+  slug: string; sessionId: string; seats: ManagedSeatInput; requestId: string;
+}): Promise<ProgramActionResult> {
+  const access = await mutableEvent(input.slug);
+  if (!access) return { error: "This event is read-only." };
+  if (!UUID_PATTERN.test(input.sessionId) || !validRequestIds(input.requestId)) return { error: "Invalid request." };
+  try {
+    const result = await access.supabase.from("sessions").select("claimed_seats")
+      .eq("event_id", access.event.id).eq("id", input.sessionId).maybeSingle();
+    if (result.error) throw result.error;
+    if (!result.data) return { error: "That session does not belong to this event." };
+    const seats = validateManagedSeatInput(input.seats, result.data.claimed_seats);
+    if (seats.error || seats.capacity === undefined || seats.reservedSeats === undefined || seats.seatsClosed === undefined) {
+      return { error: seats.error ?? "Invalid seat settings." };
+    }
+    await setManagedSessionCapacity(access.supabase, input.sessionId, seats.capacity, seats.reservedSeats, seats.seatsClosed, input.requestId);
+    revalidateEvent(access.event.slug);
+    return {};
+  } catch (error) { return programFailure(error, "session.capacity"); }
 }
 
 export async function deleteManagedSessionAction(input: { slug: string; sessionId: string; requestId: string }): Promise<ProgramActionResult> {

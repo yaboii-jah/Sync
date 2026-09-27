@@ -12,7 +12,7 @@ The migration is additive and feature flagged by the server-only `MULTI_TENANT_P
 - `/events` — signed-in event hub
 - `/events/new` — authenticated draft event creation
 - `/e/[slug]` — published public event page
-- `/e/[slug]/home`, `/alerts`, `/connect`, `/more`, `/settings`, `/photo-booth` — attendee routes
+- `/e/[slug]/home`, `/e/[slug]/alerts`, `/e/[slug]/settings`, `/e/[slug]/connect`, `/e/[slug]/c/[token]`, `/e/[slug]/feedback`, `/e/[slug]/photo-booth` — implemented attendee routes
 - `/manage/[slug]/*` — event owner/admin workspace
 - `/super-admin/*` — platform operations
 - `/settings` — global account settings
@@ -57,12 +57,20 @@ An operator may hold only one live support session. Starting another atomically 
 - Seat inventory and reservations
 - Event notification configuration, delivery, preferences, and read state
 - Event networking cards, card-link selections, and scan history
-- Event feedback and raffle state
+- Event feedback; raffle is a live event-member export without stored draw or winner state
 - Event audit records
 
 Every tenant-owned row has an `event_id`. Relationships that can cross tables use composite foreign keys including `event_id` where practical so invalid cross-event references fail at the database boundary.
 
 Speaker publication is explicit and independent of session publication. Session intervals must remain within their event's start and end timestamps. Normalized track and venue entities are deferred; v1 keeps the existing room text field.
+
+Seat limits are optional on any session. `session_seat_claims` carries required event ownership with a composite session reference; the attendee sees only their own claims. Organizers edit capacity, off-app reservations, and a close-seats switch, never another attendee's claim. Claim insert/delete triggers maintain the session's held-seat count, and inactive memberships automatically release seats without removing bookmarks. Capacity changes require an event owner/admin, not temporary platform support.
+
+Networking URLs remain global account data, editable from an active event by Google or email-link members. Event cards, selected networks, and deduplicated scans are separate membership-owned rows; a card QR is stable within one event but reveals selected links only to active members of that event. New cards share nothing by default. Archival preserves cards and scans read-only, suspension hides them, and removing a URL or deactivating a membership revokes its event-card selections. The legacy global card and scan routes remain flag-off compatibility paths.
+
+Event feedback is separate from global platform `app_feedback`. Active attendees may submit only while their event is published; owner/admin readers see only their own event, including archived history, and not email addresses. Raffle export is a fresh names-only snapshot of active attendee-role members with usable profile names; it excludes staff, inactive and anonymized accounts, and all other events. Both domains use narrow, database-authorized RPCs rather than direct table grants or legacy global-admin queries.
+
+The scoped Photo Booth uses two Sync-only frame assets and local browser canvas composition. Active members can make a keepsake in published or archived, non-suspended events; camera frames, picked photos, and downloaded JPEGs never enter Supabase, Storage, or application APIs. The AWS frame assets remain only on the flag-off legacy route.
 
 ## Database security invariants
 
@@ -94,7 +102,7 @@ All routes use the original fixed Sync dark teal/gold/green theme from `app/glob
 
 ## Notifications and jobs
 
-Scheduled work must be set-based and limited to published, non-archived, non-suspended events. Schedule timing does not automatically create attendee notifications. Manual operational alerts remain event scoped and auditable. Free-tier email guards are enforced before enqueueing delivery.
+Scheduled work must be set-based and limited to published, non-archived, non-suspended events. Schedule timing does not automatically create attendee notifications. Event owners/admins send audited, idempotent manual alerts to all or selected active members. Recipient snapshots, dispatches, deliveries, preferences, and read cursors carry `event_id`; in-app reads use recipient/event RLS. Push requires explicit per-event opt-in plus a global browser/device subscription, and the Edge worker rechecks active membership and event state before delivery. Support sessions never grant alert-sending authority. The database webhook destination is read from `private.app_secrets.push_function_url`, not embedded as a production URL; missing configuration records a terminal dispatch failure. Free-tier email guards are enforced before enqueueing delivery.
 
 Admin invitation emails use Resend from a server-only key. A private reservation ledger limits delivery attempts to 10 per event and 80 platform-wide per UTC day, then records only provider IDs or bounded failure codes. Creating an invitation always returns a copyable link even when email delivery is unavailable or capped.
 

@@ -37,7 +37,7 @@ A typical request flows from a browser to a Next.js route, then through a server
 
 - `/` is the landing/authentication entry.
 - `/events` lists events the signed-in user attends or manages; `/events/new` creates a private draft.
-- `/e/[slug]` is an unlisted published event page; `/e/[slug]/home` is its scoped attendee entry.
+- `/e/[slug]` is an unlisted published event page; `/e/[slug]/home` is its scoped attendee entry. `/e/[slug]/connect` manages a member's event card and scans; `/e/[slug]/c/[token]` opens a same-event member's QR card. `/e/[slug]/feedback` accepts identified attendee feedback while published. `/e/[slug]/photo-booth` makes a local three-photo keepsake with Sync-only frames.
 - `/manage/[slug]/*` is the owner/admin workspace. Its implemented editors cover event basics, logo/cover branding, schedule sessions, speaker profiles, team administration, publication state, and session-speaker assignments.
 - `/invite` is a public, noindex invitation entry. The secret remains in the URL fragment, so a matching signed-in account must explicitly accept it before gaining admin membership.
 - Legacy attendee routes such as `/home`, plus `/admin/*`, remain compatibility paths during rollout.
@@ -59,7 +59,17 @@ Database changes are forward-only. Tenant-owned relationships include `event_id`
 
 Branding uploads use two Storage boundaries. The browser sends a JPEG, PNG, or WebP of at most 10 MB to a private, user-scoped staging path. A server action decodes and normalizes it with Sharp, uploads a versioned WebP delivery object, and calls an audited RPC to update the event. Delivery assets are public because they appear on the unlisted public event page; only an active event owner/admin can create, activate, replace, or remove them. Do not bypass the path helpers or replace immutable delivery objects in place.
 
-Team invitations are issued by the event owner and are bound to the invitee’s exact verified email. Configure `RESEND_API_KEY` and `EVENT_INVITE_FROM_EMAIL` only in ignored deployment/local environment files to send email. Without them, the owner still receives a secure copyable link. See `docs/team-management-test-plan.md` for local manual QA.
+Team invitations are issued by the event owner and are bound to the invitee’s exact verified email. Configure `RESEND_API_KEY` and `EVENT_INVITE_FROM_EMAIL` only in ignored deployment/local environment files to send email. Without them, the owner still receives a secure copyable link. Manual invitation and delivery checks are in `docs/multi-tenant-acceptance-plan.md`.
+
+Event alerts use `/manage/[slug]/alerts` for owner/admin sending and history, `/e/[slug]/alerts` for recipient-only reading, and `/e/[slug]/settings` for per-event push opt-in. The send RPC snapshots all or selected active members and records an immutable audit entry; push is separate transport, so an alert remains in-app even if push is unavailable. A device subscription is global, but the preference is event-specific. The Edge worker requires both, then rechecks membership and event state. The worker's `MULTI_TENANT_PLATFORM_ENABLED` must match the app rollout flag; while disabled, it preserves legacy AWS push and `/alerts` clicks. Keep `PUSH_WEBHOOK_SECRET`, VAPID keys, and the database `private.app_secrets` values private. Set `push_function_url` in that table to the current environment's `/functions/v1/send-push` endpoint and make `push_webhook_secret` match the Edge Function secret; missing configuration produces `push_not_configured` rather than calling the old production endpoint. The local database container cannot use its own `127.0.0.1` to reach a host port; use a container-reachable local function URL when testing real local push.
+
+Workshop seats use the scoped schedule editor for optional per-session capacity, off-app reserved seats, and closing new claims. Attendees claim or release their own seats from the scoped home session detail; claims are event-owned and save the session to My Flow. Leaving, removal, or blocking releases held seats automatically but keeps bookmarks. Capacity changes are audited and available only to the event owner/admin; no roster or direct client write path is exposed.
+
+Networking uses reusable global URLs editable from an active event's Connect page by Google or email-link members. Every event has separate card settings, selected networks, stable QR token, and deduplicated scan history. No network is shared in an event until its member selects it. Event cards require active same-event membership even with a QR link; archived cards/history remain read-only and suspended events are unavailable. Legacy `/connect` and `/c/[token]` remain independent while the rollout flag is off.
+
+Event feedback is distinct from platform app feedback at `/more/feedback`. Active attendees can submit to their published event; its owner/admin read the latest 100 entries at `/manage/[slug]/feedback`, including after archive. Suspended events expose neither view. `/manage/[slug]/raffle` prepares a fresh names-only export from active attendee-role members for an external drawing tool; there is no in-app draw or winner history. A duplicate-name identity check reveals only the selected same-event attendee's name/email inside the protected workspace, never in the exported text. The export excludes staff, other events, inactive members, and deleted identities. Legacy global-admin raffle and feedback remain flag-off compatibility paths.
+
+Photo Booth remains a device-local camera/canvas workflow: three captures or picked photos, two event-neutral Sync frames, individual retakes, and a 1080×1920 JPEG download. Active members may use it in published and archived events; draft and suspended events cannot open it. No photo is uploaded or stored. When the multi-tenant flag is enabled, `/more/photo-booth` redirects to the preferred eligible event or `/events`; with the flag off, it retains the original AWS frames and route.
 
 ## Local development
 
@@ -80,11 +90,13 @@ npx supabase test db
 
 `scripts/smoke-organizer.mjs` is a local-only browser probe for tenant routing and organizer flows. It refuses a remote Supabase URL and cleans up only its own UUID-scoped fixtures.
 
+Use `docs/multi-tenant-acceptance-plan.md` for the consolidated local authorization, browser, and physical-device checks. Its results are not yet recorded as passed.
+
 ## Delivery and current state
 
 Code, database schema, and environment configuration are deployed separately. Pushing a branch does not copy local data, but CI may deploy that branch depending on hosting settings. Apply migrations to preview/staging first, repeat authorization and browser acceptance, and enable the multi-tenant flag only after the core acceptance gate passes. Never commit secrets or point local destructive tests at a hosted project.
 
-Tenant foundations, audited operations, scoped program data, event routes, event creation, event basics, lifecycle controls, schedule/speaker management, tenant-scoped branding uploads, and team controls are locally verified. Full platform operations and remaining legacy feature migrations are still staged work. Use `docs/progress-tracker.md` for the exact current status rather than extending this guide with implementation history.
+Tenant foundations, audited operations, scoped program data, event routes, event creation, event basics, lifecycle controls, schedule/speaker and seat management, tenant-scoped branding uploads, team controls, platform super-admin workspace, event alerts/push, networking, event feedback/raffle, and scoped Photo Booth are locally implemented. The consolidated acceptance plan is ready, but its manual run, real-device push and camera acceptance, and preview/staging rollout remain pending. Use `docs/progress-tracker.md` for exact status.
 
 ## Where to look first
 
