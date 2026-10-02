@@ -56,6 +56,8 @@ The sign-in button starts Google OAuth through Supabase. Google returns to the S
 
 Set the server-only `MAINTENANCE_MODE` environment variable to the exact value `true` and create a new production deployment. The Proxy returns a standalone maintenance HTML document directly with HTTP 503 for app GET requests, an empty 503 for HEAD, and a plain-text 503 for other methods, including Server Actions. Direct responses preserve the final status; page rewrites in this Next.js version reset it to 200. `/maintenance` remains a normal 200 page with shared wording. Static assets and `/maintenance-assets/` (the existing Geist/Perandory fonts used by the standalone document) remain available. Unset the variable or set it to `false` and redeploy to restore the application. The gate only covers requests to Next.js; it does not disable direct Supabase Data API access from existing browser sessions, so it is not a database write lock for destructive data work.
 
+Verify the deployment actually serving the public domain and the project's production target. A Ready Production build may leave custom domains pinned to an older revision when automatic domain assignment is disabled. Explicitly promoting a reviewed deployment moves the production domains and can re-enable automatic assignment; recheck that setting afterward. Use a maintenance-capable revision for recovery. The verified maintenance baseline and rollout evidence are recorded in `docs/new-organization-handoff.md`.
+
 Database changes are forward-only. Tenant-owned relationships include `event_id`, preferably in composite foreign keys, so invalid cross-event relationships fail at the database boundary. Consult `docs/schema-inventory.md` before migrating a legacy domain.
 
 ## Local development

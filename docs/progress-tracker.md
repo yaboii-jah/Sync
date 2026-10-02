@@ -4,7 +4,7 @@ Update this file after every meaningful implementation change.
 
 ## Current objective
 
-Immediate operation: publish and verify production maintenance on `main` for the new organization's event reuse workflow in `docs/new-organization-handoff.md`. Production data cleanup remains a separate gated unit.
+Immediate operation: keep production maintenance active on `main`, finish the remaining existing authenticated-session/installed-PWA checks, then prepare the read-only production inventory for the new organization's event reuse workflow in `docs/new-organization-handoff.md`. Production data cleanup remains a separate gated unit.
 
 Convert Sync from the completed AWS Student Community Day Mega Manila 2026 companion into a secure, reusable multi-tenant event platform through a feature-flagged additive migration.
 
@@ -14,16 +14,19 @@ Phase 1 — tenant foundation, audited operations, tenant-scoped program data, e
 
 ## Completed
 
-### 2026-10-02 — Maintenance release preparation
+### 2026-10-02 — Production maintenance published and activated
 
-- Confirmed local/remote `main` and Vercel production are at `8507dc92c1fd18f3b1e42a56d660e2bbe8f724cd`; project `jahmell-dorias-projects/sync` deploys `main` to `sync.aws-scd.cloud` and uses Supabase project `mygybolhwoeckrgczclm`.
+- Confirmed local/remote `main` and the newest Production build initially were at `8507dc9`; later domain-target inspection showed the public domain was pinned to the older September 11 revision `274aa8c`. Project `jahmell-dorias-projects/sync` uses Supabase project `mygybolhwoeckrgczclm` and production branch `main`.
 - Production initially has neither `MAINTENANCE_MODE` nor `MULTI_TENANT_PLATFORM_ENABLED` configured. Signed-out baseline: `/` returns 200, `/home` and `/alerts` return 307.
 - Expanded maintenance coverage for HEAD/cookie-bearing requests, auth/POST handling, disabled API/auth bypass, and actual matcher inclusion/static exclusions. Installed Next.js exports `unstable_doesMiddlewareMatch`; the bundled guide's `unstable_doesProxyMatch` name is unavailable.
 - Production-mode local HTTP verification caught page rewrites resetting 503 to 200. Replaced the rewrite with standalone HTML returned directly by Proxy, with empty HEAD responses and existing Geist/Perandory font copies under `public/maintenance-assets/`. The normal `/maintenance` page shares the wording.
 - Final local checks pass: 104 unit tests across 14 files (32 maintenance checks), lint with the same 9 existing warnings/no errors, production build, TypeScript, and diff check. The pre-existing `metadataBase` warning remains.
 - Built-app HTTP checks pass for `/`, `/home`, `/alerts`, `/admin`, `/auth/callback`, and a harmless API probe: 503, maintenance HTML, and no-cache headers. HEAD is empty 503; harmless POST is plain-text 503. `/maintenance` and 22 required static/font assets return 200.
 - Hidden headless Edge checks pass at 320/1280px with no overflow and both fonts loaded; screenshots were visually reviewed. Service-worker-controlled navigation shows maintenance. A synthetic cookie probe passes but does not substitute for an actual signed-in session or an existing installed-PWA check.
-- Production rollout and its final evidence remain in progress. No database operations are part of this release.
+- Committed and pushed maintenance baseline `bafe7ed16531459295b267ee9488cf0d8d628b04`. Set Production `MAINTENANCE_MODE=true` and `MULTI_TENANT_PLATFORM_ENABLED=false`, preserving Preview/Development settings.
+- Git produced Ready deployment `dpl_2dkXFUkChZn6caCsPDPvs5bPdBaF` (`sync-5lbrnwepu-jahmell-dorias-projects.vercel.app`). Because automatic domain assignment was disabled, explicitly promoted that reviewed deployment to `sync.aws-scd.cloud` and `sync-orpin-nine.vercel.app`; promotion re-enabled `autoAssignCustomDomains=true`.
+- Both public domains pass the HTTP checks listed above, including 503/no-cache handling and 200 for the maintenance route/assets. Live hidden headless Edge verifies 320/1280px and service-worker-controlled navigation on the custom domain; screenshots were visually reviewed. Actual existing authenticated-session/installed-PWA verification is requested and pending; full acceptance is not yet claimed.
+- No production database, Auth, Storage, migration, background-writer, or archive operations occurred. Unrelated untracked work and the separate tenant branch/local database are preserved.
 
 ### 2026-10-01 — New organization implementation handoff
 
@@ -135,6 +138,8 @@ Phase 1 — tenant foundation, audited operations, tenant-scoped program data, e
 
 ## In progress
 
+- Temporary event operation: maintenance is live and automatically verified; existing authenticated-session/installed-PWA acceptance remains pending. Read-only production inventory and the concrete write-safeguard/cleanup review are next. No deletion is approved by this release.
+
 - No organizer-foundation implementation work remains. Preview/staging migration application and rollout remain pending explicit deployment approval.
 
 ## Original Sync theme restoration verification — September 15, 2026
@@ -153,7 +158,7 @@ Original Sync UI restoration completed: removed light platform overrides, restor
 
 ## Next implementation unit
 
-For the temporary organization event operation, finish production maintenance acceptance first, then perform read-only production inventory and prepare the concrete reversible write safeguard and cleanup review. Follow `docs/new-organization-handoff.md`; do not delete production data or apply tenant migrations during maintenance delivery.
+For the temporary organization event operation, complete the remaining existing authenticated-session/installed-PWA checks, then perform read-only production inventory and prepare the concrete reversible write safeguard and cleanup review. Follow `docs/new-organization-handoff.md`; keep maintenance active and do not delete production data or apply tenant migrations during maintenance delivery.
 
 The separate multi-tenant development track remains:
 

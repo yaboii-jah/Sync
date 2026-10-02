@@ -26,15 +26,16 @@ Branch isolation protects code history. It does not isolate databases: any branc
 ### Repository and local work
 
 - Workspace: `C:\Users\Jahmell Dorias\Desktop\Projects\sync`.
-- Current branch before maintenance release: `main`, at `8507dc9` (`docs: add concise developer handoff guide`). The remote tip was freshly verified on 2026-10-02 and matches this revision.
+- Current branch: `main`. The committed and pushed maintenance baseline is `bafe7ed16531459295b267ee9488cf0d8d628b04` (`feat: add verified production maintenance gate`). Subsequent documentation-only commits may deploy the same runtime; recheck the live target before continuing.
 - The user reported that `/home` and `/alerts` work after the earlier compatibility fix. Reverify them before reopening for the new event.
-- Maintenance code is implemented locally, uncommitted and undeployed. No organization branch has been created for this plan.
-- No production environment changes, deployment changes, or destructive database cleanup have been performed in this maintenance/handoff unit.
+- Maintenance is committed, published, and active on the public production domains. No organization branch has been created for this plan; the tenant branch and local database remain untouched.
+- Production now explicitly uses `MAINTENANCE_MODE=true` and `MULTI_TENANT_PLATFORM_ENABLED=false`. No production database/schema/Auth/Storage cleanup or write safeguard has been performed in this unit.
 - Verified on 2026-10-02: Vercel project `jahmell-dorias-projects/sync` (`prj_zV0Aybl2b9KoHJ3BZPuU1BZIIOzV`), team `team_RaPLkKno5WawTO35tKiHBCr9`, production branch `main`, public domain `https://sync.aws-scd.cloud`. Vercel and Git identities are `yaboii-jah`.
-- Pre-release deployment: `dpl_7w3CNzgciypp9yWwtTAtSRKnyJGj`, URL `https://sync-n7zx5vcmx-jahmell-dorias-projects.vercel.app`, source `8507dc92c1fd18f3b1e42a56d660e2bbe8f724cd`. Other aliases: `sync-orpin-nine.vercel.app`, `sync-jahmell-dorias-projects.vercel.app`, `sync-git-main-jahmell-dorias-projects.vercel.app`.
-- Production Supabase hostname matches `mygybolhwoeckrgczclm.supabase.co`. Neither maintenance nor multi-tenant flag is configured yet; both default off. Signed-out baseline: `/` 200, `/home` and `/alerts` 307.
+- First verified maintenance deployment: `dpl_2dkXFUkChZn6caCsPDPvs5bPdBaF`, URL `https://sync-5lbrnwepu-jahmell-dorias-projects.vercel.app`, source `bafe7ed16531459295b267ee9488cf0d8d628b04`, Ready. Public domains `sync.aws-scd.cloud` and `sync-orpin-nine.vercel.app` both pass maintenance HTTP smoke checks.
+- The newest pre-release Production build was `dpl_7w3CNzgciypp9yWwtTAtSRKnyJGj` at `8507dc9`, but the custom-domain target was actually pinned to `dpl_FDNtK4qUemWQeDgRBAPnFwuyFRpF` at `274aa8c77f7a205f68373ba58fbdec4f153fa1fc` (September 11). Its stale deployment alias list was not proof of current routing. `autoAssignCustomDomains=false` prevented the maintenance Git build from moving those domains; an explicit promotion of the verified maintenance deployment moved them and re-enabled automatic assignment (`true`). Always inspect the public domain and project production target, not just the latest Ready build.
+- Production Supabase hostname matches `mygybolhwoeckrgczclm.supabase.co`. Before the release, neither feature flag existed; signed-out baseline was `/` 200, `/home` and `/alerts` 307. After promotion, the public routes return maintenance 503.
 
-Maintenance files to preserve and commit with their documentation:
+Committed maintenance implementation and documentation:
 
 | File | Purpose |
 | --- | --- |
@@ -62,7 +63,8 @@ Preserve unrelated pre-existing untracked work: `docs/issues-suggestions-questio
 - Release preparation on 2026-10-02: all 104 unit tests across 14 files pass, including 32 maintenance checks. Actual matcher uses the installed `unstable_doesMiddlewareMatch` export because the guide's Proxy-named helper is unavailable. Lint has the same 9 existing warnings/no errors; build, TypeScript, and diff checks pass. The existing `metadataBase` warning remains.
 - Built-app local HTTP checks pass: `/`, `/home`, `/alerts`, `/admin`, `/auth/callback`, and a harmless API probe return maintenance HTML with final HTTP 503 and no-cache headers; HEAD returns empty 503 and harmless POST plain-text 503. `/maintenance` and 22 required assets return 200.
 - Hidden headless Edge verifies 320/1280px with no overflow, Geist/Perandory loading, and service-worker-controlled navigation; screenshots were visually reviewed. Synthetic cookie probes do not count as real signed-in verification. Existing installed-PWA and real authenticated-session checks remain pending.
-- Live production rollout and HTTP smoke verification remain pending for this release.
+- Live public-domain checks pass on `sync.aws-scd.cloud` and `sync-orpin-nine.vercel.app`: `/`, `/home`, `/alerts`, `/admin`, `/auth/callback`, and a harmless nonexistent API probe all return 503 with maintenance content and no-cache headers. HEAD is empty 503; a harmless POST to `/home` is plain-text 503. `/maintenance` and 22 required static/font assets return 200. No valid OAuth code, Server Action ID, or mutation payload was submitted.
+- Live hidden headless Edge checks on `sync.aws-scd.cloud` pass at 320/1280px with loaded fonts, no overflow, and visually reviewed screenshots. Navigation under an active service worker shows maintenance. The user has been asked to check an existing authenticated session and installed PWA; those actual-context checks remain pending, so full acceptance is not yet claimed.
 - Stale generated `.next/dev` types from the other branch initially failed type/build checks. Only that verified local generated cache was removed, then checks passed. No tracked source or user data was removed.
 
 ### Archive confirmation
@@ -178,11 +180,11 @@ Acceptance: the production domain serves the new organization event correctly, a
 - A new Codex account may need its own Git/Vercel/Supabase authentication. Do not expose credentials in tool output. Use hidden/non-GUI execution for routine commands; the user dislikes multiple visible CMD windows.
 - Maintain this document and the progress tracker after each phase. Record actual commits, deployments, lock/reversal procedure, reviewed cleanup inventory, data-import evidence, and remaining gates.
 
-**Immediate next unit:** review and publish the existing maintenance changes on `main`, activate the Production flag, and verify the public domain. Do not start deleting data. The next unit after that is the read-only production inventory and concrete write-safeguard/cleanup review.
+**Immediate next unit:** obtain the remaining existing authenticated-session and installed-PWA verification (or explicitly record unavailable contexts), then perform the read-only production inventory and prepare the concrete reversible write safeguard and cleanup review. Maintenance is already active and automatically verified. Do not start deleting data; neither a database write lock nor an executable cleanup inventory is approved yet.
 
 ### Details still needed before their dependent phases
 
-- Verified Vercel project/team, production domain and branch, active environment flags, and deployment author permissions.
+- Existing authenticated-session and installed-PWA maintenance evidence. Vercel project/team, production domains/branch, flags, and deployment author are verified above; recheck them for each rollout.
 - Concrete reversible database write safeguard, external writer inventory, and its validation/reversal evidence.
 - Exact delete/retain inventory, operator account retention/provisioning, and explicit user approval for production deletion.
 - New organization event details/assets, administrators, enabled features, registration rules, and launch date.
