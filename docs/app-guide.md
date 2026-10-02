@@ -52,6 +52,10 @@ The sign-in button starts Google OAuth through Supabase. Google returns to the S
 
 `proxy.ts` refreshes cookies and performs optimistic navigation redirects. It does not authorize application data. New organizer routes use event-scoped authorization helpers, server actions validate untrusted form input, and sensitive writes call audited/idempotent database RPCs with caller-generated request UUIDs.
 
+## Temporary production maintenance
+
+Set the server-only `MAINTENANCE_MODE` environment variable to the exact value `true` and create a new production deployment. The Proxy returns a standalone maintenance HTML document directly with HTTP 503 for app GET requests, an empty 503 for HEAD, and a plain-text 503 for other methods, including Server Actions. Direct responses preserve the final status; page rewrites in this Next.js version reset it to 200. `/maintenance` remains a normal 200 page with shared wording. Static assets and `/maintenance-assets/` (the existing Geist/Perandory fonts used by the standalone document) remain available. Unset the variable or set it to `false` and redeploy to restore the application. The gate only covers requests to Next.js; it does not disable direct Supabase Data API access from existing browser sessions, so it is not a database write lock for destructive data work.
+
 Database changes are forward-only. Tenant-owned relationships include `event_id`, preferably in composite foreign keys, so invalid cross-event relationships fail at the database boundary. Consult `docs/schema-inventory.md` before migrating a legacy domain.
 
 ## Local development

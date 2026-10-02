@@ -4,6 +4,8 @@ Update this file after every meaningful implementation change.
 
 ## Current objective
 
+Immediate operation: publish and verify production maintenance on `main` for the new organization's event reuse workflow in `docs/new-organization-handoff.md`. Production data cleanup remains a separate gated unit.
+
 Convert Sync from the completed AWS Student Community Day Mega Manila 2026 companion into a secure, reusable multi-tenant event platform through a feature-flagged additive migration.
 
 ## Current phase
@@ -11,6 +13,27 @@ Convert Sync from the completed AWS Student Community Day Mega Manila 2026 compa
 Phase 1 — tenant foundation, audited operations, tenant-scoped program data, event-context routes, and organizer foundation are locally verified; all four forward migrations remain unapplied remotely.
 
 ## Completed
+
+### 2026-10-02 — Maintenance release preparation
+
+- Confirmed local/remote `main` and Vercel production are at `8507dc92c1fd18f3b1e42a56d660e2bbe8f724cd`; project `jahmell-dorias-projects/sync` deploys `main` to `sync.aws-scd.cloud` and uses Supabase project `mygybolhwoeckrgczclm`.
+- Production initially has neither `MAINTENANCE_MODE` nor `MULTI_TENANT_PLATFORM_ENABLED` configured. Signed-out baseline: `/` returns 200, `/home` and `/alerts` return 307.
+- Expanded maintenance coverage for HEAD/cookie-bearing requests, auth/POST handling, disabled API/auth bypass, and actual matcher inclusion/static exclusions. Installed Next.js exports `unstable_doesMiddlewareMatch`; the bundled guide's `unstable_doesProxyMatch` name is unavailable.
+- Production-mode local HTTP verification caught page rewrites resetting 503 to 200. Replaced the rewrite with standalone HTML returned directly by Proxy, with empty HEAD responses and existing Geist/Perandory font copies under `public/maintenance-assets/`. The normal `/maintenance` page shares the wording.
+- Final local checks pass: 104 unit tests across 14 files (32 maintenance checks), lint with the same 9 existing warnings/no errors, production build, TypeScript, and diff check. The pre-existing `metadataBase` warning remains.
+- Built-app HTTP checks pass for `/`, `/home`, `/alerts`, `/admin`, `/auth/callback`, and a harmless API probe: 503, maintenance HTML, and no-cache headers. HEAD is empty 503; harmless POST is plain-text 503. `/maintenance` and 22 required static/font assets return 200.
+- Hidden headless Edge checks pass at 320/1280px with no overflow and both fonts loaded; screenshots were visually reviewed. Service-worker-controlled navigation shows maintenance. A synthetic cookie probe passes but does not substitute for an actual signed-in session or an existing installed-PWA check.
+- Production rollout and its final evidence remain in progress. No database operations are part of this release.
+
+### 2026-10-01 — New organization implementation handoff
+
+- Added `docs/new-organization-handoff.md` with the agreed full event reuse plan, current branch/uncommitted maintenance status, archive verification record, rollout and event closure steps, recovery guidance, and remaining implementation gates for another Codex account.
+- Recorded that the multi-tenant branch stays separate and that production cleanup requires a concrete database write safeguard and approval of the delete/retain inventory. No deployment, production configuration, or database data changed in this documentation unit.
+
+### 2026-10-01 — Production maintenance gate
+
+- Added a server-only `MAINTENANCE_MODE=true` switch, a public maintenance page, and HTTP 503 handling for Next.js page, API, auth, and Server Action requests. The switch is off by default; production configuration and deployment are unchanged.
+- Documented that the gate does not disable direct Supabase Data API access, so database writes require a separate operational lock before destructive cleanup.
 
 ### 2026-09-13 — Multi-tenant direction approved
 
@@ -129,6 +152,10 @@ Original Sync UI restoration completed: removed light platform overrides, restor
 - Only smoke-run fixture data was removed. No schema migrations, production changes, auth-provider changes, commits, or pushes were performed.
 
 ## Next implementation unit
+
+For the temporary organization event operation, finish production maintenance acceptance first, then perform read-only production inventory and prepare the concrete reversible write safeguard and cleanup review. Follow `docs/new-organization-handoff.md`; do not delete production data or apply tenant migrations during maintenance delivery.
+
+The separate multi-tenant development track remains:
 
 1. Plan the tenant-scoped schedule/speaker management editor using the existing audited program RPCs; branding and team controls remain separate units.
 2. Apply all four verified forward migrations to preview/staging only with explicit approval, then repeat acceptance before production cutover.
