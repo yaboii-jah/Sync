@@ -67,7 +67,7 @@ export function SessionCard({
     <Card
       id={`session-${session.id}`}
       variant={ongoing ? "secondary" : "default"}
-      className={`squircle rounded-[20px] transition-transform active:scale-[0.98] motion-reduce:transform-none ${finished ? "opacity-60" : ""} ${ongoing ? "border border-success/50 bg-success/10 shadow-lg shadow-success/10 ring-1 ring-success/40" : ""}`}
+      className={`squircle rounded-[20px] transition-transform active:scale-[0.98] motion-reduce:transform-none ${finished ? "border border-border" : ""} ${ongoing ? "border border-success/50 bg-success/10 shadow-lg shadow-success/10 ring-1 ring-success/40" : ""}`}
     >
       {/*
         * Title leads, the way an iOS list cell reads: what it is, then when,

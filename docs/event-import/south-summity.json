@@ -1,0 +1,472 @@
+{
+  "review": {
+    "state": "prepared-not-imported",
+    "timezone": "Asia/Manila",
+    "source": "Owner-supplied program screenshots, date, and venue",
+    "themeNeedsConfirmation": true,
+    "pending": [
+      "Official event tagline or acceptance of the event name as the heading",
+      "Replace approved placeholders with real speaker assets, biographies, and assignments when supplied",
+      "Sponsor/partner directory content and quick links",
+      "Administrator retention, registration rules, and launch feature choices",
+      "Fresh live inventory, operator SQL review, rollback rehearsal, and import acceptance"
+    ]
+  },
+  "event": {
+    "id": "20261007-0000-4000-8000-000000000001",
+    "name": "AWS Student Community Day South Summity 2026",
+    "theme": "AWS Student Community Day South Summity 2026",
+    "venue": "Biñan People’s Center Auditorium",
+    "starts_at": "2026-10-07T01:30:00.000Z",
+    "ends_at": "2026-10-07T09:30:00.000Z",
+    "status": "upcoming"
+  },
+  "sessions": [
+    {
+      "id": "20261007-0000-4000-8000-000000000101",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Registration",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T01:30:00.000Z",
+      "end_time": "2026-10-07T02:00:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000102",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Opening Ceremony and Emcee Introduction",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T02:00:00.000Z",
+      "end_time": "2026-10-07T02:15:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000103",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Opening Keynote: Cloud × AI: Building the Future Together",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T02:15:00.000Z",
+      "end_time": "2026-10-07T02:37:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000104",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Icebreaker",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T02:37:00.000Z",
+      "end_time": "2026-10-07T02:47:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000105",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Talk #1: Built by Community: From Student Builder to Tech Professional",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T02:47:00.000Z",
+      "end_time": "2026-10-07T03:44:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000106",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Lunch, Networking, and Community Hub",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T03:44:00.000Z",
+      "end_time": "2026-10-07T05:14:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000107",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Afternoon Energizer, Photo Hunt Winners, and Booth Challenge Updates",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T05:14:00.000Z",
+      "end_time": "2026-10-07T05:36:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000108",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Sponsor Spotlight: Tutorials Dojo",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T05:36:00.000Z",
+      "end_time": "2026-10-07T05:46:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000109",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Talk #2: Building Smarter Systems with AI and Cloud — Women in Tech Keynote",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T05:46:00.000Z",
+      "end_time": "2026-10-07T06:43:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000110",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Talk #3: Human in the Loop: Preparing People for an AI-Driven Future",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T06:43:00.000Z",
+      "end_time": "2026-10-07T07:40:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000111",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Panel Discussion: Build. Grow. Lead: How Community Shapes Careers in Tech",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T07:40:00.000Z",
+      "end_time": "2026-10-07T08:40:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000112",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Grand Raffle",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T08:40:00.000Z",
+      "end_time": "2026-10-07T08:46:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000113",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Sponsor and Community Partner Appreciation",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T08:46:00.000Z",
+      "end_time": "2026-10-07T08:50:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000114",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Closing Remarks",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T08:50:00.000Z",
+      "end_time": "2026-10-07T08:55:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000115",
+      "event_id": "20261007-0000-4000-8000-000000000001",
+      "title": "Egress and Group Photo",
+      "description": null,
+      "room": null,
+      "start_time": "2026-10-07T08:55:00.000Z",
+      "end_time": "2026-10-07T09:30:00.000Z",
+      "status": "not_started",
+      "published": true,
+      "capacity": null,
+      "reserved_seats": 0,
+      "claimed_seats": 0,
+      "seats_closed": false,
+      "status_override": null,
+      "status_override_at": null,
+      "status_override_by": null,
+      "actual_started_at": null,
+      "actual_ended_at": null,
+      "reminder_sent_at": null
+    }
+  ],
+  "speakers": [
+    {
+      "id": "20261007-0000-4000-8000-000000000201",
+      "name": "Opening keynote speaker — To be announced",
+      "role": "speaker",
+      "photo_url": null,
+      "organization": null,
+      "bio": null,
+      "linkedin_url": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000202",
+      "name": "Talk #1 speaker — To be announced",
+      "role": "speaker",
+      "photo_url": null,
+      "organization": null,
+      "bio": null,
+      "linkedin_url": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000203",
+      "name": "Talk #2 speaker — To be announced",
+      "role": "speaker",
+      "photo_url": null,
+      "organization": null,
+      "bio": null,
+      "linkedin_url": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000204",
+      "name": "Talk #3 speaker — To be announced",
+      "role": "speaker",
+      "photo_url": null,
+      "organization": null,
+      "bio": null,
+      "linkedin_url": null
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000205",
+      "name": "Panel lineup — To be announced",
+      "role": "panelist",
+      "photo_url": null,
+      "organization": null,
+      "bio": null,
+      "linkedin_url": null
+    }
+  ],
+  "speakerLinks": [
+    {
+      "session_id": "20261007-0000-4000-8000-000000000103",
+      "speaker_id": "20261007-0000-4000-8000-000000000201"
+    },
+    {
+      "session_id": "20261007-0000-4000-8000-000000000105",
+      "speaker_id": "20261007-0000-4000-8000-000000000202"
+    },
+    {
+      "session_id": "20261007-0000-4000-8000-000000000109",
+      "speaker_id": "20261007-0000-4000-8000-000000000203"
+    },
+    {
+      "session_id": "20261007-0000-4000-8000-000000000110",
+      "speaker_id": "20261007-0000-4000-8000-000000000204"
+    },
+    {
+      "session_id": "20261007-0000-4000-8000-000000000111",
+      "speaker_id": "20261007-0000-4000-8000-000000000205"
+    }
+  ],
+  "sessionKeys": [
+    {
+      "key": "registration",
+      "session_id": "20261007-0000-4000-8000-000000000101"
+    },
+    {
+      "key": "opening",
+      "session_id": "20261007-0000-4000-8000-000000000102"
+    },
+    {
+      "key": "opening-keynote",
+      "session_id": "20261007-0000-4000-8000-000000000103"
+    },
+    {
+      "key": "icebreaker",
+      "session_id": "20261007-0000-4000-8000-000000000104"
+    },
+    {
+      "key": "talk-1",
+      "session_id": "20261007-0000-4000-8000-000000000105"
+    },
+    {
+      "key": "lunch",
+      "session_id": "20261007-0000-4000-8000-000000000106"
+    },
+    {
+      "key": "afternoon-energizer",
+      "session_id": "20261007-0000-4000-8000-000000000107"
+    },
+    {
+      "key": "sponsor-spotlight",
+      "session_id": "20261007-0000-4000-8000-000000000108"
+    },
+    {
+      "key": "talk-2",
+      "session_id": "20261007-0000-4000-8000-000000000109"
+    },
+    {
+      "key": "talk-3",
+      "session_id": "20261007-0000-4000-8000-000000000110"
+    },
+    {
+      "key": "panel",
+      "session_id": "20261007-0000-4000-8000-000000000111"
+    },
+    {
+      "key": "grand-raffle",
+      "session_id": "20261007-0000-4000-8000-000000000112"
+    },
+    {
+      "key": "appreciation",
+      "session_id": "20261007-0000-4000-8000-000000000113"
+    },
+    {
+      "key": "closing",
+      "session_id": "20261007-0000-4000-8000-000000000114"
+    },
+    {
+      "key": "egress",
+      "session_id": "20261007-0000-4000-8000-000000000115"
+    }
+  ]
+}

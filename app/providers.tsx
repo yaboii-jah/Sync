@@ -7,7 +7,7 @@ import { ToastProvider } from "@/components/toast/toast-provider";
 /**
  * App-wide client providers.
  *
- * - The root layout supplies the fixed dark theme class.
+ * - The root layout supplies the fixed light event theme.
  * - ToastProvider mounts the application toast region once.
  */
 export function Providers({ children }: { children: ReactNode }) {

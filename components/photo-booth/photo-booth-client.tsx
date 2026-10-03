@@ -29,67 +29,26 @@ const FRAME_2_SLOTS: readonly PhotoSlot[] = [
   { left: 131, top: 641, width: 822, height: 459 },
   { left: 131, top: 1182, width: 822, height: 459 },
 ];
-const FRAME_2_MASCOT_OVERLAYS: readonly FrameOverlay[] = [
-  {
-    src: "/assets/event-frame-2-top-overlay.png",
-    left: 790,
-    top: 330,
-    width: 142,
-    height: 250,
-  },
-  {
-    src: "/assets/event-frame-2-left-overlay.png",
-    left: 0,
-    top: 800,
-    width: 190,
-    height: 235,
-  },
-];
-const FRAME_2_OVERLAYS: readonly FrameOverlay[] = [
-  ...FRAME_2_MASCOT_OVERLAYS,
-  {
-    src: "/assets/event-frame-2-title-overlay.png",
-    left: 190,
-    top: 1455,
-    width: 560,
-    height: 135,
-  },
-  {
-    src: "/assets/event-frame-2-date-overlay.png",
-    left: 370,
-    top: 1612,
-    width: 200,
-    height: 50,
-  },
-];
-const FRAME_1_OVERLAYS: readonly FrameOverlay[] = [
-  ...FRAME_2_MASCOT_OVERLAYS,
-  {
-    src: "/assets/event-frame-1-date-overlay.png",
-    left: 380,
-    top: 1632,
-    width: 180,
-    height: 36,
-  },
-];
+const FRAME_1_OVERLAYS: readonly FrameOverlay[] = [];
+const FRAME_2_OVERLAYS: readonly FrameOverlay[] = [];
 
 const FRAME_OPTIONS = [
   {
     id: "frame-1",
-    label: "Frame 1",
-    src: "/assets/event-frame-source.png",
+    label: "Blue & green",
+    src: "/assets/south-summity-frame-1.png",
     slots: FRAME_1_SLOTS,
     slotBorder: 6,
-    slotBorderColor: "#003c70",
+    slotBorderColor: "#17171c",
     overlays: FRAME_1_OVERLAYS,
   },
   {
     id: "frame-2",
-    label: "Frame 2",
-    src: "/assets/event-frame-source-2.png",
+    label: "Violet & pink",
+    src: "/assets/south-summity-frame-2.png",
     slots: FRAME_2_SLOTS,
     slotBorder: 6,
-    slotBorderColor: "#003c70",
+    slotBorderColor: "#17171c",
     overlays: FRAME_2_OVERLAYS,
   },
 ] as const;
@@ -316,8 +275,9 @@ function FrameSelector({
           {FRAME_OPTIONS.map((frame) => (
             <Button
               key={frame.id}
-              variant={selectedFrameId === frame.id ? "primary" : "secondary"}
-              className="min-w-0"
+              variant="secondary"
+              size="sm"
+              className="min-w-0 px-2 whitespace-nowrap aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-foreground"
               aria-pressed={selectedFrameId === frame.id}
               onPress={() => onChange(frame.id)}
             >

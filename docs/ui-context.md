@@ -6,12 +6,13 @@
 
 The standing rule is **no route-owned UI primitives**. Use the local components for buttons, cards, chips, dialogs, tabs, switches, skeletons, avatars, and toasts. Global tokens establish the event palette, tonal surfaces, UI typography, and Home focal treatment; individual screens do not invent parallel component styling.
 
-There are exactly four admitted exceptions, and each is a real anchor, a nav landmark, or a functional media surface that the local primitive set does not cover:
+The admitted exceptions cover real anchors, navigation landmarks, functional media, and the standalone maintenance response:
 
 1. `components/ui/link-button.ts` — class strings for anchors (`target="_blank"`, `next/link` navigation) that must read as a Button. Built from local tokens only.
 2. Navigation shells — `bottom-tabs.tsx`, `side-rail.tsx`, `admin-nav.tsx`. These are `<nav>` landmarks of `next/link` elements; the local Tabs primitive is a tab-panel widget, not routing. Styled with local tokens only.
-3. The QR tile in `connect-card.tsx` — neutral-white ground and dark-teal modules, because scanners require that contrast. Functional, not decorative.
-4. The event strip in `components/photo-booth/photo-booth-client.tsx` — layered image windows over the supplied event-background artwork, because live camera frames and canvas output require a fixed 9:16 composition. Functional, not decorative.
+3. The QR tile in `connect-card.tsx` — neutral-white ground and dark-ink modules, because scanners require that contrast. Functional, not decorative.
+4. The event strip in `components/photo-booth/photo-booth-client.tsx` — fixed photo windows over generated event-grid artwork, because live camera frames and canvas output require a fixed 9:16 composition. Functional, not decorative.
+5. `lib/maintenance.ts` — standalone HTML/CSS returned directly with HTTP 503 before React or Supabase runs. It mirrors the light role palette and Sync typefaces, with neutral maintenance wording and no event decoration. The normal `/maintenance` page uses server-safe primitives.
 
 Anything else that needs a new visual should be assembled from local primitives first.
 
@@ -22,46 +23,30 @@ rest of the row inert. Field-adjacent counters must not use `Typography` inside
 a `TextField` because React Aria reserves nested text slots for descriptions and
 errors.
 
-**The signed-out portal, `app/page.tsx`, remains the ceremonial peak of the system.** Its story-sky image, restrained comets, and sheened Perandory lockup are more expressive than the app shell, but use the same teal, off-white, gold, and yellow palette. Portal artwork stays limited to the landing route and the Home focal card; dense attendee and admin routes use quiet dark-teal panels.
+**The signed-out portal, `app/page.tsx`, uses the supplied South Summity 2026 artwork.** This landing-only exception has a white grid canvas, the transparent event logo, a dark Perandory Sync heading, dark readable copy, and a dark Google sign-in action. `app/landing.module.css` scopes its tokens and presentation without changing shared fonts. A server-rendered CSS backdrop recreates the white square grid and colored tiles: 8 columns below 640px, 16 below 1024px, and 24 on larger screens. Smaller layouts use fewer edge clusters, keeping the content readable; squares and grid spacing share one container-based cell size. The background PNG is a retained reference only. CSS recreates the reference video's four corner glows with a five-second, three-pulse loop. An existing local Button controls pause/resume; reduced-motion preferences retain the CSS grid/tiles and a subtle static corner haze, and hide the motion control. The MP4 is a reference asset only. The app-wide theme, PWA identity, social images, and photo frames follow design.md; authentication and event data remain separate boundaries.
 
 ## Theme
 
-**Dark only.** The root layout supplies the `dark` class to `<html>`; there is no light, system, or persisted appearance selector. `app/globals.css` imports Tailwind and defines the local AWS SCD tokens.
+**Fixed light theme across all routes.** See design.md for the locked event system. The root no longer forces dark appearance; there is no appearance selector. Global role tokens are shared by client/server primitives and public cards. Primary actions are dark with white text; active navigation and focus are violet. Status colors remain semantic and accessible. The landing retains its own responsive CSS poster and pauseable animation; authenticated decoration is static and restrained.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--background` | deep tonal teal | Page ground with restrained grain |
-| `--surface` | quiet dark teal | Standard cards and navigation |
-| `--surface-secondary` | lifted dark teal | Live, selected, and supporting surfaces |
-| `--foreground` | warm off-white | Primary text |
-| `--muted` | cool light teal | Supporting text |
-| `--accent` | `#fcdb64` | Primary actions and emphasis |
-| `--border` | tonal teal | Quiet structural edges |
-| `--success` | `#58de69` | Live and successful states |
-| `--warning` | `#fcdb64` | Warnings and upcoming states |
-| `--danger` | `#d9614f` | Destructive and error states |
-| `--focus` | `#7cd0f7` | Focus and icon highlight |
+| background | #F7F7FA | Page ground |
+| surface / overlay | #FFFFFF | Cards, dialogs |
+| foreground / action | #17171C | Text / primary buttons |
+| muted | #45454F | Supporting text |
+| accent / focus | #742BC0 | Selection / keyboard focus |
+| border | #D8DBE2 | Dividers and card edges |
+| field-border | #7C808B | Interactive input boundaries |
+| success / warning / danger | #087A43 / #8A4B00 / #B42338 | Functional status |
 
-Standard cards use tonal dark-teal fills without a visible outline. Navigation, fields, separators, and dialogs use restrained tonal edges. Gold is reserved for primary actions, focal Home treatment, selected controls, and deliberate live emphasis.
-
-Status uses semantic hue and emphasis:
-
-| Meaning | Treatment |
-| --- | --- |
-| Ongoing / success | green |
-| Upcoming / warning | yellow |
-| Finished / archival | muted teal |
-| Error / destructive | ember |
-
-`components/status-badge.tsx` is the single mapping for session status; `alerts-client.tsx` uses the same ladder for alert kinds.
-
-Live state is the one signal allowed a dot: `live-mini-bar.tsx`, the hero eyebrow and the `/home` time headers pair a green dot with a ping that collapses under `motion-reduce`. It marks real state — a session is running now.
+Bright blue, green, violet, orange, and pink are decorative accents sampled from the supplied logo/artwork. Do not use them as small functional text.
 
 ## iOS conventions on /home
 
 `/home` is the one screen tuned deliberately toward a native-app read, using local primitives throughout:
 
-- **One dramatic surface.** The hero is a luminous dark-teal focal panel with a selective gold edge, layered jade/gold atmosphere, a green live dot, a `ProgressBar` and a ticking countdown. Every other card stays a quiet tonal panel.
+- **One dramatic surface.** The hero is a white focal panel with a restrained static grid and corner tiles, a green live dot, a `ProgressBar` and a ticking countdown. Every other card stays a quiet tonal panel. Finished sessions keep readable text rather than reducing the entire card opacity.
 - **Squircles.** `corner-shape: squircle` via the `.squircle` utility on hero, cells, capsule and dialog. Progressive enhancement — browsers without it keep the plain radius.
 - **Grouped time blocks.** The program list uses one time heading per start-time block and stacks concurrent choices beneath it. A Manila date heading sits above the first group and above every group whose Manila calendar date differs from the group above it, so consecutive same-day groups state their date once and two groups sharing a clock time on different days are still told apart. The old continuous progress rail is omitted because a single day-progress line is misleading when sessions run in parallel.
 - **Parallel hero choices.** Happening Now and Up Next show every live session or every session in the earliest upcoming time block; each choice opens its own detail dialog.
@@ -84,7 +69,7 @@ Geist is the application-wide interface font through `--font-sans` and `--font-d
 
 ## Shape, spacing, elevation
 
-Local tokens provide `--radius` for controls and cards, `--field-radius` for inputs, and overlay shadows. Cards use a generous radius and tonal separation; focal or modal surfaces may use a restrained teal glow.
+Local tokens provide `--radius` for controls and cards, `--field-radius` for inputs, and overlay shadows. Cards use a generous radius and tonal separation; focal surfaces may use static grid/tile accents; dialogs use neutral elevation.
 
 ## Icons
 
@@ -97,7 +82,7 @@ Icons never carry colour of their own; they inherit `currentColor`.
 
 ## Layout patterns
 
-- **Landing / login**: the landing remains the event poster: `story-sky.webp`, restrained comet motion, gradient lockup, grain overlay, and pale-yellow primary action. The full image is limited to the portal; authenticated shells keep the simplified tonal field.
+- **Landing / login**: responsive CSS white grid/tile poster, supplied logo, dark Sync identity and Google action. Only the landing has pauseable decorative motion.
 - **Public networking card**: `/c/[token]` is a focused, noindex card page outside the authenticated navigation shell. It uses local surfaces and link-button styles, shows the active attendee identity and social destinations, and gives malformed, unknown, linkless, and inactive tokens the same unavailable state. The owner may append `?preview=1` to inspect their own active card without changing its resolution; only a verified owner preview receives a Back to Connect control.
 - **Connect scanner**: `/connect` places a prominent Scan attendee QR action above the owner's card. It opens a dismissible camera modal only after explicit user action, prefers the rear camera, offers a QR screenshot picker, and decodes only local `/c/<UUID>` networking-card paths. Camera tracks and image data remain in browser memory, and arbitrary QR destinations are never followed.
 - **Home**: sticky hero pane (~38%) beside the schedule list at `≥1024px`; single column below. The hero is a `Card`; the All / My Flow filter uses local `Tabs`.
@@ -108,10 +93,10 @@ Icons never carry colour of their own; they inherit `currentColor`.
 - **Sign-out confirmation**: uses the same medium-width AlertDialog treatment as event controls — a plain left-aligned heading/body, neutral `Cancel`, and accent `Confirm` action without a decorative leading icon.
 - **Admin session editing**: schedule fields are labeled `(PHT)` and use the event's Asia/Manila wall-clock timezone. Deleting a draft always opens a destructive confirmation dialog.
 - **Admin raffle export**: the Attendees heading offers a full-width-on-mobile `Export raffle names` action. Its modal fetches the complete eligible snapshot on demand, provides a read-only one-line-per-entry preview plus Copy and plain-text Download actions, and widens at desktop widths. Its footer keeps Close left of the action group on desktop and stacks Copy, Download, then Close on mobile. Numbered duplicate labels are clickable only inside the protected modal, where they open the existing attendee-detail dialog for private confirmation.
-- **Bottom tabs** (`<1024px`) and a **fixed labeled sidebar** (`232px`, `≥1024px`) for attendees; the attendee profile menu owns Account, Admin, and Sign out in both presentations. `/admin` keeps a compact mobile utility header above a fixed icon-and-label bottom bar and uses a **256px rail** on desktop. All use dark-teal grounds, tonal edges, and readable off-white labels.
-- **App identity assets**: browser tabs and notification thumbnails use the transparent compact mascot crop; installed app icons use the transparent full seal or a padded teal maskable variant; notification badges use a dedicated monochrome crystal mark.
+- **Bottom tabs** (`<1024px`) and a **fixed labeled sidebar** (`232px`, `≥1024px`) for attendees; the attendee profile menu owns Account, Admin, and Sign out in both presentations. `/admin` keeps a compact mobile utility header above a fixed icon-and-label bottom bar and uses a **256px rail** on desktop. All use white grounds, neutral edges, and dark labels with violet active states.
+- **App identity assets**: browser/PWA/notification/share images are generated from the supplied event logo, with white safe-area padding for installed icons and a monochrome notification badge.
 - **More**: Quick Links remain above the complete speaker responsive lineup. Desktop uses a portrait-led grid; narrow widths collapse to compact rows. Missing portraits use branded initials, and the bio modal omits unavailable optional content gracefully.
-- **Photo Booth**: `/more/photo-booth` retains the attendee shell and local controls. Its functional capture stage offers two selectable 9:16 event-branded story-strip frames with three landscape photo windows, not a generic camera mockup. The selector uses two compact local `Button`s, defaults to the existing frame, and is available before capture and during review, where changing it recomposes the same three photos without recapture. Both frames use the same narrower illustrated-window geometry and a 6px dark-teal outline; clean, alpha-preserving foreground mascot assets are composed above photos in both the live strip and JPEG output. Frame 2 rebuilds its watermark-free background plus Perandory event title and italic `09.11.26` date as independent layers. Frame 1 keeps its existing event title and adds a small centred `09.11.26` date beneath it. Before permission, it explains local-only processing; capture uses three separate countdowns with front/rear switching where available and a normal image-picker fallback. During capture, the live camera is clipped into the selected photo window while the frame and completed slots remain fixed in place. Review exposes Download plus individual slot retakes. A history-aware Back control falls back to `/more`. The media composition is canvas output, held only in browser memory; stale camera work is invalidated and camera tracks stop outside active capture. The supplied event-background artwork is treated as content, not as a new authenticated-screen color system.
+- **Photo Booth**: keep the attendee shell, two frame IDs, three photo slots, local-only camera/image-picker capture, countdowns, review/retakes, and 1080x1920 JPEG export. Frames are generated white-grid artwork with blue/green or violet/pink accents and the approved logo/event name; no unconfirmed date or old mascot overlays. Camera/async ownership invariants are unchanged.
 - **Empty states**: one component, `components/empty-states.tsx` — icon, what is missing, what to do about it.
 - **Loading**: local `Skeleton` shaped like the content it replaces, per route `loading.tsx`.
 

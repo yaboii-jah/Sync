@@ -37,7 +37,7 @@
 
 ## 1. What is Sync?
 
-**Sync** is a companion web app for **AWS Student Community Day Mega Manila 2026** — a one-day event (Sep 11, 2026, 9:30 AM–6:00 PM, Asia Pacific College) where students learn about cloud computing.
+**Sync** is a companion web app being rebranded for **AWS Student Community Day South Summity 2026**. The supplied event is October 7, 2026, 09:30–17:30 PHT at Biñan People’s Center Auditorium. Its one event, 15 published activities, five approved speaker/panel placeholders, and five links are committed and freshly verified in production; see `docs/event-import/production-import-review.md`. The rebranded branch has not been deployed; website maintenance, Auth/database guards, and paused jobs remain active pending separate rollout and reopening. Event data is managed separately from the app identity. Do not rerun the completed import or old-data cleanup.
 
 Attendees install Sync on their phone like a native app. During the event it answers four questions instantly:
 
@@ -68,7 +68,7 @@ Here is what a real attendee experiences, from start to finish:
 9. End of day                → "That's a wrap" card; Alerts retains the recipient's feed
 ```
 
-**Visually**, the landing page gets the full ceremonial treatment. Everything after sign-in uses the fixed dark AWS SCD local component system: tonal deep-teal panels, warm off-white text, selective gold emphasis, semantic green/yellow/ember states, and one luminous atmospheric Home hero. The event theme is centered at the top of every hero state and is not repeated below the program date.
+**Visually**, all routes use the fixed light South Summity system: white surfaces, dark text and primary actions, violet selections/focus, and accessible semantic status colors. The Home hero and four networking templates use restrained static grid/tile accents; the landing retains its responsive CSS poster and pauseable animation. See `design.md` for the shared reference.
 
 **On desktop** (≥1024px), the bottom tab bar is replaced by a left sidebar ("rail"), and Home splits into two panes: the Happening Now card pins on the left while the schedule scrolls on the right.
 
@@ -88,7 +88,7 @@ Here is what a real attendee experiences, from start to finish:
 | **pg_cron** | A database alarm clock (SQL job scheduler) | Flips session statuses every minute, automatically |
 | **pg_net** | Lets the database make HTTP requests | Wakes up the push Edge Function |
 | **Web Push + FCM** | The browser/phone notification system | Delivers notifications when the app is closed |
-| **Vercel** (planned) | Hosting for Next.js apps | Will serve the app in production |
+| **Vercel** | Hosting for Next.js apps | Serves the production domains; event rollout remains gated by maintenance |
 
 **Key idea:** there is no traditional "backend server" you wrote. The Next.js server components + Supabase + database triggers *are* the backend. This style is common now and it's why the codebase is small.
 
@@ -153,16 +153,15 @@ Each section follows the same pattern: **what you see → what happens under the
 
 ### 5.1 Landing Page — "The Poster"
 
-**What you see:** a portrait teal story-sky with restrained comet motion, the word **SYNC** with a light-band sweeping across it, and a yellow "Sign in with Google" button.
+**What you see:** a white square grid with bright colored tiles framing the supplied South Summity event logo, a dark Perandory **SYNC** heading, and a dark "Sign in with Google" button. Smaller screens use fewer tile clusters around the content.
 
-**Under the hood:** there's no video and no image files. Everything is **pure CSS and one inline SVG**:
+**Under the hood:** the backdrop is server-rendered HTML and scoped CSS. The supplied logo remains an image; the background PNG and MP4 are references only and are not requested.
 
-- The sky = `public/assets/story-sky.webp`, layered with a restrained readability treatment and grain.
-- Comet = one thin gradient line with `animation: comet-fall …` that translates diagonally across the screen. Six comets exist, each with its own start position, speed, and delay — the delays are **negative**, meaning the shower is already mid-flight the instant the page loads.
-- The sheen on SYNC = the text is actually transparent; a moving gradient shows *through* the letters using `background-clip: text`.
-- Accessibility: everything animated is switched off for people whose OS requests `prefers-reduced-motion`, and the comets fall back to static faint streaks.
+- CSS gradients draw the grid and corner haze. Deterministic tile maps use 8 columns below 640px, 16 below 1024px, and 24 on larger screens; container units keep tiles square and aligned with the grid.
+- The four corner glows pulse on a five-second loop. The existing local React Aria Button pauses/resumes motion. Reduced-motion preferences retain the grid, tiles, and subtle static haze, and hide the control.
+- The landing tokens stay in its CSS module; authenticated surfaces retain their dark theme. OAuth behavior is unchanged.
 
-**Files:** `app/page.tsx` (markup), `app/globals.css` (portal artwork and animation keyframes), `public/assets/story-sky.webp`, `app/layout.tsx` (loads Geist + Perandory).
+**Files:** `app/page.tsx` (server page/auth), `components/landing-backdrop.tsx` (responsive decoration), `components/landing-motion.tsx` (pause/resume state), and `app/landing.module.css` (scoped artwork/styles).
 
 **One lesson baked in:** OAuth starts in the browser Supabase client so the PKCE verifier is written in the same browser or installed-app context that returns from Google. The button disables immediately to prevent duplicate flows.
 
@@ -258,7 +257,7 @@ otherwise → "Starts In" countdown (D/H/M/S boxes)
 | Status | Look |
 |---|---|
 | Not Started | yellow-green outline |
-| Ongoing | light-green fill + soft pulsing glow |
+| Ongoing | semantic green live status + functional pulse |
 | Finished | dimmed text |
 
 The Home server query and every Realtime refetch explicitly add `published = true`. This is necessary even for an administrator signed into the attendee view because the database lets admins read drafts for the operations workspace. A linked alert uses the same published-only lookup; if a session was later unpublished, the alert says its details are unavailable.
@@ -427,7 +426,7 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 **What you see:** open **Photo Booth** from More, choose one of the two event-frame buttons, take three photos with three-second countdowns, then download one event-framed vertical story strip. You can switch between front and rear cameras when the device makes both available, choose an existing image for any slot, and retake one slot without losing the other two. During review, changing the frame reuses the same photos and rebuilds the strip without another capture.
 
-**Under the hood:** the browser asks for camera permission only after the attendee chooses **Open camera**. Each source image stays in browser memory as a temporary object URL. Once all three slots are full, a canvas draws the selected static frame and three centre-cropped landscape photos into a high-quality 1080×1920 JPEG. Both frames use the same narrower illustrated-window geometry with dark-teal outlines, then redraw foreground mascots above photos; Frame 1 also draws its small `09.11.26` date beneath the existing event title. Neither source images nor the finished JPEG are uploaded, stored in Supabase, or attached to an account. Camera tracks stop whenever review starts, the page is hidden, or the component unmounts.
+**Under the hood:** the browser asks for camera permission only after the attendee chooses **Open camera**. Each source image stays in browser memory as a temporary object URL. Once all three slots are full, a canvas draws the selected static frame and three centre-cropped landscape photos into a high-quality 1080×1920 JPEG. Both generated white-grid frames retain the same three photo-slot coordinates and dark outlines, with blue/green or violet/pink edge accents, the supplied event logo, and the approved South Summity name. Neither frame includes an unconfirmed date or overlays on faces. Neither source images nor the finished JPEG are uploaded, stored in Supabase, or attached to an account. Camera tracks stop whenever review starts, the page is hidden, or the component unmounts.
 
 **Files:** `app/(app)/more/photo-booth/page.tsx`, `components/photo-booth/photo-booth-client.tsx`, `scripts/generate-photo-booth-frame-2-overlays.mjs`, `public/assets/event-frame-source.png`, `public/assets/event-frame-source-2.png`, `public/assets/event-frame-2-background.png`, `public/assets/event-frame-2-mascot-fox.png`, `public/assets/event-frame-2-mascot-crystal.png`, `public/assets/event-frame-2-top-overlay.png`, `public/assets/event-frame-2-left-overlay.png`, `public/assets/event-frame-2-title-overlay.png`, `public/assets/event-frame-2-date-overlay.png`, `public/assets/event-frame-1-date-overlay.png`.
 
@@ -699,8 +698,14 @@ Create `app/(app)/your-page/page.tsx` — it automatically gets the rail + tab c
 Run `npx supabase gen types typescript --linked --schema public` and commit the refreshed `lib/supabase/database.types.ts`.
 
 **…deploy for production?**
-Hosting isn't finalized (Vercel + Supabase Cloud is the assumed pairing). When it happens: add the production domain to Supabase's redirect allowlist **and** Google's OAuth app settings, set the same env vars on the host, and deploy the Edge Function again.
+The existing Vercel `sync` project hosts the app against Supabase Cloud. Follow `docs/event-release.md` for the exact event-branch release, staged Production checks, domain promotion, and maintenance recovery. Reopening and real Google sign-in acceptance are separate steps; this frontend release does not redeploy the Edge Function or change OAuth settings.
 
 ---
 
 *End of guide. When something in the code confuses you, find the feature above, open the named files, and read them next to the explanation — the whole app fits in your head once you've traced one feature end to end.*
+
+## Event-branch maintenance
+
+Set the server-only `MAINTENANCE_MODE=true` in the deployment environment and deploy a revision containing the gate. Only exact `true` enables it; local examples default to `false`. Matched GET/HEAD requests return direct HTTP 503 with no-cache headers before Auth runs; other methods return plain-text 503. `/maintenance` remains a normal 200 page, and required static/font assets stay accessible. Standalone and normal pages use neutral Sync copy with the light event palette.
+
+This website gate is independent of the production database freeze. Disabling it cannot unblock frozen Auth/profile writes. Keep database guards and cron pauses until controlled reopening. Maintenance/archive operator tooling remains in the main `sync` checkout; the event branch contains its own bounded import/verification tools. No tenant code or migrations are imported into `org-event`. The approved event release commits/publishes this branch and deploys with maintenance retained; see `docs/event-release.md` for actual execution status.

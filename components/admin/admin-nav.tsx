@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Separator, Typography } from "@/components/ui";
 import {
@@ -41,6 +42,10 @@ export function AdminNav() {
     <>
       <aside className="border-border bg-surface fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r lg:flex">
         <div className="px-6 py-6">
+          <div className="mb-4 flex items-center gap-3">
+            <Image src="/icons/mascot-96.png" alt="" width={32} height={32} className="size-8 object-contain" />
+            <span className="identity-font text-xl">Sync</span>
+          </div>
           <Typography type="h5" weight="semibold" className="font-display">
             Control Room
           </Typography>
@@ -61,7 +66,7 @@ export function AdminNav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-2.5 text-sm transition-colors ${
+                className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                   active
                     ? "border-accent text-accent font-semibold"
                     : "border-transparent text-muted hover:text-foreground"

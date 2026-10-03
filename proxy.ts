@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getAuthenticatedClaims } from "./lib/supabase/auth";
 import { getSupabaseEnv } from "./lib/supabase/env";
+import { isMaintenanceModeEnabled, maintenanceResponse } from "./lib/maintenance";
 
 const PUBLIC_PATHS = ["/", "/login", "/c"];
 
@@ -12,6 +13,12 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/maintenance") return NextResponse.next();
+  if (isMaintenanceModeEnabled()) return maintenanceResponse(request);
+  if (isApiOrAuthPath(pathname)) return NextResponse.next();
+
   const { url, publishableKey } = getSupabaseEnv();
 
   let response = NextResponse.next({ request });
@@ -39,8 +46,6 @@ export async function proxy(request: NextRequest) {
   const claims = await getAuthenticatedClaims(supabase);
   setPrivateNoStore(response);
 
-  const { pathname } = request.nextUrl;
-
   if (!claims && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
@@ -62,6 +67,12 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+function isApiOrAuthPath(pathname: string): boolean {
+  return ["/api", "/auth"].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
 }
 
 function redirectWithCookies(
@@ -89,6 +100,6 @@ function setPrivateNoStore(response: NextResponse): NextResponse {
 
 export const config = {
   matcher: [
-    "/((?!api|auth|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|maintenance-assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

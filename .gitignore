@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Playwright CLI probe output
 .playwright-cli/
+
+# Private production inventories, rehearsal SQL, and evidence
+/.production-maintenance/

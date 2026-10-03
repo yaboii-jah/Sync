@@ -1,14 +1,8 @@
-const CACHE_NAME = "sync-static-v16";
+const CACHE_NAME = "sync-static-v17";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
-  "/assets/event-frame-source.png",
-  "/assets/event-frame-source-2.png",
-  "/assets/event-frame-2-top-overlay.png",
-  "/assets/event-frame-2-left-overlay.png",
-  "/assets/event-frame-2-title-overlay.png",
-  "/assets/event-frame-2-date-overlay.png",
-  "/assets/event-frame-1-date-overlay.png",
-  "/assets/story-sky.webp",
+  "/assets/south-summity-frame-1.png",
+  "/assets/south-summity-frame-2.png",
   "/icons/favicon-32.png",
   "/icons/favicon-64.png",
   "/icons/mascot-96.png",

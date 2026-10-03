@@ -45,8 +45,8 @@ export function BottomTabs() {
               key={tab.label}
               href={tab.href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 py-1 transition active:scale-95 motion-reduce:transform-none ${
-                active ? "text-success" : "text-muted hover:text-foreground"
+              className={`flex flex-1 flex-col items-center gap-1 py-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus active:scale-95 motion-reduce:transform-none ${
+                active ? "text-accent" : "text-muted hover:text-foreground"
               }`}
             >
               <Badge.Anchor>

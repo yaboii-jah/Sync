@@ -139,7 +139,7 @@ export function Button({
     <AriaButton
       className={join(
         "inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "border-accent bg-accent text-accent-foreground hover:brightness-105",
+        variant === "primary" && "border-action bg-action text-action-foreground hover:opacity-90",
         variant === "secondary" && "border-border bg-surface-secondary text-foreground hover:bg-default",
         variant === "outline" && "border-border bg-transparent text-foreground hover:bg-default",
         variant === "ghost" && "border-transparent bg-transparent text-foreground hover:bg-default",
@@ -174,14 +174,14 @@ export function Chip({
         size === "lg" && "px-3 py-1 text-sm",
         variant === "tertiary" && "bg-transparent",
         variant !== "tertiary" && color === "default" && "bg-default text-foreground",
-        variant !== "tertiary" && color === "accent" && "bg-accent text-accent-foreground",
-        variant !== "tertiary" && color === "success" && "bg-success text-success-foreground",
-        variant !== "tertiary" && color === "warning" && "bg-warning text-warning-foreground",
-        variant !== "tertiary" && color === "danger" && "bg-danger text-danger-foreground",
-        variant === "soft" && color === "accent" && "bg-accent/20 text-accent",
-        variant === "soft" && color === "success" && "bg-success/20 text-success",
-        variant === "soft" && color === "warning" && "bg-warning/20 text-warning",
-        variant === "soft" && color === "danger" && "bg-danger/20 text-danger",
+        variant !== "tertiary" && variant !== "soft" && color === "accent" && "bg-accent text-accent-foreground",
+        variant !== "tertiary" && variant !== "soft" && color === "success" && "bg-success text-success-foreground",
+        variant !== "tertiary" && variant !== "soft" && color === "warning" && "bg-warning text-warning-foreground",
+        variant !== "tertiary" && variant !== "soft" && color === "danger" && "bg-danger text-danger-foreground",
+        variant === "soft" && color === "accent" && "bg-accent-soft text-accent",
+        variant === "soft" && color === "success" && "bg-success-soft text-success",
+        variant === "soft" && color === "warning" && "bg-warning-soft text-warning",
+        variant === "soft" && color === "danger" && "bg-danger-soft text-danger",
         className,
       )}
       {...props}
@@ -207,9 +207,9 @@ export function Alert({
       role="alert"
       className={join(
         "flex gap-3 rounded-xl border p-3 text-sm",
-        status === "success" && "border-success bg-success/15 text-success",
-        status === "warning" && "border-warning bg-warning/15 text-warning",
-        status === "danger" && "border-danger bg-danger/15 text-danger",
+        status === "success" && "border-success bg-success-soft text-success",
+        status === "warning" && "border-warning bg-warning-soft text-warning",
+        status === "danger" && "border-danger bg-danger-soft text-danger",
         status === "default" && "border-border bg-surface-secondary text-foreground",
         className,
       )}
@@ -331,7 +331,7 @@ function ModalContainer({
 function ModalDialog({ className, children, ...props }: ComponentProps<typeof AriaDialog>) {
   return (
     <AriaDialog
-      className={join("mx-auto flex w-full max-w-lg flex-col rounded-3xl border border-border !bg-overlay p-5 text-foreground opacity-100 shadow-overlay", className)}
+      className={join("relative mx-auto flex w-full max-w-lg flex-col rounded-3xl border border-border !bg-overlay p-5 text-foreground opacity-100 shadow-overlay", className)}
       {...props}
     >
       {({ close }) => (
@@ -373,7 +373,7 @@ Modal.Heading = ModalHeading;
 Modal.Body = ModalBody;
 Modal.Footer = ModalFooter;
 Modal.Icon = function ModalIcon({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={join("flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-success", className)} {...props} />;
+  return <span className={join("flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-accent", className)} {...props} />;
 };
 
 export function AlertDialog({ children }: { children?: ReactNode }) {
@@ -410,7 +410,7 @@ Tabs.List = function TabsList({ className, ...props }: ComponentProps<typeof Ari
   return <AriaTabList className={join("flex w-full items-center", typeof className === "string" && className)} {...props} />;
 };
 Tabs.Tab = function TabsTab({ className, ...props }: ComponentProps<typeof AriaTab>) {
-  return <AriaTab className={join("relative flex-1 rounded-lg px-3 py-2 text-center text-sm text-muted outline-none transition data-[selected]:bg-surface data-[selected]:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-focus", typeof className === "string" && className)} {...props} />;
+  return <AriaTab className={join("relative flex-1 rounded-lg px-3 py-2 text-center text-sm text-muted outline-none transition data-[selected]:bg-accent data-[selected]:text-accent-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-focus", typeof className === "string" && className)} {...props} />;
 };
 Tabs.Panel = function TabsPanel({ className, ...props }: ComponentProps<typeof AriaTabPanel>) {
   return <AriaTabPanel className={join("outline-none", typeof className === "string" && className)} {...props} />;
@@ -427,10 +427,10 @@ Switch.Content = function SwitchContent({ className, ...props }: HTMLAttributes<
   return <span className={join("flex items-center", className)} {...props} />;
 };
 Switch.Control = function SwitchControl({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={join("ml-auto flex h-6 w-10 items-center rounded-full bg-default p-0.5 transition group-data-[selected]:bg-success", className)} {...props} />;
+  return <span className={join("ml-auto flex h-6 w-10 items-center rounded-full border border-field-border bg-default p-0.5 transition group-data-[selected]:border-accent group-data-[selected]:bg-accent group-data-[focus-visible]:ring-2 group-data-[focus-visible]:ring-focus", className)} {...props} />;
 };
 Switch.Thumb = function SwitchThumb({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={join("size-5 rounded-full bg-foreground transition-transform group-data-[selected]:translate-x-4", className)} {...props} />;
+  return <span className={join("size-5 rounded-full bg-foreground transition-transform group-data-[selected]:translate-x-4 group-data-[selected]:bg-accent-foreground", className)} {...props} />;
 };
 
 export function Checkbox({ className, ...props }: ComponentProps<typeof AriaCheckbox>) {
@@ -440,10 +440,10 @@ Checkbox.Content = function CheckboxContent({ className, ...props }: HTMLAttribu
   return <span className={join("flex items-center gap-2", className)} {...props} />;
 };
 Checkbox.Control = function CheckboxControl({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={join("flex size-4 items-center justify-center rounded border border-border bg-surface group-data-[selected]:border-success group-data-[selected]:bg-success", className)} {...props} />;
+  return <span className={join("flex size-4 items-center justify-center rounded border border-field-border bg-surface group-data-[selected]:border-accent group-data-[selected]:bg-accent group-data-[focus-visible]:ring-2 group-data-[focus-visible]:ring-focus", className)} {...props} />;
 };
 Checkbox.Indicator = function CheckboxIndicator({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={join("size-1.5 rounded-full bg-success-foreground opacity-0 group-data-[selected]:opacity-100", className)} {...props} />;
+  return <span className={join("size-1.5 rounded-full bg-accent-foreground opacity-0 group-data-[selected]:opacity-100", className)} {...props} />;
 };
 
 export function RadioGroup({ className, ...props }: ComponentProps<typeof AriaRadioGroup>) {
@@ -453,7 +453,7 @@ RadioGroup.Option = function RadioOption({ className, ...props }: ComponentProps
   return <AriaRadio className={join("group flex cursor-pointer items-start gap-3 rounded-xl bg-surface-secondary px-4 py-3 text-foreground outline-none transition hover:bg-default data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[focus-visible]:ring-2 data-[focus-visible]:ring-focus", typeof className === "string" && className)} {...props} />;
 };
 RadioGroup.Control = function RadioControl({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span aria-hidden className={join("mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-border bg-surface transition group-data-[selected]:border-accent group-data-[selected]:bg-accent", className)} {...props}><span className="size-1.5 rounded-full bg-accent-foreground opacity-0 group-data-[selected]:opacity-100" /></span>;
+  return <span aria-hidden className={join("mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-field-border bg-surface transition group-data-[selected]:border-accent group-data-[selected]:bg-accent", className)} {...props}><span className="size-1.5 rounded-full bg-accent-foreground opacity-0 group-data-[selected]:opacity-100" /></span>;
 };
 
 export function TextField({ fullWidth, className, ...props }: ComponentProps<typeof AriaTextField> & { fullWidth?: boolean }) {
@@ -464,11 +464,11 @@ export function Label({ className, ...props }: ComponentProps<typeof AriaLabel>)
 }
 export function Input({ className, variant, ...props }: ComponentProps<typeof AriaInput> & { variant?: "secondary" }) {
   void variant;
-  return <AriaInput className={join("w-full rounded-lg border border-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/30", typeof className === "string" && className)} {...props} />;
+  return <AriaInput className={join("w-full rounded-lg border border-field-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/30", typeof className === "string" && className)} {...props} />;
 }
 export function TextArea({ className, variant, ...props }: ComponentProps<typeof AriaTextArea> & { variant?: "secondary" }) {
   void variant;
-  return <AriaTextArea className={join("w-full rounded-lg border border-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/30", typeof className === "string" && className)} {...props} />;
+  return <AriaTextArea className={join("w-full rounded-lg border border-field-border bg-field-background px-3 py-2.5 text-sm text-field-foreground outline-none placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/30", typeof className === "string" && className)} {...props} />;
 }
 export function FieldError({ className, ...props }: ComponentProps<typeof AriaFieldError>) {
   return <AriaFieldError className={join("text-sm text-danger", typeof className === "string" && className)} {...props} />;
@@ -481,7 +481,7 @@ export function SearchField({ className, ...props }: ComponentProps<typeof AriaS
   return <AriaSearchField className={join("flex flex-col gap-1.5", typeof className === "string" && className)} {...props} />;
 }
 SearchField.Group = function SearchFieldGroup({ className, ...props }: DivProps) {
-  return <div className={join("flex items-center gap-2 rounded-lg border border-border bg-field-background px-3 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30", className)} {...props} />;
+  return <div className={join("flex items-center gap-2 rounded-lg border border-field-border bg-field-background px-3 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30", className)} {...props} />;
 };
 SearchField.SearchIcon = function SearchFieldIcon() { return <Search className="size-4 shrink-0 text-muted" aria-hidden />; };
 SearchField.Input = function SearchFieldInput({ className, ...props }: ComponentProps<typeof AriaInput>) {
@@ -490,7 +490,7 @@ SearchField.Input = function SearchFieldInput({ className, ...props }: Component
 SearchField.ClearButton = function SearchFieldClearButton() { return <AriaButton slot="clear" className="text-muted hover:text-foreground"><X className="size-4" aria-hidden /></AriaButton>; };
 
 export function ToggleButton({ className, variant = "ghost", size = "md", isIconOnly, ...props }: ComponentProps<typeof AriaToggleButton> & { variant?: "ghost" | "secondary"; size?: "sm" | "md"; isIconOnly?: boolean }) {
-  return <AriaToggleButton className={join("inline-flex items-center justify-center rounded-lg border border-transparent text-foreground transition hover:bg-default data-[selected]:bg-default data-[focus-visible]:ring-2 data-[focus-visible]:ring-focus", variant === "secondary" && "border-border bg-surface-secondary", size === "sm" && "size-8", size === "md" && "size-10", isIconOnly && "p-0", typeof className === "string" && className)} {...props} />;
+  return <AriaToggleButton className={join("inline-flex items-center justify-center rounded-lg border border-transparent text-foreground transition hover:bg-default data-[selected]:bg-accent data-[selected]:text-accent-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-focus", variant === "secondary" && "border-border bg-surface-secondary", size === "sm" && "size-8", size === "md" && "size-10", isIconOnly && "p-0", typeof className === "string" && className)} {...props} />;
 }
 
 const progressValue = createContext<number>(0);

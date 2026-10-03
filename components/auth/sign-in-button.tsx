@@ -39,7 +39,7 @@ export function SignInButton({ next }: { next?: string }) {
         type="button"
         onClick={() => void startSignIn()}
         disabled={pending}
-        className="rounded-full bg-pastel-yellow px-7 py-3 text-xs font-bold tracking-[0.14em] text-charcoal uppercase transition-all hover:bg-light-green disabled:cursor-wait disabled:opacity-70 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pastel-yellow"
+        className="rounded-full bg-action px-7 py-3 text-xs font-bold tracking-[0.14em] text-action-foreground uppercase transition-all hover:opacity-90 disabled:cursor-wait disabled:opacity-70 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         {pending ? "Opening Google..." : "Sign in with Google"}
       </button>

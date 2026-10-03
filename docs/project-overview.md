@@ -4,7 +4,9 @@
 
 Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based social networking, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
 
-The application uses the event's dark AWS Student Community Day visual identity across every rendered interface route. This is a presentation-only decision: it does not change product flows, permissions, data, or route behavior.
+The `org-event` worktree reuses this legacy application for AWS Student Community Day South Summity 2026. All app surfaces use the approved light event identity: dark primary actions, violet selections, and restrained grid/tile accents. Sync remains the app name and identity heading. PWA/share imagery and photo-booth frames use the supplied logo. The supplied new program is October 7, 2026, 09:30–17:30 Asia/Manila at Biñan People’s Center Auditorium, with 15 consecutive activities. The approved production import is committed and verified: one event, 15 published sessions, five explicitly unconfirmed speaker/panel placeholders, and five session links. Retained administrators, schema/security, maintenance guards, and paused jobs are preserved. Actual speaker content can follow later, and the event name remains the provisional theme heading. The rebranded branch has not been deployed and production/Auth remain in maintenance; fresh-client testing and reopening are separate units. Product flows, permissions, and route behavior remain unchanged.
+
+The event branch also supports a server-side website maintenance gate for rollout preparation. It presents neutral Sync maintenance content while enabled and preserves the legacy app when disabled. Importing event content, lifting the separate database write freeze, resuming jobs, and deploying remain separately reviewed operations.
 
 ## Goals
 

@@ -22,7 +22,7 @@ export async function AppHeader() {
           width={36}
           height={36}
           preload
-          className="size-9 rounded-full object-cover"
+          className="size-9 object-contain"
         />
         <Typography.Heading level={1} className="identity-font text-[28px]">
           Sync

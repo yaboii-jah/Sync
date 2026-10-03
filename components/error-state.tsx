@@ -56,7 +56,7 @@ export function ErrorState({
           ) : null}
           <Link
             href={homeHref}
-            className={`${retry ? "border-border text-muted hover:text-foreground border" : "bg-accent text-accent-foreground hover:opacity-90"} w-full rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-opacity`}
+            className={`${retry ? "border-border text-muted hover:text-foreground border" : "bg-action text-action-foreground hover:opacity-90"} w-full rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-opacity`}
           >
             {homeLabel}
           </Link>

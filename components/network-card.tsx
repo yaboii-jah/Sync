@@ -36,10 +36,10 @@ export const networkCardThemes: Record<
   NetworkCardVariant,
   { className: string; showCrystal: boolean; showStars: boolean; showMoon: boolean; showEventBranding: boolean }
 > = {
-  solid: { className: "network-card--solid", showCrystal: true, showStars: false, showMoon: false, showEventBranding: false },
-  glass: { className: "network-card--glass", showCrystal: true, showStars: true, showMoon: false, showEventBranding: false },
-  crystal: { className: "network-card--crystal", showCrystal: true, showStars: true, showMoon: false, showEventBranding: false },
-  event: { className: "network-card--event", showCrystal: true, showStars: true, showMoon: true, showEventBranding: false },
+  solid: { className: "network-card--solid", showCrystal: false, showStars: false, showMoon: false, showEventBranding: false },
+  glass: { className: "network-card--glass", showCrystal: false, showStars: false, showMoon: false, showEventBranding: false },
+  crystal: { className: "network-card--crystal", showCrystal: false, showStars: false, showMoon: false, showEventBranding: false },
+  event: { className: "network-card--event", showCrystal: false, showStars: false, showMoon: false, showEventBranding: false },
 };
 
 interface NetworkCardProps {
@@ -52,7 +52,7 @@ interface NetworkCardProps {
   badge?: string;
 }
 
-export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, organization, badge }: NetworkCardProps) {
+export function NetworkCard({ variant = "solid", name, photoUrl, links, organization, badge }: NetworkCardProps) {
   const normalized: NetworkCardVariant =
     typeof variant === "number" ? getVariantFromTemplate(variant) : variant;
   const theme = networkCardThemes[normalized];
@@ -60,68 +60,11 @@ export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, org
 
   return (
     <article className={`network-card ${theme.className}`}>
-      <div className="network-card__decoration" aria-hidden="true">
-        {theme.showCrystal && (
-          <svg className="network-card__crystal" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M60 6 L95 30 L95 78 L60 102 L25 78 L25 30 Z"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              opacity="0.9"
-            />
-            <path d="M25 30 L60 52 L95 30" stroke="currentColor" strokeWidth="1" opacity="0.7" />
-            <path d="M60 52 L60 102" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-            <path d="M25 78 L60 52 L95 78" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-            <path d="M42 22 L60 6 L78 22" stroke="currentColor" strokeWidth="0.9" opacity="0.6" />
-          </svg>
-        )}
-        {theme.showStars && (
-          <div className="network-card__stars">
-            <span className="network-card__star" style={{ top: "14%", left: "18%" }} />
-            <span className="network-card__star" style={{ top: "22%", right: "16%" }} />
-            <span className="network-card__star" style={{ top: "42%", right: "28%" }} />
-            <span className="network-card__star" style={{ top: "68%", left: "12%" }} />
-            <span className="network-card__star network-card__star--lg" style={{ top: "10%", right: "22%" }} />
-          </div>
-        )}
-        {theme.showMoon && <span className="network-card__moon" />}
-        {theme.showEventBranding && (
-          <div className="network-card__event-mark">
-            <span className="network-card__event-label">STUDENT COMMUNITY DAY</span>
-            <span className="network-card__event-subtitle">MEGA MANILA 2026</span>
-          </div>
-        )}
-        {normalized === "glass" && (
-          <img
-            src="/assets/scd%20pubmats%20(4).svg"
-            alt=""
-            aria-hidden="true"
-            className="network-card__pubmat"
-            loading="lazy"
-          />
-        )}
-        {normalized === "crystal" && (
-          <img
-            src="/assets/scd%20pubmats%20(3).svg"
-            alt=""
-            aria-hidden="true"
-            className="network-card__pubmat"
-            loading="lazy"
-          />
-        )}
-        {normalized === "event" && (
-          <img
-            src="/assets/scd%20pubmats%20clena.svg"
-            alt=""
-            aria-hidden="true"
-            className="network-card__pubmat"
-            loading="lazy"
-          />
-        )}
-      </div>
+      <div className="network-card__decoration" aria-hidden="true" />
 
       <div className="network-card__content">
         <div className="network-card__header">
+          {normalized === "event" ? <Image src="/icons/mascot-96.png" alt="" width={48} height={48} className="network-card__event-logo" /> : null}
           <Avatar size="lg" className="network-card__avatar size-24">
             {photoUrl ? (
               <Avatar.Image asChild src={photoUrl}>
@@ -134,7 +77,7 @@ export function NetworkCard({ variant = "solid", name, photoUrl, links, bio, org
             <h1 className="network-card__name">{name || "Attendee"}</h1>
             {organization ? <p className="network-card__organization">{organization}</p> : null}
             {badge ? <span className="network-card__badge">{badge}</span> : null}
-            <p className="network-card__event-inline">BUILD · FORGE · REPEAT</p>
+            <p className="network-card__event-inline">AWS Student Community Day South Summity 2026</p>
           </div>
         </div>
 

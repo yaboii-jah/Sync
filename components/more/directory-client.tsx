@@ -39,7 +39,7 @@ function PersonPortrait({
       ) : (
         <span
           aria-hidden
-          className="flex size-full items-center justify-center bg-[radial-gradient(circle_at_72%_18%,color-mix(in_srgb,var(--accent)_28%,transparent),transparent_44%),linear-gradient(145deg,var(--surface-tertiary),var(--surface-secondary))] text-3xl font-semibold text-foreground sm:text-5xl"
+          className="flex size-full items-center justify-center bg-surface-secondary text-3xl font-semibold text-foreground sm:text-5xl"
         >
           {person.name.charAt(0).toUpperCase()}
         </span>

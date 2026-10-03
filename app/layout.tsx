@@ -18,19 +18,20 @@ const perandory = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000"),
   title: "Sync",
   description:
-    "The AWS Student Community Day Mega Manila 2026 companion for the live schedule, session alerts, and attendee networking.",
+    "The AWS Student Community Day South Summity 2026 companion for the live schedule, session alerts, and attendee networking.",
   openGraph: {
     type: "website",
     siteName: "Sync",
-    title: "Sync — AWS Student Community Day Mega Manila 2026",
+    title: "Sync — AWS Student Community Day South Summity 2026",
     description:
       "Your event day, in one place: the live schedule, session alerts, and attendee networking.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sync — AWS Student Community Day Mega Manila 2026",
+    title: "Sync — AWS Student Community Day South Summity 2026",
     description:
       "Your event day, in one place: the live schedule, session alerts, and attendee networking.",
   },
@@ -54,14 +55,14 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#052f3c",
+  themeColor: "#f7f7fa",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${perandory.variable} dark h-full antialiased`}
+      className={`${geist.variable} ${perandory.variable} h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <Providers>{children}</Providers>

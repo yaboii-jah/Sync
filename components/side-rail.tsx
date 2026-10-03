@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Badge, Separator, Typography } from "@/components/ui";
 import {
@@ -49,8 +50,9 @@ export function SideRail({
       <div className="px-6 py-6">
         <Link
           href="/home"
-          className="inline-flex rounded-lg focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="inline-flex items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
         >
+          <Image src="/icons/mascot-96.png" alt="" width={32} height={32} className="size-8 object-contain" />
           <Typography type="h5" weight="semibold" className="identity-font">
             Sync
           </Typography>
