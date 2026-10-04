@@ -6,14 +6,14 @@ October 4 production-testing decision: publish the reviewed event changes, disab
 
 Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based social networking, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
 
-The `org-event` worktree reuses this legacy application for AWS Student Community Day South Summity 2026. Authenticated attendee/admin workspaces support the approved light/dark event identity, device appearance by default, browser-local toggles, and static grid/tile/corner-wash decoration. Public landing and maintenance retain their light identity. Sync remains the app name and identity heading. PWA/share imagery and photo-booth frames use the supplied logo. The supplied new program is October 7, 2026, 09:30–17:30 Asia/Manila at Biñan People’s Center Auditorium, with 15 consecutive activities. The approved production import established one event and 15 published sessions; a separately rehearsed roster update now has five confirmed people (three talk speakers and two panelists), the still-unconfirmed opening keynote, and six session links. Four supplied portraits are referenced by the roster; Trisha Pelagio’s portrait remains pending. Retained administrators and schema/security are preserved. Controlled database unfreeze is committed and independently verified for local Google/admin/attendee acceptance; both jobs remain paused and public website maintenance stays enabled. The event name remains the provisional theme heading. The rebranded branch is committed/published and deployed to both production domains with maintenance retained; see `docs/event-release.md`. Fresh-client Auth/write testing and reopening remain separate units. Product flows, permissions, and route behavior remain unchanged.
+The `org-event` worktree reuses this legacy application for AWS Student Community Day South Summity 2026. Authenticated attendee/admin workspaces support the approved light/dark event identity, device appearance by default, browser-local toggles, and static grid/tile/corner-wash decoration. Public landing and maintenance retain their light identity. Sync remains the app name and identity heading. PWA/share imagery and photo-booth frames use the supplied logo. The supplied new program is October 7, 2026, 09:30–17:30 Asia/Manila at Biñan People’s Center Auditorium, with 15 consecutive activities. The approved production import established one event and 15 published sessions; a separately rehearsed roster update now has five confirmed people (three talk speakers and two panelists), the still-unconfirmed opening keynote, and six session links. Four supplied portraits are referenced by the roster; Trisha Pelagio’s portrait remains pending. Retained administrators and schema/security are preserved. Controlled database unfreeze is committed and independently verified. The October 4 testing release disables public website maintenance and restores both existing jobs; real admin/attendee testing continues on production. The event name remains the provisional theme heading. The reviewed event branch is committed/published and deployed to both production domains for unannounced testing; see `docs/event-release.md`. Fresh-client Auth/write testing and reopening remain separate units. Product flows, permissions, and route behavior remain unchanged.
 
 The event branch supports the active server-side website maintenance gate. It presents neutral Sync maintenance content while enabled and preserves the legacy app when disabled. The approved import, frontend deployment, and controlled database unfreeze are complete. Fresh client acceptance, restoration of approved jobs, and public launch remain separate operations; see docs/event-reopening.md.
 
 ## Goals
 
 1. Let an attendee go from landing page to a fully usable account via Google sign-in, with no manual registration form and nothing typed
-2. Surface session status (not started / ongoing / finished) in real time, with zero manual posting required from anyone
+2. Surface administrator-controlled session status (not started / ongoing / finished) in real time without attendees refreshing or reposting
 3. Let an attendee activate one stable networking QR code for their selected LinkedIn, Instagram, Facebook, and GitHub profiles without retyping profile URLs
 4. Make the app installable as a PWA so it behaves like a native app from the home screen
 5. Give approved event operators a secure, auditable way to correct live program state and communicate with attendees
@@ -101,7 +101,7 @@ The event branch supports the active server-side website maintenance gate. It pr
 - Immediate title/body notifications sent to everyone or explicitly selected attendees
 - Read-only latest-100 app feedback list showing category, message, attendee name/photo, and submission time
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
-- Manual Start, End, and Resume Auto controls persist against schedule automation; manual timestamps become the attendee-facing live state
+- Manual Start and End controls are the only session-state transitions; scheduled times remain program information. Sessions stay Not Started until an admin starts or ends them, and stay Ongoing until an admin ends them. Ending a session does not start another session. Manual timestamps become the attendee-facing live state; Resume Auto is unavailable.
 - Searchable attendee identity/reachability directory with confirmed admin-access controls, notification history, delivery results, and immutable mutation audit log
 - On-demand raffle-name export for every non-admin attendee profile: names only, one line per profile, with numbered duplicate-name entries that stay privately traceable in the admin workspace
 - `profiles.pass_type` remains dormant and is not used for targeting, authorization, filtering, or dashboard metrics
@@ -114,7 +114,7 @@ The event branch supports the active server-side website maintenance gate. It pr
 ### In Scope
 
 - Google OAuth sign-in
-- Real-time program flow with automatic session status
+- Real-time program flow with manually controlled session status
 - Audited organizer announcements and explicitly confirmed manual status notifications
 - Organizer announcements managed through the protected admin composer and audited database RPC
 - Persisted unread alert count and session-linked alert detail access
@@ -140,6 +140,6 @@ The event branch supports the active server-side website maintenance gate. It pr
 3. A user can activate one stable networking QR code that resolves to a noindex card showing their name, photo, and only their configured social links
 4. A user can install the app to a device home screen and launch it as a standalone PWA
 5. A user can browse the complete speaker lineup and open an entry's LinkedIn profile when one is provided
-6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually override or restore session status without cron reverting the override
+6. An allowlisted administrator can send a recipient-scoped alert, inspect push acceptance results, and manually start or end sessions without schedule timing changing their status
 7. Attendees can understand every concurrent live or upcoming program choice and receive a clear warning when saved My Flow sessions overlap
 8. An authenticated attendee can submit identified app feedback in one of three categories, and an allowlisted administrator can review the latest 100 submissions without exposing feedback to attendees

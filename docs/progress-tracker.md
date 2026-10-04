@@ -1,22 +1,32 @@
 # Progress Tracker
 
-## 2026-10-04 — Unannounced production testing release in progress
+## Current revision: manual session lifecycle
+
+- Approved October 4: both Start and End are manual. Scheduled times must not transition status through cron, session edits, attendee views, bookmarks, or seat claims. Preserve all existing session state and history; remove Resume Auto. Implement database behavior first, verify it, then complete frontend and staged production testing rollout.
+- Read-only baseline: all 15 production sessions are Not Started with no override; both existing cron jobs are active. Prior release documentation changes are preserved.
+- Database unit prepared: additive migration `20261004132605_manual_session_lifecycle.sql` uses compatible invoker RPCs/private workers, removes clock transitions, preserves event timing/cleanup, and uses stored completion for bookmarks/seats. All **64 rollback-only SQL checks pass**, with schema, event/program data and sequence state preserved. Earlier harness failures identified baseline search-path serialization/RLS enforcement and were corrected; separate live subscription/read-state activity is retained in evidence. No migration has been committed to production or applied to the local multi-tenant database. Frontend implementation is next.
+- Frontend unit completed locally: Start/End only, stored status throughout Home/My Flow/details, planned waiting/overtime wording, and no premature program wrap. The status confirmation has an explicit accessible label. All **170 tests**, lint, TypeScript and production build (24 pages) pass. Four isolated component-browser layouts (320/1280, light/dark) pass action eligibility, confirmation payload/notification opt-in, late waiting/live/completed states and no overflow/runtime errors; screenshots reviewed. These fixture checks stub server actions and do not count as real Google/admin/attendee acceptance. Production rollout is next; all private harness files remain excluded from release source.
+
+## 2026-10-04 — Unannounced production testing release
 
 - Owner approved deploying the reviewed event UI/assets/admin-access batch, disabling website maintenance for normal public Google login, and restoring both existing jobs. Marketing remains pending testing and revisions.
 - Added a separate signed-out testing-release verifier for landing/login/callback behavior, protected-route redirects and new asset byte identity. Kept maintenance recovery checks intact. Release preflight captures the current unfrozen state; owner-local token refresh, alert read-state updates and push renewal are acknowledged as ordinary client activity rather than restored from the old baseline.
 - Database operations are already complete. Release will preserve program/security/protected admins and reactivate only the verified status-sync/push-retry jobs after frontend health checks. Deployment, job observation and real tester acceptance will be recorded below when completed.
 - Release preparation passed all **158 tests**, lint, TypeScript and the production build (24 pages, no fixture route). The final smoke script transport annotation was corrected before these final checks. The reviewed fresh inventory preserves event/program data, schema/security, protected admins, business sequences, paused job identities/commands and empty retry queues. Local client Auth/read-state/push/social updates are preserved. Production automatic domain assignment is paused; future Production builds have maintenance disabled while current domains still route to the maintenance deployment.
+- Release completed: committed/published source `4eb67edc5b1ed8b1925557451dc4cca086777b63`, clean export SHA-256 `836e6bb9ee34c673f62dc8c4be36eefe4f6a3ab1bd28a605420f4912d40f8224`, Ready deployment `dpl_H1TTmwqYESQBcoJ9xqJU1vPpRZAj` promoted at **08:28:59 Asia/Manila**. Both actual domains pass 32 signed-out route/asset checks each; staged acceptance passed another 32. Four live responsive/theme-device landing and service-worker checks pass. Google initiation has correct app/Supabase callbacks; no consent/session was fabricated. Initial browser redirect interception was corrected in the private check, with no app/Auth changes.
+- Both unchanged jobs are active and completed two successful minute cycles by **08:38:21 Asia/Manila**, with no failures or queue/dispatch backlog. Final preservation at **08:39:02 Asia/Manila** confirms unchanged schema/security/program/protected admins/job definitions and empty retries. Production maintenance is disabled, legacy flag/Supabase/site origin are preserved, and prior automatic domain assignment is restored. Security advisors remain 29 existing findings with zero new findings. No cleanup/import/unfreeze/migration replay, Edge Function deployment, account deletion or test announcement occurred.
+- **Production testing open:** https://sync.aws-scd.cloud. Another tester signs in before Catherine/Jahmell can promote them through attendee details. Real signed-in admin/attendee and physical-device camera/PWA acceptance remain pending testers. Marketing is deferred. Final documentation is local to avoid triggering an unreviewed automatic deployment; runtime remains the published source above. Checksummed release evidence and operation markers remain in the protected ignored `testing-release-20261004` directory. Recovery uses the previous maintenance deployment and job pause/drain while preserving test data.
 
 Update this file after every meaningful implementation
 change.
 
 ## Current Phase
 
-- South Summity frontend and event import are deployed on `org-event` under website maintenance. Controlled database unfreeze is committed and independently verified: all 22 guards and their rejection function are removed; both background jobs remain paused. Fresh Google/admin/attendee acceptance is in progress through the local app.
+- South Summity changes are deployed from `org-event` for unannounced production testing. Website maintenance is disabled, the database remains unfrozen, and both existing background jobs are active. Automated release/OAuth-initiation checks pass; real admin/attendee sessions and physical-device acceptance remain the testing work.
 
 ## Current Goal
 
-- Verify fresh Google sign-in and real admin/attendee flows after the completed controlled database unfreeze, with website maintenance enabled and jobs paused. Approved job restoration and public launch follow successful acceptance. Do not repeat completed cleanup/import or guard reversal, remove one-use markers, or merge tenant migrations.
+- Have authorized testers sign in at https://sync.aws-scd.cloud, grant admin access to existing users where intended, collect feedback, and complete revisions before marketing. Verify real promotion/demotion, authorization, attendee flows and physical camera/PWA behavior. Preserve completed database operations and one-use markers; do not repeat cleanup/import/unfreeze or merge tenant migrations.
 
 ## 2026-10-04 - Admin access management
 

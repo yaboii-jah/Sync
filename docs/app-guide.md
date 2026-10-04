@@ -37,7 +37,7 @@
 
 ## 1. What is Sync?
 
-**Sync** is the companion web app for **AWS Student Community Day South Summity 2026**. The supplied event is October 7, 2026, 09:30–17:30 PHT at Biñan People’s Center Auditorium. Production has one event, 15 published activities, five confirmed people (three speakers and two panelists), the unconfirmed opening keynote, and six speaker/session links. Four supplied portraits are referenced by the roster; Trisha Pelagio’s photo is pending. The initial import and separate roster update are documented in `docs/event-import/production-import-review.md` and `docs/event-import/south-summity-speaker-roster.md`. The rebranded `org-event` branch is deployed to both production domains with verified maintenance retained; see `docs/event-release.md`. The database is unfrozen, while website maintenance and both paused jobs remain in place pending fresh-client acceptance and separate launch work. Event data is managed separately from the app identity. Do not rerun the completed import, roster update, or old-data cleanup.
+**Sync** is the companion web app for **AWS Student Community Day South Summity 2026**. The supplied event is October 7, 2026, 09:30–17:30 PHT at Biñan People’s Center Auditorium. Production has one event, 15 published activities, five confirmed people (three speakers and two panelists), the unconfirmed opening keynote, and six speaker/session links. Four supplied portraits are referenced by the roster; Trisha Pelagio’s photo is pending. The initial import and separate roster update are documented in `docs/event-import/production-import-review.md` and `docs/event-import/south-summity-speaker-roster.md`. The reviewed `org-event` branch is deployed to both production domains for unannounced testing; see `docs/event-release.md`. The database is unfrozen, website maintenance is disabled, and both existing jobs are active. Authorized testers can sign in at https://sync.aws-scd.cloud, then Catherine or Jahmell can grant admin access through Control Room → Attendees → user details → Make admin. Marketing waits until testing and revisions are complete. Event data is managed separately from the app identity. Do not rerun the completed import, roster update, or old-data cleanup.
 
 Attendees install Sync on their phone like a native app. During the event it answers four questions instantly:
 
@@ -48,7 +48,7 @@ Attendees install Sync on their phone like a native app. During the event it ans
 
 It is **not** a social network or ticketing system. General directory content still lives directly in Supabase, while the narrow allowlisted `/admin` control room handles event-day alerts, schedule corrections, delivery monitoring, attendee lookup, and mutation auditing. Operators use the protected composer for announcements rather than inserting them directly.
 
-The name of the game remains automation-first for program state: session statuses derive from schedule timestamps, while attendee notifications are created only by audited organizer actions. Published sessions are visible to attendees; unpublished drafts stay in the admin workspace and are ignored by schedule automation. When the real event drifts, an admin Start or End override remains authoritative until Resume Auto, and approved operators can send immediate audited alerts from the app.
+Session state is manually controlled: an admin starts and ends each session, and Realtime distributes the stored status to attendees. Schedule times remain informational. Editing or publishing a session never changes its status, and Resume Auto is unavailable. Published sessions are visible to attendees; unpublished drafts stay in the admin workspace. Operators can optionally notify attendees when confirming Start or End.
 
 ---
 
@@ -85,10 +85,10 @@ Here is what a real attendee experiences, from start to finish:
 | **Supabase Auth** | Login-as-a-service | The Google sign-in and session cookies |
 | **Supabase Realtime** | A websocket service that yells "the database changed!" | Live schedule updates and the live Alerts feed |
 | **Supabase Edge Functions** | Small server programs that run on-demand | Sends push notifications |
-| **pg_cron** | A database alarm clock (SQL job scheduler) | Flips session statuses every minute, automatically |
+| **pg_cron** | A database alarm clock (SQL job scheduler) | Updates event timing and cleans finished-session bookmarks every minute |
 | **pg_net** | Lets the database make HTTP requests | Wakes up the push Edge Function |
 | **Web Push + FCM** | The browser/phone notification system | Delivers notifications when the app is closed |
-| **Vercel** | Hosting for Next.js apps | Serves the production domains; event rollout remains gated by maintenance |
+| **Vercel** | Hosting for Next.js apps | Serves the production domains for unannounced testing |
 
 **Key idea:** there is no traditional "backend server" you wrote. The Next.js server components + Supabase + database triggers *are* the backend. This style is common now and it's why the codebase is small.
 
@@ -383,7 +383,6 @@ This is the most connected feature in the app — five systems passing a baton:
 | Scheduled status transition | No new notification | None |
 | Manual Start or End with **Notify every attendee** checked | Snapshotted profiles for everyone | Every available device for those profiles |
 | Manual Start or End with notification unchecked | No new notification | None |
-| Resume Auto | No new notification | None |
 | Admin announcement to Everyone | Snapshotted profiles for everyone | Every available device for those profiles |
 | Admin announcement to Selected | Snapshotted selected profiles only | Every available device for those profiles |
 
@@ -561,7 +560,7 @@ erDiagram
 |---|---|---|
 | `profiles` | Your identity: name, photo, canonical LinkedIn URL; pass type remains dormant | Created by a trigger on signup; **you** edit supported fields in Settings |
 | `events` | The event itself — one row: name, venue, time span, status | Organizers via SQL; status auto-flips |
-| `sessions` | Every slot plus effective status, manual override, and actual action timestamps | Schedule automation or audited admin Start/End/Resume Auto |
+| `sessions` | Every slot plus effective status, manual override, and actual action timestamps | Audited admin Start/End; create initializes Not Started and schedule edits preserve state |
 | `speakers_sponsors` | People: name, photo, role (speaker/host/panelist/sponsor), org, bio, LinkedIn | Organizers via SQL |
 | `session_speakers` | Join table: which person appears in which session | Organizers via SQL |
 | `my_flow_bookmarks` | Your saved sessions (user_id + session_id) | **You**, via the bookmark button |
@@ -609,47 +608,13 @@ create policy "Users can delete own bookmarks"
 
 ---
 
-## 8. The Automation — The Minute Job That Runs the Event
+## 8. Manual Sessions and Background Cleanup
 
-The single most important piece of automatic program state is one function on a timer:
+Admins use Start and End on `/admin/sessions`. A session stays Not Started until an admin acts, and stays Ongoing until an admin ends it, even after its scheduled end. Ending one session does not start another. The database enforces admin authorization, retry idempotency, timestamps, and transactional auditing; attendee clients render stored status and update through Realtime.
 
-```sql
--- supabase/migrations/…130000 (simplified)
-create or replace function public.sync_program_flow_statuses()
-returns void language plpgsql as $$
-begin
-  -- For every session whose stored status no longer matches reality…
-  for flipped in
-    select s.id, s.title, s.room,
-           case when now() < s.start_time then 'not_started'
-               when now() >= s.end_time  then 'finished'
-                else 'ongoing' end as new_status
-      from public.sessions s
-     where s.status is distinct from (…same case…)
-  loop
-    -- …flip it…
-    update public.sessions set status = flipped.new_status where id = flipped.id;
+The existing minute job, `sync-program-flow-statuses`, calls `public.sync_program_flow_statuses()` only for event-level timing and independent finished-session bookmark cleanup. It never transitions a session or creates a notification. The push retry job remains unchanged.
 
-    -- Finished-session bookmarks are cleaned up independently.
-    if flipped.new_status = 'finished' then
-      delete from public.my_flow_bookmarks where session_id = flipped.id;
-    end if;
-  end loop;
-  -- No schedule-generated reminder, live, or ended notification is written.
-  -- (events.status gets the same treatment)
-end; $$;
-
-select cron.schedule('sync-program-flow-statuses', '* * * * *',
-  $$select public.sync_program_flow_statuses()$$);
-```
-
-Read the `where s.status is distinct from (...)` clause carefully — it's the quiet genius of the design:
-
-- Sessions only get **written** when their status *actually changed* → no pointless database churn, no spam.
-- A write is exactly what Realtime (§5.5) and the notification trigger (§5.7) are waiting for → the whole machine advances itself.
-- Status can never drift more than ~60 seconds from the truth, because the job runs every minute.
-
-This is why scheduled event-day behavior needs no organizer at the controls for program state: statuses and finished-bookmark cleanup write themselves, while open clients update through Realtime. Operators use the protected admin composer or deliberate manual status confirmation for attendee alerts; direct SQL remains for directory/quick-link maintenance and source-controlled schedule replacements.
+Waiting sessions past their planned start say “Awaiting admin start.” Live countdowns are labeled as scheduled estimates and say “Past scheduled end” during an overrun. Unfinished sessions remain visible after the event’s scheduled end. Bookmarks and seat claims remain eligible until the session is manually marked Finished; scheduled overlap warnings remain informational.
 
 ---
 
@@ -680,7 +645,7 @@ This is why scheduled event-day behavior needs no organizer at the controls for 
 ## 10. "How Do I…?" Cheat-Sheet
 
 **…change the schedule?**
-Use the source-controlled finalized-program migration for a complete schedule replacement. The current event has 13 main-program rows plus three parallel workshop rows; statuses, notifications, and pushes adjust automatically. Use the admin session editor for event-day title, room, and time corrections plus status overrides; its date-time fields are always Asia/Manila (PHT). Only unpublished, not-started drafts may be hard-deleted, after confirmation.
+The reviewed South Summity program has 15 published sessions. Use the admin session editor for event-day title, room, and time corrections; its date-time fields are always Asia/Manila (PHT). These edits preserve status. Use Start and End for live session state, with optional notifications at confirmation. Only unpublished, not-started drafts may be hard-deleted, after confirmation. Historical import migrations are not replayed.
 
 **…open seats in a full workshop?**
 Open the session in the admin session editor and lower **Registered off-app**. That number is the organiser export's registration count, and the gap between it and **Capacity** is what attendees can take in the app — drop Track A from 33 to 30 and three attendees can each claim a seat, at which point it reads `33/33 · Full` again. **Close seats** presents the session as Full even with seats free, and refuses new claims without touching the seats people already hold. Leave **Capacity** blank for any session that has no seat limit; that is every non-workshop row and shows attendees nothing at all. Capacity can never be set below the seats attendees are already sitting in — the database refuses and the editor says by how much.
@@ -714,4 +679,4 @@ The existing Vercel `sync` project hosts the app against Supabase Cloud. Follow 
 
 Set the server-only `MAINTENANCE_MODE=true` in the deployment environment and deploy a revision containing the gate. Only exact `true` enables it; local examples default to `false`. Matched GET/HEAD requests return direct HTTP 503 with no-cache headers before Auth runs; other methods return plain-text 503. `/maintenance` remains a normal 200 page, and required static/font assets stay accessible. Standalone and normal pages use neutral Sync copy with the light event palette.
 
-This website gate is independent of the production database freeze. The controlled guard-only unfreeze is now committed and verified, so Google login and authorized client writes can be tested through `http://localhost:3000/`; both jobs remain paused and public production routes still return maintenance. Use a fresh landing URL instead of an old error-fragment URL. Maintenance/archive operator tooling remains in the main `sync` checkout; this event branch contains bounded import, verification, and one-use reopening tools. No tenant code or migrations are imported into `org-event`. See `docs/event-release.md` and `docs/event-reopening.md` for actual status and remaining client/job/launch acceptance. Do not repeat the completed cleanup, import, or guard reversal.
+This website gate is independent of the production database freeze. The controlled guard-only unfreeze is now committed and verified, so Google login and authorized client writes can be tested through `http://localhost:3000/`; both existing jobs are now active and public production routes are open for the approved unannounced testing period. Use a fresh landing URL instead of an old error-fragment URL. Maintenance/archive operator tooling remains in the main `sync` checkout; this event branch contains bounded import, verification, and one-use reopening tools. No tenant code or migrations are imported into `org-event`. See `docs/event-release.md` and `docs/event-reopening.md` for actual status and remaining client/job/launch acceptance. Do not repeat the completed cleanup, import, or guard reversal.

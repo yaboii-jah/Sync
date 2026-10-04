@@ -28,7 +28,7 @@ export function SessionCard({
   onToggleBookmark,
   onOpen,
 }: SessionCardProps) {
-  const status = effectiveSessionStatus(session, now);
+  const status = effectiveSessionStatus(session);
   const startedAt = new Date(session.start_time).getTime();
   const endsAt = new Date(session.end_time).getTime();
   const duration = formatDurationMinutes((endsAt - startedAt) / 60_000);
@@ -54,14 +54,18 @@ export function SessionCard({
    * about the start the attendee was promised.
    */
   const operatorEnd =
-    session.status_override === "finished" ? session.actual_ended_at : null;
+    finished ? session.actual_ended_at : null;
   const operatorStart =
-    session.status_override === "ongoing" ? session.actual_started_at : null;
-  const relative = relativeSessionLabel(
-    operatorEnd ?? operatorStart ?? session.start_time,
-    operatorEnd ? "end" : "start",
-    now,
-  );
+    ongoing ? session.actual_started_at : null;
+  const relative = finished && !operatorEnd
+    ? "Finished"
+    : ongoing && !operatorStart
+      ? "In progress"
+      : relativeSessionLabel(
+          operatorEnd ?? operatorStart ?? session.start_time,
+          operatorEnd ? "end" : operatorStart ? "start" : "scheduled",
+          now,
+        );
 
   return (
     <Card
@@ -132,7 +136,7 @@ export function SessionCard({
         {ongoing ? (
           <ProgressBar
             value={elapsedPct}
-            aria-label="Session progress"
+            aria-label="Progress through scheduled time"
             className="mt-3"
           >
             <ProgressBar.Track className="bg-separator h-1 rounded-full">

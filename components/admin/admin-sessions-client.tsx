@@ -17,7 +17,6 @@ import {
   Pencil,
   Plus,
   Radio,
-  RotateCcw,
   Square,
   Trash2,
 } from "lucide-react";
@@ -32,12 +31,11 @@ import { formatTimeRange } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/components/toast/toast-provider";
 
-type SessionAction = "start" | "end" | "resume_auto";
+type SessionAction = "start" | "end";
 
 const ACTION_LABELS: Record<SessionAction, string> = {
   start: "Start session?",
   end: "End session?",
-  resume_auto: "Resume automatic status?",
 };
 
 export function AdminSessionsClient({
@@ -124,8 +122,7 @@ export function AdminSessionsClient({
         const result = await changeSessionStatus({
           sessionId: selection.session.id,
           action: selection.action,
-          sendNotification:
-            selection.action === "resume_auto" ? false : sendNotification,
+          sendNotification,
           requestId: selection.requestId,
         });
         if (result.error) {
@@ -156,7 +153,7 @@ export function AdminSessionsClient({
         {sessions.map((session) => (
           <Card
             key={session.id}
-            variant={session.status_override ? "secondary" : "default"}
+            variant={session.status === "ongoing" ? "secondary" : "default"}
           >
             <Card.Content className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
@@ -169,11 +166,6 @@ export function AdminSessionsClient({
                   <Typography type="body-xs" color="muted">
                     {formatTimeRange(session.start_time, session.end_time)}
                   </Typography>
-                  {session.status_override ? (
-                    <Chip size="sm" variant="tertiary">
-                      Manual
-                    </Chip>
-                  ) : null}
                   {session.published ? null : (
                     <Chip size="sm" variant="soft">
                       Draft
@@ -225,7 +217,11 @@ export function AdminSessionsClient({
                   </Button>
                 ) : null}
                 {session.status === "not_started" ? (
-                  <Button size="sm" onPress={() => open(session, "start")}>
+                  <Button
+                    size="sm"
+                    isDisabled={pending}
+                    onPress={() => open(session, "start")}
+                  >
                     <Radio className="size-4" aria-hidden />
                     Start
                   </Button>
@@ -234,20 +230,11 @@ export function AdminSessionsClient({
                   <Button
                     size="sm"
                     variant="outline"
+                    isDisabled={pending}
                     onPress={() => open(session, "end")}
                   >
                     <Square className="size-4" aria-hidden />
                     End
-                  </Button>
-                ) : null}
-                {session.status_override ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onPress={() => open(session, "resume_auto")}
-                  >
-                    <RotateCcw className="size-4" aria-hidden />
-                    Resume auto
                   </Button>
                 ) : null}
               </div>
@@ -311,7 +298,9 @@ export function AdminSessionsClient({
           }}
         >
           <AlertDialog.Container size="sm">
-            <AlertDialog.Dialog>
+            <AlertDialog.Dialog
+              aria-label={selection ? ACTION_LABELS[selection.action] : "Session status"}
+            >
               <AlertDialog.Header>
                 <AlertDialog.Heading>
                   {selection ? ACTION_LABELS[selection.action] : ""}
@@ -324,12 +313,12 @@ export function AdminSessionsClient({
                 </Typography>
 
                 <Typography type="body-sm" color="muted">
-                  {selection?.action === "resume_auto"
-                    ? "The effective status will immediately return to the published schedule."
-                    : "This status stays active until another manual action or Resume Auto."}
+                  {selection?.action === "start"
+                    ? "The session will stay Ongoing until an admin ends it. Scheduled times do not change its status."
+                    : "The session will be marked Finished. This will not start another session."}
                 </Typography>
 
-                {selection && selection.action !== "resume_auto" ? (
+                {selection ? (
                   <Checkbox
                     isSelected={sendNotification}
                     isDisabled={pending}

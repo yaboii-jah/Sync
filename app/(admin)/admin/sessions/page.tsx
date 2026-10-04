@@ -20,9 +20,9 @@ export default async function AdminSessionsPage() {
         Program flow
       </Typography.Heading>
       <Typography type="body-sm" color="muted" className="mt-2 max-w-2xl">
-        Create, edit and publish the schedule here. Manual Start or End remains
-        authoritative until Resume Auto; a draft is hidden from attendees and
-        the scheduled job leaves it alone.
+        Create, edit and publish the schedule here. Start and end each session
+        manually; scheduled times do not change its status. Drafts are hidden
+        from attendees.
       </Typography>
       <AdminSessionsClient sessions={sessions} eventId={event?.id ?? null} />
     </div>

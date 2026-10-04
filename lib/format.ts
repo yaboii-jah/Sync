@@ -95,37 +95,31 @@ export function formatTimeRange(startIso: string, endIso: string): string {
   return `${TIME_FORMAT.format(new Date(startIso))} – ${TIME_FORMAT.format(new Date(endIso))}`;
 }
 
-export function displayStatus(
-  startIso: string,
-  endIso: string,
-  now: number = Date.now(),
-): DisplayStatus {
-  const start = new Date(startIso).getTime();
-  const end = new Date(endIso).getTime();
-
-  if (now < start) return "not_started";
-  if (now >= end) return "finished";
-  return "ongoing";
-}
-
+/** Stored admin-controlled state is authoritative, regardless of schedule time. */
 export function effectiveSessionStatus(
-  session: {
-    status: string;
-    status_override: string | null;
-    start_time: string;
-    end_time: string;
-  },
-  now: number = Date.now(),
+  session: { status: string },
 ): DisplayStatus {
   if (
-    session.status_override &&
-    (session.status === "not_started" ||
-      session.status === "ongoing" ||
-      session.status === "finished")
+    session.status === "not_started" ||
+    session.status === "ongoing" ||
+    session.status === "finished"
   ) {
     return session.status;
   }
-  return displayStatus(session.start_time, session.end_time, now);
+  return "not_started";
+}
+
+/** Informational countdown; it never implies an automatic session transition. */
+export function scheduledSessionRemaining(endIso: string, now: number): string {
+  const msRemaining = new Date(endIso).getTime() - now;
+  if (!Number.isFinite(msRemaining)) return "In progress";
+  if (msRemaining <= 0) return "Past scheduled end";
+  const total = Math.floor(msRemaining / 1000);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours > 0) return `${hours} hr ${minutes} min until scheduled end`;
+  return `${minutes}:${String(seconds).padStart(2, "0")} until scheduled end`;
 }
 
 /**
@@ -163,10 +157,10 @@ export function formatDurationMinutes(minutes: number): string {
 }
 
 /**
- * Which milestone a relative clause is about. The card reads an operator's
- * `actual_ended_at` as an end and everything else as a start.
+ * Actual action timestamps describe a start/end. A planned start remains
+ * scheduled, including when it passes before an administrator acts.
  */
-export type SessionTimeAnchor = "start" | "end";
+export type SessionTimeAnchor = "start" | "end" | "scheduled";
 
 /** Single-unit magnitude for a relative clause: `2 min`, `5 hr`, `3 d`. */
 function relativeMagnitude(absMinutes: number): string {
@@ -194,6 +188,12 @@ export function relativeSessionLabel(
 
   const diffMs = target - now;
   const absMinutes = Math.abs(Math.round(diffMs / 60000));
+
+  if (anchor === "scheduled") {
+    if (diffMs <= 0) return "Awaiting admin start";
+    if (absMinutes < 1) return "Scheduled now";
+    return `Scheduled in ${relativeMagnitude(absMinutes)}`;
+  }
 
   if (diffMs > 0) {
     if (absMinutes < 1) return anchor === "end" ? "ending now" : "starting now";

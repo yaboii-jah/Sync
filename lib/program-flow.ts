@@ -85,22 +85,20 @@ export function groupSessionsByStartTime(
 
 export function getLiveSessions(
   sessions: SessionWithSpeakers[],
-  now: number,
 ): SessionWithSpeakers[] {
   return sortSessions(
     sessions.filter(
-      (session) => effectiveSessionStatus(session, now) === "ongoing",
+      (session) => effectiveSessionStatus(session) === "ongoing",
     ),
   );
 }
 
 export function getNextSessions(
   sessions: SessionWithSpeakers[],
-  now: number,
 ): SessionWithSpeakers[] {
   const upcoming = sortSessions(
     sessions.filter(
-      (session) => effectiveSessionStatus(session, now) === "not_started",
+      (session) => effectiveSessionStatus(session) === "not_started",
     ),
   );
   const first = upcoming[0];
@@ -116,13 +114,12 @@ export function getNextSessions(
 export function getConflictingSessionIds(
   sessions: SessionWithSpeakers[],
   bookmarkedIds: ReadonlySet<string>,
-  now: number,
 ): Set<string> {
   const saved = sortSessions(
     sessions.filter(
       (session) =>
         bookmarkedIds.has(session.id) &&
-        effectiveSessionStatus(session, now) !== "finished",
+        effectiveSessionStatus(session) !== "finished",
     ),
   );
   const conflicts = new Set<string>();

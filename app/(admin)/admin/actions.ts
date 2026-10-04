@@ -106,7 +106,7 @@ export async function changeUserAdminAccess(input: AdminAccessRequest): Promise<
 
 export async function changeSessionStatus(input: {
   sessionId: string;
-  action: "start" | "end" | "resume_auto";
+  action: "start" | "end";
   sendNotification: boolean;
   requestId: string;
 }): Promise<AdminActionResult> {
@@ -114,7 +114,7 @@ export async function changeSessionStatus(input: {
   if (!UUID_PATTERN.test(input.sessionId) || !UUID_PATTERN.test(input.requestId)) {
     return { error: "Invalid session request." };
   }
-  if (!(["start", "end", "resume_auto"] as const).includes(input.action)) {
+  if (!(["start", "end"] as const).includes(input.action)) {
     return { error: "Invalid session action." };
   }
 

@@ -80,25 +80,22 @@ select is(
   'anonymous clients hold no grant at all on session_seat_claims'
 );
 
--- The seat functions must be security definer with a pinned search path, and
--- must not be callable anonymously.
+-- Privileged workers have pinned search paths and no anonymous execution.
+-- Claiming uses an invoker API with its worker in the non-exposed private schema.
 
 select is(
   (
     select count(*)::integer
       from pg_proc
       join pg_namespace on pg_namespace.oid = pg_proc.pronamespace
-     where pg_namespace.nspname = 'public'
-       and pg_proc.proname in (
-         'claim_session_seat',
-         'release_session_seat',
-         'admin_set_session_capacity'
-       )
+     where ((pg_namespace.nspname = 'public' and pg_proc.proname in (
+         'release_session_seat', 'admin_set_session_capacity'
+       )) or (pg_namespace.nspname = 'private' and pg_proc.proname = 'claim_session_seat'))
        and pg_proc.prosecdef
-       and pg_proc.proconfig @> array['search_path=']
+       and (pg_proc.proconfig @> array['search_path='] or pg_proc.proconfig @> array['search_path=""'])
   ),
   3,
-  'all three seat functions are security definer with a pinned search path'
+  'all three privileged seat workers have a pinned search path'
 );
 
 select ok(

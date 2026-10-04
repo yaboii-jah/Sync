@@ -10,6 +10,7 @@ import {
   formatManilaDate,
   formatManilaTime,
   formatTimeRange,
+  scheduledSessionRemaining,
 } from "@/lib/format";
 import { getLiveSessions, getNextSessions } from "@/lib/program-flow";
 import { getVenueMapLinks } from "@/lib/venue-map";
@@ -32,21 +33,6 @@ function HeroTheme({ theme }: { theme: string }) {
       {theme}
     </Card.Description>
   );
-}
-
-/**
- * Time left in a running session, live-activity style: a ticking `mm:ss` in the
- * final hour, coarser above that where seconds are noise rather than news.
- */
-function remainingLabel(msRemaining: number): string {
-  const total = Math.max(0, Math.floor(msRemaining / 1000));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const seconds = total % 60;
-
-  if (total === 0) return "Wrapping up";
-  if (hours > 0) return `${hours} hr ${minutes} min left`;
-  return `${minutes}:${String(seconds).padStart(2, "0")} left`;
 }
 
 function countdownParts(msRemaining: number) {
@@ -96,7 +82,7 @@ function HeroSessionItem({
         <>
           <ProgressBar
             value={elapsedPct}
-            aria-label={`${session.title} progress`}
+            aria-label={`${session.title} progress through scheduled time`}
             className="mt-1"
           >
             <ProgressBar.Track className="h-1.5 rounded-full bg-background/65">
@@ -111,13 +97,13 @@ function HeroSessionItem({
               className="text-foreground text-sm font-semibold tabular-nums"
               suppressHydrationWarning
             >
-              {remainingLabel(sessionEnd - now)}
+              {scheduledSessionRemaining(session.end_time, now)}
             </span>
             <span className={`text-xs ${heroMuted}`}>
-              ends {formatManilaTime(session.end_time)}
+              scheduled end {formatManilaTime(session.end_time)}
             </span>
           </div>
-          {session.status_override && session.actual_started_at ? (
+          {session.actual_started_at ? (
             <Typography type="body-xs" className={heroMuted}>
               Started live at{" "}
               {new Intl.DateTimeFormat("en-PH", {
@@ -156,9 +142,10 @@ export function HeroCard({
   const startsAt = new Date(event.starts_at).getTime();
   const endsAt = new Date(event.ends_at).getTime();
 
-  const current = getLiveSessions(sessions, now);
+  const current = getLiveSessions(sessions);
+  const next = getNextSessions(sessions);
 
-  if (current.length === 0 && now >= endsAt) {
+  if (current.length === 0 && next.length === 0 && now >= endsAt) {
     return (
       <Card className={heroSurface}>
         <Card.Header className="relative z-10">
@@ -206,8 +193,6 @@ export function HeroCard({
       </Card>
     );
   }
-
-  const next = getNextSessions(sessions, now);
 
   if (next.length > 0 && now >= startsAt) {
     return (

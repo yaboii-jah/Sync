@@ -78,8 +78,8 @@ export function HomeClient({
   const activeSession =
     sessions.find((session) => session.id === activeSessionId) ?? null;
 
-  const liveSessions = getLiveSessions(sessions, now);
-  const conflictIds = getConflictingSessionIds(sessions, bookmarks, now);
+  const liveSessions = getLiveSessions(sessions);
+  const conflictIds = getConflictingSessionIds(sessions, bookmarks);
 
   async function refetchProgramFlow() {
     const client = createClient();
@@ -191,7 +191,7 @@ export function HomeClient({
   const flowSessions = sessions.filter(
     (session) =>
       bookmarks.has(session.id) &&
-      effectiveSessionStatus(session, now) !== "finished",
+      effectiveSessionStatus(session) !== "finished",
   );
 
   function renderList(items: SessionWithSpeakers[], emptyForFlow: boolean) {
@@ -217,7 +217,7 @@ export function HomeClient({
       <ol className="flex flex-col gap-6">
         {groups.map((group, index) => {
           const live = group.sessions.some(
-            (session) => effectiveSessionStatus(session, now) === "ongoing",
+            (session) => effectiveSessionStatus(session) === "ongoing",
           );
           // D-1: the first group always states its date, and every later group
           // states it again when the Manila calendar day changes, so two groups

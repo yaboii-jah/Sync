@@ -2,6 +2,8 @@
 
 October 4 authorization: the owner approved deploying the latest event changes with website maintenance disabled for unannounced production testing and restoring both existing jobs. Normal public Google login is intended; testers sign in before Catherine or Jahmell can grant admin access. Marketing remains pending testing/revisions. The current operation is described in `event-release.md`; the completed one-use database operations below remain historical evidence and must not be repeated.
 
+October 4 execution: source `4eb67edc5b1ed8b1925557451dc4cca086777b63` is promoted as `dpl_H1TTmwqYESQBcoJ9xqJU1vPpRZAj` on both production domains. Website maintenance is disabled. Both unchanged minute-schedule jobs were activated at **00:36:24 UTC / 08:36:24 Asia/Manila**. Signed-out release checks, responsive landing/service worker and real Supabase-to-Google initiation pass. Real signed-in admin/attendee and physical-device acceptance remain pending testers; no session was fabricated. See `event-release.md` for the final observation and recovery record.
+
 The South Summity release is on the production domains with website maintenance enabled. The imported event, 15 published activities, five placeholders, five links, retained admins, and legacy security remain the baseline. Cleanup and import are complete and must not be repeated.
 
 ## Preparation unit
