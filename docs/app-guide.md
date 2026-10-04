@@ -37,7 +37,7 @@
 
 ## 1. What is Sync?
 
-**Sync** is a companion web app being rebranded for **AWS Student Community Day South Summity 2026**. The supplied event is October 7, 2026, 09:30–17:30 PHT at Biñan People’s Center Auditorium. Its one event, 15 published activities, five approved speaker/panel placeholders, and five links are committed and freshly verified in production; see `docs/event-import/production-import-review.md`. The rebranded branch has not been deployed; website maintenance, Auth/database guards, and paused jobs remain active pending separate rollout and reopening. Event data is managed separately from the app identity. Do not rerun the completed import or old-data cleanup.
+**Sync** is the companion web app for **AWS Student Community Day South Summity 2026**. The supplied event is October 7, 2026, 09:30–17:30 PHT at Biñan People’s Center Auditorium. Production has one event, 15 published activities, five confirmed people (three speakers and two panelists), the unconfirmed opening keynote, and six speaker/session links. Four supplied portraits are referenced by the roster; Trisha Pelagio’s photo is pending. The initial import and separate roster update are documented in `docs/event-import/production-import-review.md` and `docs/event-import/south-summity-speaker-roster.md`. The rebranded `org-event` branch is deployed to both production domains with verified maintenance retained; see `docs/event-release.md`. The database is unfrozen, while website maintenance and both paused jobs remain in place pending fresh-client acceptance and separate launch work. Event data is managed separately from the app identity. Do not rerun the completed import, roster update, or old-data cleanup.
 
 Attendees install Sync on their phone like a native app. During the event it answers four questions instantly:
 
@@ -68,7 +68,7 @@ Here is what a real attendee experiences, from start to finish:
 9. End of day                → "That's a wrap" card; Alerts retains the recipient's feed
 ```
 
-**Visually**, all routes use the fixed light South Summity system: white surfaces, dark text and primary actions, violet selections/focus, and accessible semantic status colors. The Home hero and four networking templates use restrained static grid/tile accents; the landing retains its responsive CSS poster and pauseable animation. See `design.md` for the shared reference.
+**Visually**, authenticated attendee/admin workspaces follow device appearance until a sun/moon button in the mobile header or desktop rail saves a light/dark choice on that browser. Light uses pale grounds and white panels; dark uses navy-charcoal grounds and opaque dark panels, with readable light text and violet selection/focus. Both have static grids, edge tiles, and four stationary corner washes. QR grounds stay white, and photo exports keep their artwork. Landing, maintenance, and anonymous public cards retain their light presentation. See `design.md` for the shared reference.
 
 **On desktop** (≥1024px), the bottom tab bar is replaced by a left sidebar ("rail"), and Home splits into two panes: the Happening Now card pins on the left while the schedule scrolls on the right.
 
@@ -231,7 +231,7 @@ The QR encodes the app-owned `/c/<public_token>` card URL, not a mutable externa
 
 ### 5.4 Home Dashboard — The "Happening Now" Machine
 
-**What you see (mobile):** your clean header and profile menu, the hero card, a segmented **All | My Flow** toggle, and stacked published-session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right.
+**What you see (mobile):** your clean header and profile menu, the hero card, a segmented **All | My Flow** toggle, and stacked published-session cards with time, title, room, status badge, and a bookmark icon. On desktop the hero pins on the left while the list scrolls on the right. The countdown hero links to the active event venue, and desktop adds a live companion map. Both map URLs and all venue labels come from `event.venue`; full names wrap. A missing or blank venue shows “Venue to be announced” in the countdown hero and omits map links and the desktop map. No previous-event address is used as a fallback.
 
 **The hero card's four brains** (`components/home/hero-card.tsx`). It re-renders every second with the device clock and picks a state:
 
@@ -424,11 +424,11 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 ### 5.10 Photo Booth — Three-Shot Story Strip
 
-**What you see:** open **Photo Booth** from More, choose one of the two event-frame buttons, take three photos with three-second countdowns, then download one event-framed vertical story strip. You can switch between front and rear cameras when the device makes both available, choose an existing image for any slot, and retake one slot without losing the other two. During review, changing the frame reuses the same photos and rebuilds the strip without another capture.
+**What you see:** open **Photo Booth** from More, take three photos with three-second countdowns, then download one vertical story strip in the supplied Sue event frame. You can switch between front and rear cameras when the device makes both available, choose an existing image for any slot, and retake one slot without losing the other two. There is one frame and no frame picker.
 
-**Under the hood:** the browser asks for camera permission only after the attendee chooses **Open camera**. Each source image stays in browser memory as a temporary object URL. Once all three slots are full, a canvas draws the selected static frame and three centre-cropped landscape photos into a high-quality 1080×1920 JPEG. Both generated white-grid frames retain the same three photo-slot coordinates and dark outlines, with blue/green or violet/pink edge accents, the supplied event logo, and the approved South Summity name. Neither frame includes an unconfirmed date or overlays on faces. Neither source images nor the finished JPEG are uploaded, stored in Supabase, or attached to an account. Camera tracks stop whenever review starts, the page is hidden, or the component unmounts.
+**Under the hood:** the browser asks for camera permission only after the attendee chooses **Open camera**. Each source image stays in browser memory as a temporary object URL. Once all three slots are full, a canvas draws three centre-cropped landscape photos beneath the optimized transparent Sue artwork into a high-quality 1080×1920 JPEG. Preview and export share the measured window coordinates, including a small bleed beneath soft edges. The navy frame, colored tiles, event logo, “South Summit 2026” title, BUILD GROW LEAD footer, and mascot placement come directly from the supplied complete artwork. The original file remains untouched. App light/dark appearance never recolors the frame or export. Neither source images nor the finished JPEG are uploaded, stored in Supabase, or attached to an account. Camera tracks stop whenever review starts, the page is hidden, or the component unmounts.
 
-**Files:** `app/(app)/more/photo-booth/page.tsx`, `components/photo-booth/photo-booth-client.tsx`, `scripts/generate-photo-booth-frame-2-overlays.mjs`, `public/assets/event-frame-source.png`, `public/assets/event-frame-source-2.png`, `public/assets/event-frame-2-background.png`, `public/assets/event-frame-2-mascot-fox.png`, `public/assets/event-frame-2-mascot-crystal.png`, `public/assets/event-frame-2-top-overlay.png`, `public/assets/event-frame-2-left-overlay.png`, `public/assets/event-frame-2-title-overlay.png`, `public/assets/event-frame-2-date-overlay.png`, `public/assets/event-frame-1-date-overlay.png`.
+**Files:** `app/(app)/more/photo-booth/page.tsx`, `components/photo-booth/photo-booth-client.tsx`, `lib/photo-booth/frame.ts`, `scripts/generate-event-frames.mjs`, `public/new-assets/SS2026 Photobooth Frame.png`, `public/assets/south-summit-sue-frame.png`. Legacy frame assets remain inactive.
 
 **Access:** the Photo Booth is available to authenticated attendees from More. Camera frames, selected images, and the finished JPEG remain local to the browser and are never uploaded or persisted.
 
@@ -442,7 +442,7 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 
 - The route passes every read-only directory record with the `speaker` role to the lineup. New speaker records can appear before their optional portrait, organization, bio, LinkedIn URL, or session links are supplied.
 - The bio modal is the same visual language as the session modal: a focused, tonal, blurred-backdrop overlay using gold only for primary external actions.
-- Quick links come from the `quick_links` table. Root-relative destinations stay inside the PWA through `next/link`; external destinations open separately.
+- Photo Booth is a built-in quick link and stays visible even when the `quick_links` table returns no configured links. Configured links follow it, with duplicate booth destinations omitted. Cards stack on phones and use two columns from 640px. Root-relative destinations stay inside the PWA through `next/link`; external destinations open separately.
 
 **Files:** `app/(app)/more/page.tsx`, `components/more/directory-client.tsx`, `lib/supabase/queries/directory.ts`, `…/quick-links.ts`.
 
@@ -469,6 +469,12 @@ The snapshot is immutable: users who subscribe or are selected after the send do
 **Files:** `app/(admin)/admin/attendees/page.tsx`, `components/admin/attendee-directory.tsx`, `lib/raffle.ts`, `lib/supabase/queries/admin.ts`, `supabase/migrations/20260909125851_raffle_attendee_export.sql`.
 
 ---
+
+### 5.14 Managing Admin Access
+
+An existing admin opens **Control Room → Attendees**, searches for a user who has already signed in with Google, and opens their details. **Make admin** grants the existing full operations permissions after confirmation; **Remove admin access** returns an unprotected admin to attendee access while keeping their account and data. Catherine Notado and Jahmell Dorias are protected by account UUID, and nobody can demote themselves or remove the last admin.
+
+Changes are authorized by the live database allowlist and recorded in Mutation audit as `admin.grant` / `admin.revoke`. A promoted user can refresh the app to expose admin navigation; a demoted user fails subsequent admin requests even with the same Google session. Invitations and account deletion are separate operations. Only the two protected admins currently remain, so another authorized person must sign in before they can be selected.
 
 ## 6. The Database in Plain English
 
@@ -708,4 +714,4 @@ The existing Vercel `sync` project hosts the app against Supabase Cloud. Follow 
 
 Set the server-only `MAINTENANCE_MODE=true` in the deployment environment and deploy a revision containing the gate. Only exact `true` enables it; local examples default to `false`. Matched GET/HEAD requests return direct HTTP 503 with no-cache headers before Auth runs; other methods return plain-text 503. `/maintenance` remains a normal 200 page, and required static/font assets stay accessible. Standalone and normal pages use neutral Sync copy with the light event palette.
 
-This website gate is independent of the production database freeze. Disabling it cannot unblock frozen Auth/profile writes. Keep database guards and cron pauses until controlled reopening. Maintenance/archive operator tooling remains in the main `sync` checkout; the event branch contains its own bounded import/verification tools. No tenant code or migrations are imported into `org-event`. The approved event release commits/publishes this branch and deploys with maintenance retained; see `docs/event-release.md` for actual execution status.
+This website gate is independent of the production database freeze. The controlled guard-only unfreeze is now committed and verified, so Google login and authorized client writes can be tested through `http://localhost:3000/`; both jobs remain paused and public production routes still return maintenance. Use a fresh landing URL instead of an old error-fragment URL. Maintenance/archive operator tooling remains in the main `sync` checkout; this event branch contains bounded import, verification, and one-use reopening tools. No tenant code or migrations are imported into `org-event`. See `docs/event-release.md` and `docs/event-reopening.md` for actual status and remaining client/job/launch acceptance. Do not repeat the completed cleanup, import, or guard reversal.

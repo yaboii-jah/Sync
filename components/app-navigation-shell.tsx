@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { AlertsCountProvider } from "@/components/alerts-count-provider";
 import { BottomTabs } from "@/components/bottom-tabs";
 import { SideRail } from "@/components/side-rail";
+import { AppAppearanceBoundary } from "@/components/app-appearance-boundary";
+import { AppCornerWashes } from "@/components/app-corner-washes";
 import type { Profile } from "@/lib/supabase/profile";
 
 interface AppNavigationShellProps {
@@ -20,14 +22,17 @@ export function AppNavigationShell({
   profile,
 }: AppNavigationShellProps) {
   return (
-    <div className="app-field min-h-dvh min-w-0 overflow-x-clip">
-      <AlertsCountProvider>
-        <SideRail isAdmin={isAdmin} profile={profile} />
-        <div className="relative flex min-h-dvh min-w-0 flex-col pb-24 lg:ml-[232px] lg:pb-0">
-          {children}
-        </div>
-        <BottomTabs />
-      </AlertsCountProvider>
-    </div>
+    <AppAppearanceBoundary>
+      <div className="app-field app-field--event min-h-dvh min-w-0 overflow-x-clip">
+        <AppCornerWashes />
+        <AlertsCountProvider>
+          <SideRail isAdmin={isAdmin} profile={profile} />
+          <div className="relative flex min-h-dvh min-w-0 flex-col pb-24 lg:ml-[232px] lg:pb-0">
+            {children}
+          </div>
+          <BottomTabs />
+        </AlertsCountProvider>
+      </div>
+    </AppAppearanceBoundary>
   );
 }

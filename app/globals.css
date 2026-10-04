@@ -1,7 +1,7 @@
 /* Hallmark pre-emit critique: P5 H4 E4 S5 R5 V4 */
 @import "tailwindcss";
 
-/* Fixed light event theme. See design.md for role and contrast decisions. */
+/* Public light tokens; authenticated dark overrides stay scoped below. */
 :root {
   color-scheme: light;
   --white: #ffffff;
@@ -72,6 +72,165 @@ html, body { overflow-x: clip; }
 .card:not(.bg-transparent) { box-shadow: var(--surface-shadow); }
 .identity-font { font-family: var(--font-identity), sans-serif; letter-spacing: 0.08em; }
 .app-field { position: relative; isolation: isolate; background: var(--background); }
+/* App-only event canvas: quiet grid, static tiles, opaque content surfaces.
+ * Hallmark component critique: preserve hierarchy, contrast, and navigation.
+ */
+.app-field--event {
+  --app-canvas: #f0f3fa;
+  --app-cell: 48px;
+  --app-rail: 0px;
+  --app-wash-opacity: 0.1;
+  --app-grid: color-mix(in srgb, var(--border) 45%, var(--app-canvas));
+  --app-blue: color-mix(in srgb, var(--brand-blue) 16%, var(--app-canvas));
+  --app-violet: color-mix(in srgb, var(--brand-violet) 14%, var(--app-canvas));
+  --app-green: color-mix(in srgb, var(--brand-green) 12%, var(--app-canvas));
+  --app-right: calc(100% - var(--app-cell));
+  background: var(--app-canvas);
+}
+.app-corner-washes {
+  position: fixed;
+  inset: 0 0 0 var(--app-rail);
+  z-index: -2;
+  pointer-events: none;
+  user-select: none;
+  background:
+    radial-gradient(ellipse 240px 200px at top left, var(--brand-blue), transparent),
+    radial-gradient(ellipse 240px 200px at top right, var(--brand-pink), transparent),
+    radial-gradient(ellipse 240px 200px at bottom left, var(--brand-violet), transparent),
+    radial-gradient(ellipse 240px 200px at bottom right, var(--brand-green), transparent);
+  opacity: var(--app-wash-opacity);
+}
+@supports (background-position-x: round(down, 100px, 48px)) {
+  .app-field--event { --app-right: round(down, calc(100% - var(--app-cell)), var(--app-cell)); }
+}
+.app-field--event::before,
+.app-field--event::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 var(--app-rail);
+  z-index: -1;
+  pointer-events: none;
+}
+.app-field--event::before {
+  background-image:
+    linear-gradient(to right, var(--app-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--app-grid) 1px, transparent 1px);
+  background-size: var(--app-cell) var(--app-cell);
+}
+.app-field--event::after {
+  background-image:
+    linear-gradient(var(--app-blue), var(--app-blue)),
+    linear-gradient(var(--app-violet), var(--app-violet)),
+    linear-gradient(var(--app-green), var(--app-green));
+  background-size: var(--app-cell) var(--app-cell);
+  background-repeat: no-repeat;
+  background-position:
+    var(--app-right) calc(var(--app-cell) * 2),
+    var(--app-cell) calc(var(--app-cell) * 5),
+    var(--app-right) calc(var(--app-cell) * 11);
+}
+@media (min-width: 768px) {
+  .app-field--event { --app-cell: 64px; }
+  .app-corner-washes {
+    background:
+      radial-gradient(ellipse 480px 360px at top left, var(--brand-blue), transparent),
+      radial-gradient(ellipse 480px 360px at top right, var(--brand-pink), transparent),
+      radial-gradient(ellipse 480px 360px at bottom left, var(--brand-violet), transparent),
+      radial-gradient(ellipse 480px 360px at bottom right, var(--brand-green), transparent);
+  }
+  .app-field--event::after {
+    background-image:
+      linear-gradient(var(--app-blue), var(--app-blue)),
+      linear-gradient(var(--app-violet), var(--app-violet)),
+      linear-gradient(var(--app-green), var(--app-green)),
+      linear-gradient(var(--app-violet), var(--app-violet)),
+      linear-gradient(var(--app-blue), var(--app-blue)),
+      linear-gradient(var(--app-green), var(--app-green));
+    background-position:
+      var(--app-right) var(--app-cell),
+      calc(var(--app-right) - var(--app-cell)) calc(var(--app-cell) * 2),
+      var(--app-cell) calc(var(--app-cell) * 6),
+      var(--app-right) calc(var(--app-cell) * 10),
+      var(--app-cell) calc(var(--app-cell) * 15),
+      calc(var(--app-cell) * 2) calc(var(--app-cell) * 16);
+  }
+}
+@media (min-width: 1024px) {
+  .app-field--event { --app-rail: 232px; }
+  .app-field--admin { --app-rail: 256px; }
+}
+
+/* Shared app roles also cover portaled overlays and the root toast region.
+ * :has keeps those global hosts light whenever no authenticated shell exists.
+ */
+html[data-app-appearance="dark"] .app-field--event,
+html[data-app-appearance="dark"]:has(.app-field--event) .app-theme-surface {
+  color-scheme: dark;
+  --background: #10151f;
+  --app-canvas: #10151f;
+  --app-wash-opacity: 0.18;
+  --foreground: #f3f5fa;
+  --surface: #1b2230;
+  --surface-foreground: var(--foreground);
+  --surface-secondary: #232b3c;
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: #202c3c;
+  --surface-tertiary-foreground: var(--foreground);
+  --overlay: #1b2230;
+  --overlay-foreground: var(--foreground);
+  --muted: #b9c2d1;
+  --default: #2b3548;
+  --default-foreground: var(--foreground);
+  --segment: var(--surface-secondary);
+  --segment-foreground: var(--foreground);
+  --action: #f3f5fa;
+  --action-foreground: #131923;
+  --accent: #c49aff;
+  --accent-foreground: #221134;
+  --accent-soft: #322743;
+  --focus: #d3afff;
+  --link: var(--accent);
+  --field-background: #1b2230;
+  --field-foreground: var(--foreground);
+  --field-placeholder: #a4afc1;
+  --field-border: #7d8aa0;
+  --border: #364158;
+  --separator: var(--border);
+  --success: #70dda7;
+  --success-foreground: #0c281c;
+  --success-soft: #17382b;
+  --warning: #ffc573;
+  --warning-foreground: #33210a;
+  --warning-soft: #3b2c18;
+  --danger: #ff91a7;
+  --danger-foreground: #34151d;
+  --danger-soft: #3d222d;
+  --backdrop: rgb(0 0 0 / 65%);
+  --surface-shadow: 0 2px 8px rgb(0 0 0 / 18%);
+  --overlay-shadow: 0 0 0 1px var(--border), 0 18px 50px rgb(0 0 0 / 40%);
+  --network-shadow: 0 8px 28px rgb(0 0 0 / 22%);
+  --card-blue-surface: #1b2a3d;
+  --card-violet-surface: #282039;
+  --bg-base: var(--background);
+  --text-primary: var(--foreground);
+  --text-muted: var(--muted);
+  --state-error: var(--danger);
+  --pastel-yellow: var(--action);
+  --charcoal: var(--action-foreground);
+  color: var(--foreground);
+}
+.appearance-toggle { padding: 0; }
+.appearance-sun { display: none; }
+html[data-app-appearance-changing] :is(.app-field--event, .app-theme-surface),
+html[data-app-appearance-changing] :is(.app-field--event, .app-theme-surface) * {
+  transition: none !important;
+}
+html[data-app-appearance="dark"] .appearance-sun { display: block; }
+html[data-app-appearance="dark"] .appearance-moon { display: none; }
+@media (max-width: 767px) {
+  .app-corner-washes { opacity: calc(var(--app-wash-opacity) * 0.75); }
+}
+
 .event-hero {
   position: relative;
   isolation: isolate;

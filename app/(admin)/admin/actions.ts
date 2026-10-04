@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseManilaDateTimeInput } from "@/lib/format";
+import { isAdminAccessRequest, type AdminAccessRequest, type AdminUserAccess } from "@/lib/admin-access";
 import {
   createAdminNotification,
   createAdminSession,
@@ -12,6 +13,7 @@ import {
   setAdminSessionCapacity,
   setAdminSessionPublished,
   setAdminSessionStatus,
+  setAdminUserAccess,
   updateAdminSession,
   type AdminAttendee,
 } from "@/lib/supabase/queries/admin";
@@ -83,6 +85,23 @@ export async function searchAttendeesAction(query: string): Promise<AdminAttende
   await requireAdmin();
   const supabase = await createClient();
   return searchAdminAttendees(supabase, query.trim(), 50, 0);
+}
+
+export async function changeUserAdminAccess(input: AdminAccessRequest): Promise<{
+  access?: AdminUserAccess;
+  error?: string;
+}> {
+  await requireAdmin();
+  if (!isAdminAccessRequest(input)) return { error: "Invalid admin access request." };
+  try {
+    const supabase = await createClient();
+    const access = await setAdminUserAccess(supabase, input);
+    // Membership affects protected routes, navigation, and raffle eligibility.
+    revalidatePath("/", "layout");
+    return { access };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Could not update admin access." };
+  }
 }
 
 export async function changeSessionStatus(input: {

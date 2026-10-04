@@ -33,4 +33,6 @@ Private candidate/validation SQL, reviews, attempts, acknowledgments, and eviden
 - Retained counts: five Auth users, ten identities, five profiles, five admin memberships. All unrelated hashes/counts, schema/security, 22 guards, two paused/drained jobs, Storage state, and three exact sequence states matched the preflight.
 - Both production domains still returned no-store HTTP 503 after execution. No deployment, unfreeze, job resumption, migration/seed replay, Git commit/push, or fresh-client Auth acceptance occurred. Login remains blocked by the independent freeze.
 
-The execution-attempt marker remains in place and refuses any repeat. Subsequent speaker replacements require a separately scoped operator update; do not rerun this insert or the completed old-data cleanup. The next unit is event-branch rollout preparation and deployment with maintenance retained, followed by separately controlled reopening and fresh-client testing.
+The execution-attempt marker remains in place and refuses any repeat. Subsequent speaker replacements require a separately scoped operator update; do not rerun this insert or the completed old-data cleanup. At the time of the original import, event-branch rollout and reopening were the next separate units.
+
+The separately scoped confirmed-speaker update was completed on 2026-10-03. See [South Summity speaker roster](south-summity-speaker-roster.md) for the confirmed lineup, checksummed operator execution, and current live state. The import candidate and its one-use marker remain unchanged.

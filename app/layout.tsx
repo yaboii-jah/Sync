@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import localFont from "next/font/local";
 import { ServiceWorkerRegistration } from "@/components/push/service-worker-registration";
 import { Providers } from "./providers";
+import { APPEARANCE_INITIALIZER } from "@/lib/appearance";
 import "./globals.css";
 
 /* Event typefaces are mapped to the shared UI tokens in globals.css. */
@@ -62,8 +63,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geist.variable} ${perandory.variable} h-full antialiased`}
     >
+      <head>
+        <script id="app-appearance-init" dangerouslySetInnerHTML={{ __html: APPEARANCE_INITIALIZER }} />
+      </head>
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <Providers>{children}</Providers>
         <ServiceWorkerRegistration />

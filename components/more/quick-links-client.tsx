@@ -11,6 +11,16 @@ const ICONS: Record<string, LucideIcon> = {
   "message-square": MessageSquare,
 };
 
+const PHOTO_BOOTH_LINK: QuickLink = {
+  id: "app-photo-booth",
+  label: "Photo Booth",
+  url: "/more/photo-booth",
+  icon: "camera",
+};
+
+const linkClassName =
+  "block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+
 function isInternalQuickLink(url: string) {
   return url.startsWith("/") && !url.startsWith("//");
 }
@@ -20,9 +30,14 @@ export function QuickLinksClient({
 }: {
   quickLinks: QuickLink[];
 }) {
+  const links = [
+    PHOTO_BOOTH_LINK,
+    ...quickLinks.filter((link) => link.url !== PHOTO_BOOTH_LINK.url),
+  ];
+
   return (
-    <div className="mt-3 grid grid-cols-2 gap-3">
-      {quickLinks.map((link) => {
+    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {links.map((link) => {
         const Icon = (link.icon && ICONS[link.icon]) || Globe;
         const content = (
           <Card className="hover:bg-default h-full transition-colors">
@@ -42,7 +57,7 @@ export function QuickLinksClient({
 
         if (isInternalQuickLink(link.url)) {
           return (
-            <Link key={link.id} href={link.url} className="block rounded-xl">
+            <Link key={link.id} href={link.url} className={linkClassName}>
               {content}
             </Link>
           );
@@ -54,7 +69,7 @@ export function QuickLinksClient({
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-xl"
+            className={linkClassName}
           >
             {content}
           </a>

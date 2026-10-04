@@ -25,7 +25,7 @@
 ## Styling
 
 - Use CSS custom property tokens for color and spacing — no hardcoded hex values except functional canvas/SVG media APIs that require an explicit color string
-- Follow the fixed light South Summity theme in `design.md` and `ui-context.md`; do not add a dark, system, or per-user appearance mode. Dark primary-action tokens and violet selection/focus tokens are separate. Bright logo colors are decorative; functional status colors must retain accessible contrast.
+- Follow the South Summity light/dark app themes in `design.md` and `ui-context.md`. Appearance follows the device until explicitly toggled, with browser-local persistence only. Keep theme tokens scoped to authenticated workspaces and their overlays; landing, maintenance, and anonymous public cards stay light. Primary-action and violet selection/focus tokens are separate. Bright logo colors are decorative; functional status colors must retain accessible contrast.
 - Use local primitives from `components/ui/`; use React Aria Components directly only when the local primitive does not cover an accessible interaction
 - Status badges (Not Started / Ongoing / Finished) use a consistent color mapping wherever they appear — schedule, notifications, session detail
 - Browser media work must invalidate stale async requests and stop tracks on hidden-page and unmount paths; never leave camera ownership to a route transition

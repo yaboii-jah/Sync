@@ -51,8 +51,8 @@ export default async function AdminAttendeesPage({
         <RaffleExport />
       </div>
       <Typography type="body-sm" color="muted" className="mt-2 max-w-2xl">
-        Read-only directory. Search identity and notification reachability. This
-        workspace cannot edit attendee accounts.
+        Search attendees, inspect notification reachability, and manage admin
+        access from a user’s details.
       </Typography>
 
       <MetricCards metrics={metrics} className="mt-6" />

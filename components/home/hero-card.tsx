@@ -12,6 +12,7 @@ import {
   formatTimeRange,
 } from "@/lib/format";
 import { getLiveSessions, getNextSessions } from "@/lib/program-flow";
+import { getVenueMapLinks } from "@/lib/venue-map";
 
 interface HeroCardProps {
   event: EventInfo;
@@ -25,17 +26,6 @@ const heroSurface =
   "event-hero squircle relative overflow-hidden rounded-[28px] p-5 sm:p-6";
 const heroTitle = "text-foreground text-2xl font-semibold tracking-tight";
 const heroMuted = "text-muted";
-const fallbackVenue = "Asia Pacific College";
-
-/**
- * Google Maps search for the event venue. The name is percent-encoded, so a
- * venue containing `&` or `#` stays inside the `query` parameter instead of
- * truncating the URL.
- */
-function venueMapUrl(venue: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`;
-}
-
 function HeroTheme({ theme }: { theme: string }) {
   return (
       <Card.Description className="w-full text-center text-xs font-semibold tracking-[0.14em] text-accent uppercase">
@@ -259,7 +249,7 @@ export function HeroCard({
     );
   }
 
-  const venue = event.venue ?? fallbackVenue;
+  const venueLinks = getVenueMapLinks(event.venue);
   const parts = countdownParts(startsAt - now);
   const pad = (value: number) => String(value).padStart(2, "0");
   const units: [string, number][] = [
@@ -301,17 +291,23 @@ export function HeroCard({
         </div>
       </Card.Content>
        <Card.Footer className="relative z-10 pt-5">
-        <Link
-          href={venueMapUrl(venue)}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Open ${venue} in Google Maps`}
-          className={`flex min-w-0 items-center gap-2 ${heroMuted} transition-opacity hover:opacity-100`}
-        >
-          <MapPin className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{venue}</span>
-          <ExternalLink className="size-3.5 shrink-0" aria-hidden />
-        </Link>
+        {venueLinks ? (
+          <Link
+            href={venueLinks.searchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open ${venueLinks.venue} in Google Maps`}
+            className={`flex min-w-0 items-center gap-2 ${heroMuted} transition-opacity hover:opacity-100`}
+          >
+            <MapPin className="size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 break-words">{venueLinks.venue}</span>
+            <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+          </Link>
+        ) : (
+          <Typography type="body-xs" className={heroMuted}>
+            Venue to be announced
+          </Typography>
+        )}
       </Card.Footer>
     </Card>
   );

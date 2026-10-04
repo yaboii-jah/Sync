@@ -15,8 +15,8 @@ export default async function AdminAuditPage() {
         Mutation audit
       </Typography.Heading>
       <Typography type="body-sm" color="muted" className="mt-2 max-w-2xl">
-        Every notification send and live-session control is recorded in the same
-        database transaction as the change.
+        Notification sends, program controls, and admin access changes are
+        recorded in the same database transaction as the change.
       </Typography>
 
       <Card className="mt-8">

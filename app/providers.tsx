@@ -3,17 +3,20 @@
 import type { ReactNode } from "react";
 import { InstallProvider } from "@/components/push/install-provider";
 import { ToastProvider } from "@/components/toast/toast-provider";
+import { AppearanceProvider } from "@/components/appearance-provider";
 
 /**
  * App-wide client providers.
  *
- * - The root layout supplies the fixed light event theme.
+ * - AppearanceProvider owns browser-local app appearance; public tokens stay light.
  * - ToastProvider mounts the application toast region once.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ToastProvider>
-      <InstallProvider>{children}</InstallProvider>
-    </ToastProvider>
+    <AppearanceProvider>
+      <ToastProvider>
+        <InstallProvider>{children}</InstallProvider>
+      </ToastProvider>
+    </AppearanceProvider>
   );
 }

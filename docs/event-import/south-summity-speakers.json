@@ -1,0 +1,64 @@
+{
+  "event_id": "20261007-0000-4000-8000-000000000001",
+  "source": "Owner-supplied speaker details and public/new-assets/speaker portraits",
+  "speakers": [
+    {
+      "id": "20261007-0000-4000-8000-000000000202",
+      "session_id": "20261007-0000-4000-8000-000000000105",
+      "name": "Isaeus Guiang",
+      "role": "speaker",
+      "photo_url": "/new-assets/speaker/isaeus-guiang.webp",
+      "organization": "AWSUG.PH",
+      "bio": "AWS User Groups Leader Philippines and Community Builder; Head of Operations and Communications",
+      "linkedin_url": "https://www.linkedin.com/in/isaeus-guiang"
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000203",
+      "session_id": "20261007-0000-4000-8000-000000000109",
+      "name": "Trisha Pelagio",
+      "role": "speaker",
+      "photo_url": null,
+      "organization": "Amazon Web Services (AWS)",
+      "bio": "Solutions Architect; Machine Learning; Cloud Computing",
+      "linkedin_url": "https://www.linkedin.com/in/trishapelagio"
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000204",
+      "session_id": "20261007-0000-4000-8000-000000000110",
+      "name": "Kevin Ventura",
+      "role": "speaker",
+      "photo_url": "/new-assets/speaker/Kevin.webp",
+      "organization": "Stratpoint Technologies, Inc.",
+      "bio": "Senior Engineering Manager",
+      "linkedin_url": "https://www.linkedin.com/in/kjventura"
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000205",
+      "session_id": "20261007-0000-4000-8000-000000000111",
+      "name": "Nina Comia",
+      "role": "panelist",
+      "photo_url": "/new-assets/speaker/Nina.webp",
+      "organization": "Data Engineering Pilipinas",
+      "bio": "Lead Data Engineer",
+      "linkedin_url": "https://www.linkedin.com/in/nina-comia"
+    },
+    {
+      "id": "20261007-0000-4000-8000-000000000206",
+      "session_id": "20261007-0000-4000-8000-000000000111",
+      "name": "Jared Remulta",
+      "role": "panelist",
+      "photo_url": "/new-assets/speaker/jared-remulta.webp",
+      "organization": "PROLOOK",
+      "bio": "Chief Technology Officer",
+      "linkedin_url": "https://www.linkedin.com/in/jared-remulta-a43a132a"
+    }
+  ],
+  "unconfirmed": [
+    {
+      "id": "20261007-0000-4000-8000-000000000201",
+      "session_id": "20261007-0000-4000-8000-000000000103",
+      "name": "Opening keynote speaker — To be announced",
+      "role": "speaker"
+    }
+  ]
+}

@@ -2,11 +2,13 @@
 
 ## Overview
 
+October 4 production-testing decision: publish the reviewed event changes, disable website maintenance for normal Google sign-in, and restore both existing background jobs. Anyone who finds the production link can sign in; sharing and marketing remain an owner activity, with marketing deferred until testing and revisions are complete. See `event-release.md` for release status and `progress-tracker.md` for acceptance results.
+
 Sync (Student Edition) is a companion PWA for attendees of AWS Student Community Day Mega Manila 2026. It keeps attendees oriented throughout the event day with a live view of what's happening now, real-time session status, a speaker/sponsor directory, and QR-based social networking, installable to a phone's home screen like a native app. An allowlisted event-operations team uses a protected admin workspace in the same application to correct live session state, send attendee alerts, and monitor delivery during the event.
 
-The `org-event` worktree reuses this legacy application for AWS Student Community Day South Summity 2026. All app surfaces use the approved light event identity: dark primary actions, violet selections, and restrained grid/tile accents. Sync remains the app name and identity heading. PWA/share imagery and photo-booth frames use the supplied logo. The supplied new program is October 7, 2026, 09:30–17:30 Asia/Manila at Biñan People’s Center Auditorium, with 15 consecutive activities. The approved production import is committed and verified: one event, 15 published sessions, five explicitly unconfirmed speaker/panel placeholders, and five session links. Retained administrators, schema/security, maintenance guards, and paused jobs are preserved. Actual speaker content can follow later, and the event name remains the provisional theme heading. The rebranded branch has not been deployed and production/Auth remain in maintenance; fresh-client testing and reopening are separate units. Product flows, permissions, and route behavior remain unchanged.
+The `org-event` worktree reuses this legacy application for AWS Student Community Day South Summity 2026. Authenticated attendee/admin workspaces support the approved light/dark event identity, device appearance by default, browser-local toggles, and static grid/tile/corner-wash decoration. Public landing and maintenance retain their light identity. Sync remains the app name and identity heading. PWA/share imagery and photo-booth frames use the supplied logo. The supplied new program is October 7, 2026, 09:30–17:30 Asia/Manila at Biñan People’s Center Auditorium, with 15 consecutive activities. The approved production import established one event and 15 published sessions; a separately rehearsed roster update now has five confirmed people (three talk speakers and two panelists), the still-unconfirmed opening keynote, and six session links. Four supplied portraits are referenced by the roster; Trisha Pelagio’s portrait remains pending. Retained administrators and schema/security are preserved. Controlled database unfreeze is committed and independently verified for local Google/admin/attendee acceptance; both jobs remain paused and public website maintenance stays enabled. The event name remains the provisional theme heading. The rebranded branch is committed/published and deployed to both production domains with maintenance retained; see `docs/event-release.md`. Fresh-client Auth/write testing and reopening remain separate units. Product flows, permissions, and route behavior remain unchanged.
 
-The event branch also supports a server-side website maintenance gate for rollout preparation. It presents neutral Sync maintenance content while enabled and preserves the legacy app when disabled. Importing event content, lifting the separate database write freeze, resuming jobs, and deploying remain separately reviewed operations.
+The event branch supports the active server-side website maintenance gate. It presents neutral Sync maintenance content while enabled and preserves the legacy app when disabled. The approved import, frontend deployment, and controlled database unfreeze are complete. Fresh client acceptance, restoration of approved jobs, and public launch remain separate operations; see docs/event-reopening.md.
 
 ## Goals
 
@@ -74,10 +76,10 @@ The event branch also supports a server-side website maintenance gate for rollou
 - Link to the native app feedback form
 
 ### Photo Booth
-- An authenticated, local-only three-shot booth reached from More with two selectable event frames
+- An authenticated, local-only three-shot booth reached from More with the supplied Sue event frame
 - Front camera by default with a front/rear switch where supported, plus an image-picker fallback
 - Three separately triggered three-second countdown captures arranged in a 9:16 event-branded story strip
-- High-quality JPEG download; attendees can switch frames during review and retake an individual slot without losing the other two
+- High-quality 1080×1920 JPEG download; attendees can retake an individual slot without losing the other two
 - Camera footage and source/result images remain in browser memory only and are never uploaded or persisted
 
 ### Account Settings
@@ -91,6 +93,7 @@ The event branch also supports a server-side website maintenance gate for rollou
 
 ### Admin Operations
 - Database-allowlisted administrators switch between attendee and admin views in the same app
+- Any current administrator can grant or remove admin access for an existing signed-in user from attendee details, with confirmation and transactional auditing. Catherine Notado and Jahmell Dorias are protected by immutable account IDs; self-demotion and removal of the last admin are refused. Demotion preserves the account and attendee data. Invitations and account creation/deletion are outside this feature.
 - Responsive operations dashboard for current program state, attendee reachability, recent sends, and failures
 - Session create/edit/publish controls for event-day schedule corrections; admin time inputs always use Asia/Manila (PHT)
 - Seat controls in the same session editor: a capacity, the count registered off-app, and a switch that closes seats. A live preview shows the exact badge attendees will read. Capacity can never be set below the seats attendees already hold
@@ -99,7 +102,7 @@ The event branch also supports a server-side website maintenance gate for rollou
 - Read-only latest-100 app feedback list showing category, message, attendee name/photo, and submission time
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
 - Manual Start, End, and Resume Auto controls persist against schedule automation; manual timestamps become the attendee-facing live state
-- Searchable read-only attendee directory, notification history, delivery results, and immutable mutation audit log
+- Searchable attendee identity/reachability directory with confirmed admin-access controls, notification history, delivery results, and immutable mutation audit log
 - On-demand raffle-name export for every non-admin attendee profile: names only, one line per profile, with numbered duplicate-name entries that stay privately traceable in the admin workspace
 - `profiles.pass_type` remains dormant and is not used for targeting, authorization, filtering, or dashboard metrics
 
@@ -127,7 +130,7 @@ The event branch also supports a server-side website maintenance gate for rollou
 - Full workshop registration remains out of scope: no waitlists, no payment, no QR check-in, and no attendee roster in the app. Seat capacity and seat claiming are in scope and described above; the organiser export stays the source of truth for who registered off-app
 - Speaker management and other general content-management tooling outside the approved session editor
 - Scheduled notification resends, external notification links, and multi-admin approval
-- Attendee editing, access suspension, deletion, or pass-type management
+- Attendee account/profile editing, account suspension or deletion, or pass-type management
 - Attendee feedback history, editing, and deletion; feedback triage, replies, badges, and notifications
 
 ## Success Criteria

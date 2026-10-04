@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "../database.types";
+import { parseAdminUserAccess, type AdminAccessRequest, type AdminUserAccess } from "@/lib/admin-access";
 
 type QueryClient = SupabaseClient<Database>;
 
@@ -175,6 +176,22 @@ export async function getAdminAttendee(
   return callRpc<AdminAttendeeDetail>(client, "admin_get_attendee", {
     target_attendee_id: attendeeId,
   });
+}
+
+export async function getAdminUserAccess(client: QueryClient, userId: string): Promise<AdminUserAccess> {
+  const { data, error } = await client.rpc("admin_get_user_access", { target_user_id: userId });
+  if (error) throw new Error(error.message);
+  return parseAdminUserAccess(data, userId);
+}
+
+export async function setAdminUserAccess(client: QueryClient, input: AdminAccessRequest): Promise<AdminUserAccess> {
+  const { data, error } = await client.rpc("admin_set_user_admin", {
+    target_user_id: input.userId,
+    grant_admin: input.grantAdmin,
+    mutation_request_id: input.requestId,
+  });
+  if (error) throw new Error(error.message);
+  return parseAdminUserAccess(data, input.userId);
 }
 
 function isRaffleSnapshot(value: unknown): value is AdminRaffleSnapshot {

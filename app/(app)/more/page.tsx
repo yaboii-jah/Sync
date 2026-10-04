@@ -21,7 +21,7 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
-  const speakers = people.filter((person) => person.role === "speaker");
+  const speakers = people.filter((person) => person.role === "speaker" || person.role === "panelist");
 
   return (
     <main className="w-full">
@@ -29,21 +29,19 @@ export default async function MorePage() {
         <AppHeader />
         <PageHeader title="More" />
 
-        {quickLinks.length > 0 ? (
-          <section className="mt-8">
-            <Typography.Heading level={2} className="text-base">
-              Quick links
-            </Typography.Heading>
-            <QuickLinksClient quickLinks={quickLinks} />
-          </section>
-        ) : null}
+        <section className="mt-8">
+          <Typography.Heading level={2} className="text-base">
+            Quick links
+          </Typography.Heading>
+          <QuickLinksClient quickLinks={quickLinks} />
+        </section>
 
         <section className="mt-8 mb-4">
           <Typography.Heading level={2} className="text-base">
             Speakers
           </Typography.Heading>
           <Typography type="body-sm" color="muted" className="mt-1">
-            Meet the speakers sharing their work and perspective on event day.
+            Meet the speakers and panelists sharing their work and perspective on event day.
           </Typography>
           <div className="mt-3">
             <DirectoryClient people={speakers} />

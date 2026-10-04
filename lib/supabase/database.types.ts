@@ -51,16 +51,19 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          protected: boolean
           user_id: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          protected?: boolean
           user_id: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          protected?: boolean
           user_id?: string
         }
         Relationships: []
@@ -142,78 +145,6 @@ export type Database = {
           status?: string
           theme?: string
           venue?: string | null
-        }
-        Relationships: []
-      }
-      merch_attendees: {
-        Row: {
-          claim_method: string | null
-          claimed_at: string | null
-          claimed_by: string | null
-          extra: Json
-          first_name: string
-          id: string
-          last_name: string
-          note: string | null
-          updated_at: string
-        }
-        Insert: {
-          claim_method?: string | null
-          claimed_at?: string | null
-          claimed_by?: string | null
-          extra?: Json
-          first_name?: string
-          id: string
-          last_name: string
-          note?: string | null
-          updated_at?: string
-        }
-        Update: {
-          claim_method?: string | null
-          claimed_at?: string | null
-          claimed_by?: string | null
-          extra?: Json
-          first_name?: string
-          id?: string
-          last_name?: string
-          note?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      merch_scan_log: {
-        Row: {
-          at: string
-          attendee_id: string | null
-          attendee_name: string | null
-          detail: string | null
-          device: string
-          outcome: string
-          raw: string | null
-          received_at: string
-          uid: string
-        }
-        Insert: {
-          at: string
-          attendee_id?: string | null
-          attendee_name?: string | null
-          detail?: string | null
-          device: string
-          outcome: string
-          raw?: string | null
-          received_at?: string
-          uid: string
-        }
-        Update: {
-          at?: string
-          attendee_id?: string | null
-          attendee_name?: string | null
-          detail?: string | null
-          device?: string
-          outcome?: string
-          raw?: string | null
-          received_at?: string
-          uid?: string
         }
         Relationships: []
       }
@@ -812,6 +743,7 @@ export type Database = {
         Returns: Json
       }
       admin_get_raffle_attendees: { Args: never; Returns: Json }
+      admin_get_user_access: { Args: { target_user_id: string }; Returns: Json }
       admin_list_audit: {
         Args: { result_limit?: number; result_offset?: number }
         Returns: {
@@ -903,6 +835,14 @@ export type Database = {
           status_override_at: string
         }[]
       }
+      admin_set_user_admin: {
+        Args: {
+          grant_admin: boolean
+          mutation_request_id: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
       admin_update_session: {
         Args: {
           mutation_request_id: string
@@ -947,52 +887,6 @@ export type Database = {
         }[]
       }
       mark_alerts_read: { Args: never; Returns: undefined }
-      merch_claim_attendee: {
-        Args: {
-          p_at: string
-          p_by: string
-          p_id: string
-          p_method: string
-          p_note: string
-        }
-        Returns: {
-          claim_method: string | null
-          claimed_at: string | null
-          claimed_by: string | null
-          extra: Json
-          first_name: string
-          id: string
-          last_name: string
-          note: string | null
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "merch_attendees"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      merch_revert_claim: {
-        Args: { p_by: string; p_id: string }
-        Returns: {
-          claim_method: string | null
-          claimed_at: string | null
-          claimed_by: string | null
-          extra: Json
-          first_name: string
-          id: string
-          last_name: string
-          note: string | null
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "merch_attendees"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       record_networking_card_scan: {
         Args: { card_token: string }
         Returns: undefined

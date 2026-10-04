@@ -306,7 +306,7 @@ export function HomeClient({
             now={now}
             onOpenSession={(target) => setActiveSessionId(target.id)}
           />
-          <VenueMap />
+          <VenueMap venue={event.venue} />
         </div>
 
         <section className="mt-8 lg:mt-0 lg:min-w-0 lg:flex-1">

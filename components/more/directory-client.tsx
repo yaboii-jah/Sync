@@ -80,7 +80,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
                   {person.name}
                 </Typography>
                 <Typography type="body-xs" color="muted" className="mt-1 truncate">
-                  {person.organization ?? "Speaker"}
+                  {person.role === "panelist" ? `Panelist · ${person.organization ?? ""}` : person.organization ?? "Speaker"}
                 </Typography>
                 <Typography type="body-xs" weight="medium" className="mt-2 text-accent">
                   View profile
@@ -126,7 +126,7 @@ function PersonBioModal({
                 <PersonPortrait person={person} variant="modal" />
                 <div className="min-w-0 pt-1">
                   <Typography type="body-xs" weight="semibold" className="tracking-[0.12em] text-accent uppercase">
-                    Speaker
+                    {person.role === "panelist" ? "Panelist" : "Speaker"}
                   </Typography>
                   <Modal.Heading className="mt-2 text-xl leading-tight">
                     {person.name}

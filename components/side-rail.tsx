@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAlertsCount } from "@/components/alerts-count-provider";
 import { ProfileMenu } from "@/components/profile-menu";
+import { AppearanceToggle } from "@/components/appearance-toggle";
 
 interface RailItem {
   label: string;
@@ -88,6 +89,10 @@ export function SideRail({
 
       <div className="mt-auto flex flex-col gap-1 px-3 pb-6">
         <Separator className="mb-3" />
+        <div className="flex items-center justify-between px-2.5 text-sm text-muted">
+          <span>Appearance</span>
+          <AppearanceToggle />
+        </div>
         <ProfileMenu
           name={profile?.name}
           photoUrl={profile?.photo_url}

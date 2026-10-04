@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { AppearanceToggle } from "@/components/appearance-toggle";
 
 interface AdminNavItem {
   label: string;
@@ -81,6 +82,10 @@ export function AdminNav() {
 
         <div className="mt-auto flex flex-col gap-1 px-3 pb-6">
           <Separator className="mb-3" />
+          <div className="flex items-center justify-between px-3 text-sm text-muted">
+            <span>Appearance</span>
+            <AppearanceToggle />
+          </div>
           <Link
             href="/home"
             className="text-muted hover:bg-default hover:text-foreground flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors"
@@ -97,13 +102,16 @@ export function AdminNav() {
           <Typography type="h6" weight="semibold" className="font-display">
             Control Room
           </Typography>
-          <Link
-            href="/home"
-            className="text-muted hover:text-foreground border-border flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors"
-          >
-            <House className="size-4" aria-hidden />
-            Attendee
-          </Link>
+          <div className="flex items-center gap-1">
+            <AppearanceToggle />
+            <Link
+              href="/home"
+              className="text-muted hover:text-foreground border-border flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors"
+            >
+              <House className="size-4" aria-hidden />
+              Attendee
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -4,6 +4,7 @@ import { Typography } from "@/components/ui/static";
 import { currentUserIsAdmin } from "@/lib/supabase/admin-auth";
 import { getAuthenticatedProfile } from "@/lib/supabase/profile";
 import { ProfileMenu } from "@/components/profile-menu";
+import { AppearanceToggle } from "@/components/appearance-toggle";
 
 export async function AppHeader() {
   const [isAdmin, auth] = await Promise.all([
@@ -28,11 +29,14 @@ export async function AppHeader() {
           Sync
         </Typography.Heading>
       </Link>
-      <ProfileMenu
-        name={profile?.name}
-        photoUrl={profile?.photo_url}
-        isAdmin={isAdmin}
-      />
+      <div className="flex items-center gap-1">
+        <AppearanceToggle />
+        <ProfileMenu
+          name={profile?.name}
+          photoUrl={profile?.photo_url}
+          isAdmin={isAdmin}
+        />
+      </div>
     </header>
   );
 }
