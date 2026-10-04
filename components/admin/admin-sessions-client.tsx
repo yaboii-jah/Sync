@@ -17,6 +17,7 @@ import {
   Pencil,
   Plus,
   Radio,
+  RotateCcw,
   Square,
   Trash2,
 } from "lucide-react";
@@ -31,11 +32,12 @@ import { formatTimeRange } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/components/toast/toast-provider";
 
-type SessionAction = "start" | "end";
+type SessionAction = "start" | "end" | "undo_end";
 
 const ACTION_LABELS: Record<SessionAction, string> = {
   start: "Start session?",
   end: "End session?",
+  undo_end: "Undo session End?",
 };
 
 export function AdminSessionsClient({
@@ -237,6 +239,17 @@ export function AdminSessionsClient({
                     End
                   </Button>
                 ) : null}
+                {session.status === "finished" && session.actual_ended_at ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    isDisabled={pending}
+                    onPress={() => open(session, "undo_end")}
+                  >
+                    <RotateCcw className="size-4" aria-hidden />
+                    Undo End
+                  </Button>
+                ) : null}
               </div>
             </Card.Content>
           </Card>
@@ -315,8 +328,19 @@ export function AdminSessionsClient({
                 <Typography type="body-sm" color="muted">
                   {selection?.action === "start"
                     ? "The session will stay Ongoing until an admin ends it. Scheduled times do not change its status."
+                    : selection?.action === "undo_end"
+                      ? selection.session.actual_started_at
+                        ? "Restore this session to Ongoing with its original start time. It will stay Ongoing until an admin ends it."
+                        : "Restore this session to Not Started. An admin can start it when ready."
                     : "The session will be marked Finished. This will not start another session."}
                 </Typography>
+
+                {selection?.action === "undo_end" ? (
+                  <Typography type="body-sm" color="muted">
+                    Earlier alerts and removed My Flow bookmarks will remain
+                    unchanged. Select Notify attendees to send a correction.
+                  </Typography>
+                ) : null}
 
                 {selection ? (
                   <Checkbox

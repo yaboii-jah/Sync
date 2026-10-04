@@ -370,7 +370,7 @@ This is the most connected feature in the app — five systems passing a baton:
 
 **Hop by hop:**
 
-1. **pg_cron** (§8) flips only non-overridden sessions and performs finished-bookmark cleanup. Admin Start/End actions use the transactional notification path only when the operator confirms a send.
+1. **pg_cron** (§8) updates event timing and performs finished-bookmark cleanup; sessions change only through confirmed admin actions. Admin Start/End actions use the transactional notification path only when the operator confirms a send.
 2. Every notification snapshots its recipients. Organizer alerts snapshot everyone or explicit attendee IDs. Only those recipients can read the row in Alerts; historical automatic rows remain immutable history.
 3. An AFTER-INSERT trigger creates a durable dispatch and calls `send-push` with only the notification ID and a shared secret.
 4. The Edge Function claims that dispatch once, loads canonical recipients/subscriptions, sends in bounded batches, records accepted/failed/pruned device outcomes, counts recipients without push, and prunes 404/410 endpoints.
@@ -611,6 +611,8 @@ create policy "Users can delete own bookmarks"
 ## 8. Manual Sessions and Background Cleanup
 
 Admins use Start and End on `/admin/sessions`. A session stays Not Started until an admin acts, and stays Ongoing until an admin ends it, even after its scheduled end. Ending one session does not start another. The database enforces admin authorization, retry idempotency, timestamps, and transactional auditing; attendee clients render stored status and update through Realtime.
+
+Undo End recovers an accidental completion after confirmation. It restores the prior manual state, keeps the original start time, clears the end time, and records which End was corrected. An unstarted session returns to Not Started. Existing alerts and removed My Flow bookmarks remain unchanged; an optional correction notification defaults off. Older completion without a matching manual End audit is refused. Recovery never starts the next session or restores schedule-driven transitions.
 
 The existing minute job, `sync-program-flow-statuses`, calls `public.sync_program_flow_statuses()` only for event-level timing and independent finished-session bookmark cleanup. It never transitions a session or creates a notification. The push retry job remains unchanged.
 

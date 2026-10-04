@@ -274,7 +274,7 @@ export async function setAdminSessionStatus(
   client: QueryClient,
   input: {
     sessionId: string;
-    action: "start" | "end";
+    action: "start" | "end" | "undo_end";
     sendNotification: boolean;
     requestId: string;
   },

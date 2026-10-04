@@ -1,5 +1,21 @@
 # South Summity production release
 
+## Current revision: Undo End recovery (October 5)
+
+The owner requested recovery for an accidental session End. Migration `20261004212420` is applied once to the explicit event project `mygybolhwoeckrgczclm` and independently verified with **91 rollback-only checks**. The compatible private worker restores the prior manual state, preserves the original start, clears the end, and appends a correction referencing the original End audit. It preserves program/history, protected admins, grants/RLS, sequences and jobs. Security advisors remain 23 with zero new findings. Sent alerts and deleted bookmarks remain unchanged; correction notifications default off. Schedule-driven session status remains disabled.
+
+Frontend Undo End controls pass 170 tests, lint, TypeScript, production build, and four isolated component-browser layouts in both themes. Production staging/promotion remains the next release step. Real signed-in admin/attendee acceptance and marketing remain tester/owner work. Private evidence is in `.production-maintenance/event-import/undo-session-20261005/`; the previous release below remains the active frontend until promotion.
+
+## Current revision: manual session controls (October 5)
+
+The reviewed revision is published on `org-event` and deployed to both https://sync.aws-scd.cloud and https://sync-orpin-nine.vercel.app. Runtime source is `08033be6325b6488525541c92429453f33b889f7`; Ready deployment `dpl_9wWgcjt6MDkpvECWF6vzm5W8fefj` was staged without domain assignment, verified, then explicitly promoted. Clean export SHA-256 is `6d09adda89f991d1e7da5b9a38887a26d0748501e3bdfe208894b4a6f188f56b`. Acceptance completed at **21:06:59 UTC October 4 / 05:06:59 Asia/Manila October 5**.
+
+Only audited administrator Start/End changes session status. Schedule edits, browser clocks and cron do not transition it; Resume Auto is rejected. Migration `20261004132605` was rehearsed with rollback, applied once to `mygybolhwoeckrgczclm`, and independently verified with 64 rollback-only checks. Table security, program/history, protected admins and sequences are preserved. Both jobs keep their identities/commands/schedules, completed eight successful cycles after application and have no backlog. Fifteen production sessions remain Not Started. No local tenant migration/reset was run.
+
+Acceptance passed 170 tests, lint, TypeScript, production build, four component fixture layouts and 96 staged/public HTTP checks. Both domains independently route to the accepted deployment and `/admin/sessions` remains protected. Security advisors decreased from 29 to 23 with no new findings. Automatic domain assignment is restored; maintenance stays disabled. Real signed-in admin/attendee acceptance and marketing remain tester/owner work. Private accepted evidence is in `.production-maintenance/event-import/manual-sessions-20261004/`; final documentation is local and does not create another deployment.
+
+Recovery preserves manual database behavior and tester data. If this frontend must be withdrawn, use the recorded maintenance deployment `dpl_8wbFx1tA5p7oUa36KTjhjaPoejdy` with the existing rollback/maintenance procedure. Do not restore automatic status functions, replay imports, reset sessions, or touch the separate tenant database. Earlier checkpoints below are historical.
+
 ## October 4 unannounced production testing
 
 The owner approved deploying the reviewed local event changes and disabling website maintenance for normal Google sign-in, with both existing background jobs restored. Production testing is open to anyone who finds the link; the owner will share it privately and defer marketing until testing and revisions are complete. This supersedes the maintenance-only release contract below for this new operation.

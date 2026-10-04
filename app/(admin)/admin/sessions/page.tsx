@@ -22,7 +22,7 @@ export default async function AdminSessionsPage() {
       <Typography type="body-sm" color="muted" className="mt-2 max-w-2xl">
         Create, edit and publish the schedule here. Start and end each session
         manually; scheduled times do not change its status. Drafts are hidden
-        from attendees.
+        from attendees. Use Undo End to recover an accidentally ended session.
       </Typography>
       <AdminSessionsClient sessions={sessions} eventId={event?.id ?? null} />
     </div>

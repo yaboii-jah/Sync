@@ -47,7 +47,7 @@ The event branch supports the active server-side website maintenance gate. It pr
 - Published sessions are attendee-visible; unpublished drafts remain available only to event operators
 
 ### Real-Time Notifications
-- Organizer announcements and explicitly confirmed manual Start/End alerts
+- Organizer announcements and explicitly confirmed manual Start/End/Undo End alerts
 - Bookmark-targeted Web Push for eligible manually-triggered session-linked notifications
 - Organizer announcements created through the protected admin composer and broadcast to snapshotted recipients
 - Real-time Alerts feed with persisted unread state; session-linked alerts open the session detail modal
@@ -101,7 +101,7 @@ The event branch supports the active server-side website maintenance gate. It pr
 - Immediate title/body notifications sent to everyone or explicitly selected attendees
 - Read-only latest-100 app feedback list showing category, message, attendee name/photo, and submission time
 - Targeted notifications appear in the Alerts feed only for snapshotted recipients, including recipients without push enabled
-- Manual Start and End controls are the only session-state transitions; scheduled times remain program information. Sessions stay Not Started until an admin starts or ends them, and stay Ongoing until an admin ends them. Ending a session does not start another session. Manual timestamps become the attendee-facing live state; Resume Auto is unavailable.
+- Manual Start, End, and confirmed Undo End controls are the only session-state transitions; scheduled times remain program information. Undo End restores the state recorded before the latest manual End: Ongoing keeps its original start time, and an unstarted session returns to Not Started. The end timestamp is cleared and the correction is audited. Sent alerts and removed My Flow bookmarks are not restored; an optional correction alert defaults off. Sessions stay Not Started until an admin acts, and stay Ongoing until an admin ends them. Ending or restoring a session does not start another session. Resume Auto remains unavailable.
 - Searchable attendee identity/reachability directory with confirmed admin-access controls, notification history, delivery results, and immutable mutation audit log
 - On-demand raffle-name export for every non-admin attendee profile: names only, one line per profile, with numbered duplicate-name entries that stay privately traceable in the admin workspace
 - `profiles.pass_type` remains dormant and is not used for targeting, authorization, filtering, or dashboard metrics

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Private operator evidence and generated browser fixtures are not app source.
+    ".production-maintenance/**",
   ]),
 ]);
 
