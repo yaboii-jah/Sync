@@ -1,12 +1,18 @@
 # South Summity production release
 
-## Current revision: Undo End recovery (October 5)
+## Current correction: Undo End returns to Not Started (October 5)
+
+The owner confirmed Undo End should always reset to Not Started and require another manual Start. Migration `20261004221035` is applied once to the explicit event project and independently verified with **100 rollback-only checks**. It clears current actual start/end times and override metadata only when an admin confirms Undo End; prior timing and the referenced End remain in immutable audits. Operated sessions remain protected from draft deletion through a private worker/compatible invoker API and authorized lifecycle-ID reads in the admin page. Public signatures, program/history, protected admins, grants/RLS, sequences and jobs are preserved. Security advisors decreased from 23 to 22, with zero new findings. The migration does not reset live sessions in bulk.
+
+The matching frontend passes 170 tests, lint, TypeScript, production build and four responsive/theme component checks, including reset confirmation and deletion protection. Staged production promotion follows. Real signed-in admin/attendee acceptance and marketing remain tester/owner work. Private evidence is in `.production-maintenance/event-import/undo-reset-20261005/`. The previous release below remains the active frontend until promotion.
+
+## Previous accepted release: Undo End recovery (October 5)
 
 The owner requested recovery for an accidental session End. Migration `20261004212420` is applied once to the explicit event project `mygybolhwoeckrgczclm` and independently verified with **91 rollback-only checks**. The compatible private worker restores the prior manual state, preserves the original start, clears the end, and appends a correction referencing the original End audit. It preserves program/history, protected admins, grants/RLS, sequences and jobs. Security advisors remain 23 with zero new findings. Sent alerts and deleted bookmarks remain unchanged; correction notifications default off. Schedule-driven session status remains disabled.
 
-Frontend Undo End controls pass 170 tests, lint, TypeScript, production build, and four isolated component-browser layouts in both themes. Production staging/promotion remains the next release step. Real signed-in admin/attendee acceptance and marketing remain tester/owner work. Private evidence is in `.production-maintenance/event-import/undo-session-20261005/`; the previous release below remains the active frontend until promotion.
+Frontend Undo End controls pass 170 tests, lint, TypeScript, production build, and four isolated component-browser layouts in both themes. Source `5d7b060d04113c1a12288da0a77c386eb7c48688` is published on `org-event` and deployed to both production domains through reviewed Ready deployment `dpl_wxRhfUN6pXNw9u4BbVkHLnvuKDTv`. Clean export SHA-256 is `4e739b91b0a05582ed27847f2c0999305e33631f1701a38ee9dbefc76988d746`. Acceptance completed at **21:59:21 UTC October 4 / 05:59:21 Asia/Manila October 5**, with **96 staged/public HTTP checks** and **four explicit session-admin protection checks**. Both actual domains route to the reviewed build. Same-source production builds were Ready before restoring automatic assignment; maintenance stays disabled and legacy/event configuration is preserved. Both unchanged jobs completed four observed successful cycles with no failures/backlog. Live tester state remains intact. Real signed-in admin/attendee acceptance and marketing remain tester/owner work. Private accepted evidence is in `.production-maintenance/event-import/undo-session-20261005/`; final acceptance documentation remains local to avoid triggering another deployment.
 
-## Current revision: manual session controls (October 5)
+## Previous accepted release: manual session controls (October 5)
 
 The reviewed revision is published on `org-event` and deployed to both https://sync.aws-scd.cloud and https://sync-orpin-nine.vercel.app. Runtime source is `08033be6325b6488525541c92429453f33b889f7`; Ready deployment `dpl_9wWgcjt6MDkpvECWF6vzm5W8fefj` was staged without domain assignment, verified, then explicitly promoted. Clean export SHA-256 is `6d09adda89f991d1e7da5b9a38887a26d0748501e3bdfe208894b4a6f188f56b`. Acceptance completed at **21:06:59 UTC October 4 / 05:06:59 Asia/Manila October 5**.
 

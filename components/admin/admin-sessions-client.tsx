@@ -43,9 +43,11 @@ const ACTION_LABELS: Record<SessionAction, string> = {
 export function AdminSessionsClient({
   sessions,
   eventId,
+  sessionHistoryIds,
 }: {
   sessions: SessionWithSpeakers[];
   eventId: string | null;
+  sessionHistoryIds: string[];
 }) {
   const [editing, setEditing] = useState<{
     session: SessionWithSpeakers | null;
@@ -207,7 +209,9 @@ export function AdminSessionsClient({
                 </Button>
                 {/* Only unpublished drafts that have not started are deletable;
                     the database RPC enforces the same rule. */}
-                {!session.published && session.status === "not_started" ? (
+                {!session.published &&
+                session.status === "not_started" &&
+                !sessionHistoryIds.includes(session.id) ? (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -329,9 +333,7 @@ export function AdminSessionsClient({
                   {selection?.action === "start"
                     ? "The session will stay Ongoing until an admin ends it. Scheduled times do not change its status."
                     : selection?.action === "undo_end"
-                      ? selection.session.actual_started_at
-                        ? "Restore this session to Ongoing with its original start time. It will stay Ongoing until an admin ends it."
-                        : "Restore this session to Not Started. An admin can start it when ready."
+                      ? "Return this session to Not Started and clear its actual start and end times. An admin must press Start again when ready. Previous timing stays in the audit history."
                     : "The session will be marked Finished. This will not start another session."}
                 </Typography>
 

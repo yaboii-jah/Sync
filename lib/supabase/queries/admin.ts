@@ -249,6 +249,35 @@ export async function getAdminAudit(
   });
 }
 
+/** Used sessions retain deletion protection after Undo End clears current timing. */
+export async function getAdminSessionHistoryIds(
+  client: QueryClient,
+  sessionIds: string[],
+): Promise<string[]> {
+  if (sessionIds.length === 0) return [];
+  const historyIds = new Set<string>();
+  let offset = 0;
+  while (true) {
+    const { data, error, count } = await client
+      .from("admin_audit_log")
+      .select("entity_id", { count: "exact" })
+      .eq("entity_type", "session")
+      .in("entity_id", sessionIds)
+      .in("action", ["session.start", "session.end", "session.undo_end"])
+      .order("id", { ascending: true })
+      .range(offset, offset + 999);
+    if (error) throw error;
+    if (!data || count === null || (data.length === 0 && offset < count)) {
+      throw new Error("Could not verify session history.");
+    }
+    for (const entry of data) {
+      if (entry.entity_id) historyIds.add(entry.entity_id);
+    }
+    offset += data.length;
+    if (offset >= count) return [...historyIds];
+  }
+}
+
 export async function createAdminNotification(
   client: QueryClient,
   input: {

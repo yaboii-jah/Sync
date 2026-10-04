@@ -5,6 +5,7 @@ import {
   getSessionsWithSpeakers,
 } from "@/lib/supabase/queries/program-flow";
 import { AdminSessionsClient } from "@/components/admin/admin-sessions-client";
+import { getAdminSessionHistoryIds } from "@/lib/supabase/queries/admin";
 
 export default async function AdminSessionsPage() {
   const supabase = await createClient();
@@ -13,6 +14,10 @@ export default async function AdminSessionsPage() {
     getSessionsWithSpeakers(supabase),
     getEvent(supabase),
   ]);
+  const sessionHistoryIds = await getAdminSessionHistoryIds(
+    supabase,
+    sessions.map((session) => session.id),
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-10 lg:py-10">
@@ -24,7 +29,11 @@ export default async function AdminSessionsPage() {
         manually; scheduled times do not change its status. Drafts are hidden
         from attendees. Use Undo End to recover an accidentally ended session.
       </Typography>
-      <AdminSessionsClient sessions={sessions} eventId={event?.id ?? null} />
+      <AdminSessionsClient
+        sessions={sessions}
+        eventId={event?.id ?? null}
+        sessionHistoryIds={sessionHistoryIds}
+      />
     </div>
   );
 }

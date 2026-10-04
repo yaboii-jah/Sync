@@ -67,7 +67,8 @@ begin
     'admin_create_session(uuid,text,text,text,timestamp with time zone,timestamp with time zone,boolean,uuid)',
     'admin_update_session(uuid,text,text,text,timestamp with time zone,timestamp with time zone,uuid)',
     'admin_set_session_status(uuid,text,boolean,uuid)',
-    'toggle_my_flow_bookmark(uuid)', 'claim_session_seat(uuid)'
+    'toggle_my_flow_bookmark(uuid)', 'claim_session_seat(uuid)',
+    'admin_delete_session(uuid,uuid)'
   ] loop
     perform pg_temp.session_check(not (select prosecdef from pg_proc where oid=('public.'||signature)::regprocedure), signature||': invoker API');
     perform pg_temp.session_check((select prosecdef and (proconfig @> array['search_path='] or proconfig @> array['search_path=""']) from pg_proc where oid=('private.'||signature)::regprocedure), signature||': private pinned worker');
@@ -208,6 +209,8 @@ declare
   notifications_before bigint;
   audits_before bigint;
   legacy_request uuid := gen_random_uuid();
+  fresh_draft uuid;
+  signature text;
 begin
   select id,actual_started_at,actual_ended_at into live,original_start,original_end
     from public.sessions where event_id=fixture_event and title='Finished edited';
@@ -226,23 +229,34 @@ begin
   execute 'set local role authenticated';
   perform public.admin_set_session_status(live,'undo_end',false,undo_request);
   execute 'reset role';
-  perform pg_temp.session_check((select status='ongoing' and status_override='ongoing' and actual_started_at=original_start and actual_ended_at is null and status_override_by=actor from public.sessions where id=live),'Undo End restores Ongoing and original start with correction actor');
+  perform pg_temp.session_check((select status='not_started' and status_override is null and status_override_at is null and status_override_by is null and actual_started_at is null and actual_ended_at is null from public.sessions where id=live),'Undo End always resets previously live session to Not Started and clears actual times');
   perform pg_temp.session_check((select count(*)=notifications_before from public.notifications),'Undo End without opt-in sends no notification');
   perform pg_temp.session_check((select count(*)=audits_before+1 from public.admin_audit_log),'Undo End appends exactly one audit');
-  perform pg_temp.session_check(exists(select 1 from public.admin_audit_log where request_id=undo_request and actor_id=actor and action='session.undo_end' and entity_id=live and details->>'before_status'='finished' and details->>'after_status'='ongoing' and (details->>'before_actual_ended_at')::timestamptz=original_end and (details->>'after_actual_started_at')::timestamptz=original_start and details->'after_actual_ended_at'='null'::jsonb and (details->>'undone_end_request_id')::uuid=original_end_request),'Undo audit retains timestamps and references original End');
+  perform pg_temp.session_check(exists(select 1 from public.admin_audit_log where request_id=undo_request and actor_id=actor and action='session.undo_end' and entity_id=live and details->>'before_status'='finished' and details->>'after_status'='not_started' and (details->>'before_actual_ended_at')::timestamptz=original_end and (details->>'before_actual_started_at')::timestamptz=original_start and details->'after_actual_started_at'='null'::jsonb and details->'after_actual_ended_at'='null'::jsonb and (details->>'undone_end_request_id')::uuid=original_end_request),'Undo audit retains original timing and records cleared result with original End reference');
   perform pg_temp.session_check(exists(select 1 from public.admin_audit_log where request_id=original_end_request and action='session.end'),'original End audit is preserved');
   perform pg_temp.session_check(not exists(select 1 from public.my_flow_bookmarks where session_id=live),'Undo End does not recreate deleted bookmarks');
   perform pg_temp.session_check(exists(select 1 from public.notifications where dedupe_key='manual:'||original_end_request),'Undo End retains previously sent alert');
   perform public.admin_set_session_status(live,'undo_end',true,undo_request);
   perform pg_temp.session_check((select count(*)=audits_before+1 from public.admin_audit_log) and (select count(*)=notifications_before from public.notifications),'Undo retry cannot duplicate audit or opt into a later alert');
-  perform pg_temp.session_error(format('select * from public.admin_set_session_status(%L,''undo_end'',false,%L)',live,gen_random_uuid()),'only a finished session can undo End','second independent Undo refuses Ongoing');
+  perform pg_temp.session_error(format('select * from public.admin_set_session_status(%L,''undo_end'',false,%L)',live,gen_random_uuid()),'only a finished session can undo End','second independent Undo refuses Not Started');
   perform public.sync_program_flow_statuses();
-  perform pg_temp.session_check((select status='ongoing' and actual_started_at=original_start from public.sessions where id=live),'scheduler preserves restored Ongoing state and start');
+  perform pg_temp.session_check((select status='not_started' and actual_started_at is null from public.sessions where id=live),'scheduler preserves reset Not Started without starting it');
+  perform public.admin_set_session_published(live,false,gen_random_uuid());
+  execute 'set local role authenticated';
+  select array_agg(distinct entity_id)::text into signature
+    from public.admin_audit_log where entity_type='session' and entity_id=live
+      and action in ('session.start','session.end','session.undo_end');
+  execute 'reset role';
+  perform pg_temp.session_check(signature is not null,'admin can read session lifecycle IDs for deletion eligibility');
+  perform pg_temp.session_error(format('select public.admin_delete_session(%L,%L)',live,gen_random_uuid()),'only sessions that have not started can be deleted; unpublish instead','resetting and unpublishing cannot delete previously started session');
+  perform public.admin_set_session_published(live,true,gen_random_uuid());
   perform set_config('request.jwt.claim.sub',attendee::text,true);
   perform pg_temp.session_check((public.toggle_my_flow_bookmark(live)->>'bookmarked')::boolean,'attendee can bookmark restored session');
   perform pg_temp.session_check((public.claim_session_seat(live)->>'held')::boolean,'attendee can claim a seat in restored session');
 
   perform set_config('request.jwt.claim.sub',actor::text,true);
+  perform public.admin_set_session_status(live,'start',false,gen_random_uuid());
+  perform pg_temp.session_check((select status='ongoing' and actual_started_at=now() and actual_ended_at is null from public.sessions where id=live),'a new manual Start is required and records a new start');
   perform public.admin_set_session_status(live,'end',false,gen_random_uuid());
   perform public.admin_set_session_status(live,'undo_end',false,undo_request);
   perform pg_temp.session_check((select status='finished' from public.sessions where id=live),'replayed old Undo does not undo a later End');
@@ -250,19 +264,21 @@ begin
   perform set_config('request.jwt.claim.sub',other_admin::text,true);
   perform pg_temp.session_error(format('select * from public.admin_set_session_status(%L,''undo_end'',false,%L)',live,undo_request),'request id was already used for another mutation','Undo request cannot be replayed by a different admin');
   perform public.admin_set_session_status(live,'undo_end',false,gen_random_uuid());
-  perform pg_temp.session_check((select status='ongoing' and actual_started_at=original_start from public.sessions where id=live),'another admin can correct latest End with a fresh request');
+  perform pg_temp.session_check((select status='not_started' and actual_started_at is null and actual_ended_at is null from public.sessions where id=live),'another admin resets latest End to Not Started with fresh request');
 
   perform set_config('request.jwt.claim.sub',actor::text,true);
   execute 'set local role authenticated';
   perform public.admin_set_session_status(draft,'undo_end',true,draft_undo);
   execute 'reset role';
   perform pg_temp.session_check((select status='not_started' and status_override is null and status_override_at is null and status_override_by is null and actual_started_at is null and actual_ended_at is null from public.sessions where id=draft),'ending unstarted session can be undone without inventing a start');
-  perform pg_temp.session_check((select count(*)=1 from public.notifications where dedupe_key='manual:'||draft_undo and type='announcement' and source='manual_status' and related_session_id=draft and body like '%has not started yet%'),'opted-in waiting correction sends one accurate session-linked alert');
+  perform pg_temp.session_check((select count(*)=1 from public.notifications where dedupe_key='manual:'||draft_undo and type='announcement' and source='manual_status' and related_session_id=draft and body like '%reset to Not Started%'),'opted-in reset correction sends one accurate session-linked alert');
   perform pg_temp.session_check(exists(select 1 from public.notification_recipients r join public.notifications n on n.id=r.notification_id where n.dedupe_key='manual:'||draft_undo and r.user_id=attendee),'correction alert snapshots attendee recipients');
   perform public.admin_set_session_status(draft,'undo_end',true,draft_undo);
   perform pg_temp.session_check((select count(*)=1 from public.notifications where dedupe_key='manual:'||draft_undo),'correction notification retry is deduplicated');
   perform public.sync_program_flow_statuses();
   perform pg_temp.session_check((select status='not_started' from public.sessions where id=draft),'scheduler preserves restored Not Started after planned times');
+  perform public.admin_set_session_published(draft,false,gen_random_uuid());
+  perform pg_temp.session_error(format('select public.admin_delete_session(%L,%L)',draft,gen_random_uuid()),'only sessions that have not started can be deleted; unpublish instead','manual End and Undo history protects unstarted reset draft from deletion');
   perform public.admin_set_session_status(draft,'start',false,gen_random_uuid());
   perform pg_temp.session_check((select status='ongoing' and actual_started_at is not null from public.sessions where id=draft),'restored Not Started can be started normally');
 
@@ -272,9 +288,14 @@ begin
   insert into public.admin_audit_log(actor_id,action,entity_type,entity_id,details,request_id)
     values(actor,'session.end','session',legacy,jsonb_build_object('before_status','ongoing','after_status','finished'),legacy_request);
   perform public.admin_set_session_status(legacy,'undo_end',true,gen_random_uuid());
-  perform pg_temp.session_check((select status='ongoing' and actual_started_at=now()-interval '2 hours' and actual_ended_at is null from public.sessions where id=legacy),'pre-upgrade End audit can restore original live session');
-  perform pg_temp.session_check(exists(select 1 from public.notifications where related_session_id=legacy and source='manual_status' and type='announcement' and body like '%still ongoing%'),'opted-in live correction uses accurate wording');
+  perform pg_temp.session_check((select status='not_started' and actual_started_at is null and actual_ended_at is null from public.sessions where id=legacy),'pre-upgrade End resets previously live session to Not Started');
+  perform pg_temp.session_check(exists(select 1 from public.notifications where related_session_id=legacy and source='manual_status' and type='announcement' and body like '%reset to Not Started%' and body not like '%still ongoing%'),'opted-in reset correction never announces Ongoing');
   perform pg_temp.session_check((select count(*)=1 from public.admin_audit_log where request_id=legacy_request),'legacy End audit remains immutable history');
+  fresh_draft := public.admin_create_session(fixture_event,'Untouched draft',null,null,now(),now()+interval '1 hour',false,gen_random_uuid());
+  execute 'set local role authenticated';
+  perform public.admin_delete_session(fresh_draft,gen_random_uuid());
+  execute 'reset role';
+  perform pg_temp.session_check(not exists(select 1 from public.sessions where id=fresh_draft),'ordinary unused draft remains deletable');
 end;
 $undo_tests$;
 
