@@ -69,7 +69,7 @@ The event branch supports the active server-side website maintenance gate. It pr
 ### Speakers
 - Browsable speaker lineup with portrait when supplied and branded initials otherwise
 - Responsive speaker grid with name and optional organization
-- Detail view with optional bio and LinkedIn link
+- Detail view retains the name, speaker/panelist label, organization and LinkedIn link without biography descriptions; the unconfirmed opening-keynote placeholder is hidden from the More directory
 
 ### Quick Links
 - Link to the main event website

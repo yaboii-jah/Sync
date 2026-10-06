@@ -18,6 +18,13 @@ const PHOTO_BOOTH_LINK: QuickLink = {
   icon: "camera",
 };
 
+const EVENT_WEBSITE_LINK: QuickLink = {
+  id: "app-event-website",
+  label: "Event Website",
+  url: "https://aws.scd-south.cloud/",
+  icon: "globe",
+};
+
 const linkClassName =
   "block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
@@ -32,7 +39,12 @@ export function QuickLinksClient({
 }) {
   const links = [
     PHOTO_BOOTH_LINK,
-    ...quickLinks.filter((link) => link.url !== PHOTO_BOOTH_LINK.url),
+    EVENT_WEBSITE_LINK,
+    ...quickLinks.filter(
+      (link) =>
+        link.url !== PHOTO_BOOTH_LINK.url &&
+        link.url.replace(/\/$/, "") !== EVENT_WEBSITE_LINK.url.replace(/\/$/, ""),
+    ),
   ];
 
   return (

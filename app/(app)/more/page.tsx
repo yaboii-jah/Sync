@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   title: "More — Sync",
 };
 
+const OPENING_KEYNOTE_PLACEHOLDER_ID = "20261007-0000-4000-8000-000000000201";
+
 export default async function MorePage() {
   await requireCompleteProfile();
 
@@ -21,7 +23,11 @@ export default async function MorePage() {
     getQuickLinks(supabase),
     getSpeakersSponsors(supabase),
   ]);
-  const speakers = people.filter((person) => person.role === "speaker" || person.role === "panelist");
+  const speakers = people.filter(
+    (person) =>
+      (person.role === "speaker" || person.role === "panelist") &&
+      person.id !== OPENING_KEYNOTE_PLACEHOLDER_ID,
+  );
 
   return (
     <main className="w-full">

@@ -92,7 +92,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
       </div>
 
       {activePerson ? (
-        <PersonBioModal
+        <PersonProfileModal
           person={activePerson}
           onClose={() => setActivePerson(null)}
         />
@@ -101,7 +101,7 @@ export function DirectoryClient({ people }: { people: Person[] }) {
   );
 }
 
-function PersonBioModal({
+function PersonProfileModal({
   person,
   onClose,
 }: {
@@ -138,12 +138,6 @@ function PersonBioModal({
                   ) : null}
                 </div>
               </div>
-
-              {person.bio ? (
-                <Typography type="body-sm" className="leading-6">
-                  {person.bio}
-                </Typography>
-              ) : null}
             </Modal.Body>
 
             <Modal.Footer className="flex-col gap-3 sm:flex-row">
